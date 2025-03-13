@@ -1,0 +1,4483 @@
+﻿Imports System.Data.SqlClient
+Imports System.IO
+
+Partial Class ProductionScheduleDetailsNew
+    Inherits System.Web.UI.Page
+
+    Dim intViewType As Integer = 1
+    Dim intScheduleId As Integer = SharedConstants.DEFAULT_INTEGER_VALUE
+    Dim dtCustomers As New DataTable
+    Dim clsProdSchedule As New ProductionSchedule
+
+    Protected Sub Page_Load(ByVal sender As Object, ByVal e As EventArgs) Handles Me.Load
+
+        If Not IsPostBack Then
+
+            If Session("sessUserID") = String.Empty Then
+                Response.Redirect("Logout.aspx", False)
+                Exit Sub
+            Else
+                If Not IsNumeric(Session("sessUserID")) Then
+                    Response.Redirect("Logout.aspx", False)
+                    Exit Sub
+                End If
+            End If
+
+            'don't allow access to this page if in as louvres
+            If Session("sessProductTypeID").ToString = "2" Then
+                Response.Redirect("Home.aspx", False)
+                Exit Sub
+            End If
+
+            Dim service As New AppService
+
+            service.addWebsitePageAccess("Ozroll Plantation Scheduling", CInt(Session("sessUserID")), Session("sessUserName").ToString, System.IO.Path.GetFileName(Request.PhysicalPath), Request.QueryString.ToString(), Now)
+
+            Try
+
+                If Not Request.QueryString.Count = 0 Then
+                    If Not IsNothing(Request.Params("ScheduleId")) Then
+                        intScheduleId = CInt(Request.Params("ScheduleId"))
+                        Me.txtIntScheduleID.Text = intScheduleId
+                    End If
+                    If Not IsNothing(Request.Params("ViewType")) Then
+                        intViewType = CInt(Request.Params("ViewType"))
+                    End If
+                End If
+                Me.txtViewType.Text = intViewType.ToString
+
+                Me.lblStatus.Text = String.Empty
+
+
+                initCtrls()
+                populateDetails(intScheduleId)
+
+                If txtTempFolder.Text.Trim.Length < 1 Then
+                    txtTempFolder.Text = "temp_" + DateTime.Now.Ticks.ToString()
+                End If
+                ViewState.Remove("DTUploadFiles")
+                CreateUpLoadDataTable()
+                If intViewType = 1 Then   'Update (Not Addition)                
+                    LoadAttchments(True)
+                End If
+
+                checkAndSetClearButtonVisibilityForStatusDates()
+
+                loadDetailsComboBoxLists()
+
+                Dim newGUID As New Guid
+                newGUID = Guid.NewGuid()
+                Me.txtPSDetailGUID.Text = newGUID.ToString
+
+                copyPlantationJobDetailsFromMainToTemp()
+                loadShutterDetailsForDataGrid()
+
+                checkPermissions()
+
+                copyNotesFromMainToTemp
+                loadNotesToAccordian()
+
+                If Me.txtId.Text <> String.Empty Then
+                    loadOrderFormLinks()
+                End If
+
+            Catch ex As Exception
+                EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine & getPageInfo())
+            End Try
+            service = Nothing
+        Else
+            LoadAttchments(False)
+        End If
+
+    End Sub
+
+    Private Sub Page_Error(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.Error
+        Dim objErr1 As Exception = Server.GetLastError().GetBaseException()
+
+        Dim strErrorMessage As String = String.Empty
+
+        strErrorMessage &= "Error In: " & Request.Url.ToString() & Environment.NewLine & Environment.NewLine
+
+        strErrorMessage &= "Server.GetLastError().GetBaseException()" & Environment.NewLine & Environment.NewLine
+
+        strErrorMessage &= "Error Message: " & objErr1.Message & Environment.NewLine
+        strErrorMessage &= "Stack Trace:" & Environment.NewLine
+        strErrorMessage &= objErr1.StackTrace & Environment.NewLine & Environment.NewLine
+
+        Dim objErr2 As Exception = Server.GetLastError()
+
+        strErrorMessage &= "Server.GetLastError()" & Environment.NewLine & Environment.NewLine
+
+        strErrorMessage &= "Error Message: " & objErr2.Message & Environment.NewLine
+        strErrorMessage &= "Stack Trace:" & Environment.NewLine
+        strErrorMessage &= objErr2.StackTrace & Environment.NewLine
+
+        EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & strErrorMessage)
+
+        Server.ClearError()
+
+        Response.Redirect("GenericErrorPage.aspx", False)
+    End Sub
+
+    Private Function getPageInfo() As String
+
+        Dim strPageInfo As String = String.Empty
+
+        Dim strName As String = String.Empty
+        If Session.Contents.Count > 0 Then
+            strPageInfo &= "Session Variables" & Environment.NewLine
+            For Each strName In Session.Contents
+                strPageInfo &= strName & ": " & CStr(Session.Contents(strName)) & Environment.NewLine
+            Next
+        Else
+            strPageInfo &= "No Session Variables" & Environment.NewLine
+        End If
+
+        strPageInfo &= Environment.NewLine
+
+        If Me.HasControls Then
+            strPageInfo &= "Form Controls" & Environment.NewLine
+            getPageControls(Me, strPageInfo)
+        Else
+            strPageInfo &= "No Form Controls" & Environment.NewLine
+        End If
+        Return strPageInfo
+
+    End Function
+
+    Private Sub getPageControls(ByVal ctrl As Control, ByRef strPageControls As String)
+
+        If ctrl.HasControls Then
+            For Each childCtrl As Control In ctrl.Controls
+                getPageControls(childCtrl, strPageControls)
+            Next
+        Else
+            Select Case ctrl.GetType.Name
+                Case "TextBox"
+                    Dim frmTxt As TextBox
+                    frmTxt = DirectCast(ctrl, TextBox)
+                    strPageControls &= frmTxt.ID & ": " & Left(frmTxt.Text, 100) & Environment.NewLine
+                Case "DropDownList"
+                    Dim frmCbo As DropDownList
+                    frmCbo = DirectCast(ctrl, DropDownList)
+                    If frmCbo.Items.Count > 0 Then
+                        strPageControls &= frmCbo.ID & ": " & frmCbo.SelectedItem.Text & " (" & frmCbo.SelectedValue & ")" & Environment.NewLine
+                    Else
+                        strPageControls &= frmCbo.ID & ": Not Populated" & Environment.NewLine
+                    End If
+                Case "CheckBox"
+                    Dim frmChk As CheckBox
+                    frmChk = DirectCast(ctrl, CheckBox)
+                    strPageControls &= frmChk.ID & ": " & frmChk.Checked & Environment.NewLine
+                Case "RadioButton"
+                    Dim frmRdo As RadioButton
+                    frmRdo = DirectCast(ctrl, RadioButton)
+                    strPageControls &= frmRdo.ID & ": " & frmRdo.Checked & Environment.NewLine
+                Case "RadioButtonList"
+                    Dim frmRdoLst As RadioButtonList
+                    frmRdoLst = DirectCast(ctrl, RadioButtonList)
+                    If frmRdoLst.SelectedIndex >= 0 Then
+                        strPageControls &= frmRdoLst.ID & ": " & frmRdoLst.SelectedItem.Text & " (" & frmRdoLst.SelectedValue & ")" & Environment.NewLine
+                    Else
+                        strPageControls &= frmRdoLst.ID & ": Not Selected" & Environment.NewLine
+                    End If
+            End Select
+        End If
+
+    End Sub
+
+    Protected Sub btnLogout_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles btnLogout.Click
+
+        Response.Redirect("Logout.aspx", False)
+
+    End Sub
+
+    Protected Sub loadDetailsComboBoxLists()
+        Dim service As New AppService
+
+        SharedFunctions.fillDropDownList(service.getPSInstallationArea(), "ID", "Description", cboInstallationArea, True)
+        SharedFunctions.fillDropDownList(service.getPSRoomLocation(), "ID", "Description", cboRoomLocation, True)
+        SharedFunctions.fillDropDownList(service.getPSMountConfig(), "ID", "Description", cboMountConfig, True)
+        SharedFunctions.fillDropDownList(service.getPSMountStyle(), "ID", "Description", cboMountStyle, True)
+        SharedFunctions.fillDropDownList(service.getPSPanelQty(), "ID", "Description", cboPanelQty, True)
+        'SharedFunctions.fillDropDownList(service.getPSMaterial(2), "ID", "Description", cboMaterial, True)
+        SharedFunctions.fillDropDownList(service.getPSBladeSize(), "ID", "Description", cboBladeSize, True)
+        SharedFunctions.fillDropDownList(service.getPSColour(), "ID", "Description", cboColour, True)
+        SharedFunctions.fillDropDownList(service.getPSMountMethod(), "ID", "Description", cboMountMethod, True)
+        SharedFunctions.fillDropDownList(service.getPSSides(), "ID", "Description", cboSides, True)
+        SharedFunctions.fillDropDownList(service.getPSControlType(), "ID", "Description", cboControlType, True)
+        SharedFunctions.fillDropDownList(service.getPSSlidingGuide(), "ID", "Description", cboBottomGuide, True)
+        SharedFunctions.fillDropDownList(service.getPSSlidingOpenClose(), "ID", "Description", cboSliding, True)
+        SharedFunctions.fillDropDownList(service.getPSTPostQty(), "ID", "Description", cboTPostQty, True)
+        SharedFunctions.fillDropDownList(service.getPSHangStrip(), "ID", "Description", cboHangStrip, True)
+        SharedFunctions.fillDropDownList(service.getPSLightBlock(), "ID", "Description", cboLightBlock, True)
+        SharedFunctions.fillDropDownList(service.getPSAngleBay(), "ID", "Description", cboAngleBay, True)
+
+        'on change of txt mid height
+        SharedFunctions.fillDropDownList(service.getPSSplitBlade(), "ID", "Description", cboSplitBlade, True)
+
+        service = Nothing
+
+    End Sub
+
+    Protected Sub initCtrls()
+
+        Dim service As New AppService
+
+        'Dim dtData As DataTable = service.createOrderStatusTBL()
+        'Me.cboOrderStatus.DataSource = dtData
+        'Me.cboOrderStatus.DataValueField = "StatusID"
+        'Me.cboOrderStatus.DataTextField = "StatusName"
+        'Me.cboOrderStatus.DataBind()
+        'Me.cboOrderStatus.SelectedIndex = 0
+
+        'If Me.txtViewType.Text = "0" Then
+        '    dtCustomers = service.runSQLScheduling("Select CustomerID,CustomerName,SiteID from tblCustomers Where Discontinued=0 and SiteID is null Order By SortOrder")
+        'Else
+        '    dtCustomers = service.runSQLScheduling("Select CustomerID,CustomerName,SiteID from tblCustomers Order By SortOrder")
+        'End If
+
+        dtCustomers = service.runSQLScheduling("Select CustomerID,CustomerName,SiteID from tblCustomers Order By SortOrder")
+        Dim drow As DataRow = dtCustomers.NewRow
+        drow("CustomerID") = 0
+        drow("CustomerName") = ""
+        dtCustomers.Rows.InsertAt(drow, 0)
+        Me.cboCustomer.DataSource = dtCustomers
+        Me.cboCustomer.DataValueField = "CustomerID"
+        Me.cboCustomer.DataTextField = "CustomerName"
+        Me.cboCustomer.DataBind()
+        Me.cboCustomer.SelectedIndex = 0
+
+        '
+
+        'setup order types list
+        Dim dtOrderType As DataTable = createOrderTypeDatatable
+        Me.cboOrderType.DataSource = dtOrderType
+        Me.cboOrderType.DataValueField = "OrderTypeID"
+        Me.cboOrderType.DataTextField = "OrderType"
+        Me.cboOrderType.DataBind()
+        Me.cboOrderType.SelectedIndex = 0
+
+        'setup priority list
+        Dim dtPriority As DataTable = createPriorityDatatable()
+        Me.cboPriority.DataSource = dtPriority
+        Me.cboPriority.DataValueField = "PriorityID"
+        Me.cboPriority.DataTextField = "PriorityName"
+        Me.cboPriority.DataBind()
+        Me.cboPriority.SelectedIndex = 0
+
+
+        service = Nothing
+        '
+        '
+
+    End Sub
+
+    Protected Function createOrderTypeDatatable() As DataTable
+
+        Dim dt As DataTable = New DataTable
+
+        Dim col As DataColumn = New DataColumn
+        col.ColumnName = "OrderTypeID"
+        col.DataType = System.Type.GetType("System.Int32")
+        dt.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "OrderType"
+        col.DataType = System.Type.GetType("System.String")
+        dt.Columns.Add(col)
+        col = Nothing
+
+        Dim drow As DataRow = dt.NewRow
+        drow("OrderTypeID") = 0
+        drow("OrderType") = String.Empty
+        dt.Rows.Add(drow)
+        drow = Nothing
+
+        drow = dt.NewRow
+        drow("OrderTypeID") = 1
+        drow("OrderType") = "Order"
+        dt.Rows.Add(drow)
+        drow = Nothing
+
+        drow = dt.NewRow
+        drow("OrderTypeID") = 2
+        drow("OrderType") = "Remake"
+        dt.Rows.Add(drow)
+        drow = Nothing
+
+        drow = dt.NewRow
+        drow("OrderTypeID") = 3
+        drow("OrderType") = "Reorder"
+        dt.Rows.Add(drow)
+        drow = Nothing
+
+        Return dt
+
+    End Function
+
+    Protected Function createPriorityDatatable() As DataTable
+
+        Dim dt As DataTable = New DataTable
+
+        Dim col As DataColumn = New DataColumn
+        col.ColumnName = "PriorityID"
+        col.DataType = System.Type.GetType("System.Int32")
+        dt.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "PriorityName"
+        col.DataType = System.Type.GetType("System.String")
+        dt.Columns.Add(col)
+        col = Nothing
+
+        Dim drow As DataRow = dt.NewRow
+        drow("PriorityID") = 0
+        drow("PriorityName") = String.Empty
+        dt.Rows.Add(drow)
+        drow = Nothing
+
+        drow = dt.NewRow
+        drow("PriorityID") = 1
+        drow("PriorityName") = "High"
+        dt.Rows.Add(drow)
+        drow = Nothing
+
+
+        Return dt
+
+    End Function
+
+    Protected Sub copyPlantationJobDetailsFromMainToTemp()
+
+        Dim intScheduleID As Integer = SharedConstants.DEFAULT_INTEGER_VALUE
+
+        If Me.txtId.Text <> String.Empty Then
+            intScheduleID = CInt(Me.txtId.Text)
+
+            Dim service As New AppService
+            Dim dtMain As DataTable = service.getPlantationJobDetailsRecordsByPlantationScheduleID(intScheduleID)
+
+            If dtMain.Rows.Count > 0 Then
+
+                Dim dbConn As New DBConnection
+                Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollLouvreScheduling
+                Dim trans As SqlTransaction = Nothing
+
+                Dim bolSavedOK As Boolean = True
+
+                Try
+                    cnn.Open()
+                    trans = cnn.BeginTransaction
+
+                    For i As Integer = 0 To dtMain.Rows.Count - 1
+
+                        Dim cPlantationJobDetails As PlantationJobDetails = service.setPlantationJobDetailsFromDatarow(dtMain.Rows(i))
+
+                        cPlantationJobDetails.TempGUID = Me.txtPSDetailGUID.Text
+                        cPlantationJobDetails.OriginalPSDetailID = cPlantationJobDetails.PSDetailID
+
+                        Dim intPSDetailID As Integer = service.addTempPlantationJobDetailsRecord(cPlantationJobDetails, cnn, trans)
+
+                        If intPSDetailID = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                            bolSavedOK = False
+                            Exit For
+                        End If
+                    Next
+
+                    If bolSavedOK Then
+                        trans.Commit()
+                    Else
+                        trans.Rollback()
+                    End If
+
+                Catch ex As Exception
+                    If Not trans Is Nothing Then
+                        trans.Rollback()
+                    End If
+                    If cnn.State = ConnectionState.Open Then
+                        cnn.Close()
+                    End If
+                    EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine & getPageInfo())
+                    bolSavedOK = False
+                Finally
+                    trans.Dispose()
+                    trans = Nothing
+                    If cnn.State = ConnectionState.Open Then
+                        cnn.Close()
+                    End If
+                    cnn.Dispose()
+                    cnn = Nothing
+                End Try
+
+            End If
+            dtMain.Dispose()
+            dtMain = Nothing
+
+            service = Nothing
+        End If
+
+
+    End Sub
+
+    Protected Sub copyNotesFromMainToTemp()
+
+        Dim intScheduleID As Integer = SharedConstants.DEFAULT_INTEGER_VALUE
+
+        If Me.txtId.Text <> String.Empty Then
+            intScheduleID = CInt(Me.txtId.Text)
+
+            Dim service As New AppService
+            Dim dtMain As DataTable = service.runSQLScheduling("select * from dbo.tblProdScheduleNotes where ProdScheduleID = " & intScheduleID.ToString)
+
+            If dtMain.Rows.Count > 0 Then
+
+                Dim dbConn As New DBConnection
+                Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollLouvreScheduling
+                Dim trans As SqlTransaction = Nothing
+
+                Dim bolSavedOK As Boolean = True
+
+                Try
+                    cnn.Open()
+                    trans = cnn.BeginTransaction
+
+                    For i As Integer = 0 To dtMain.Rows.Count - 1
+
+                        Dim cNote As New ProdScheduleNote
+                        cNote.ProdScheduleID = CInt(dtMain.Rows(i)("ProdScheduleID"))
+                        cNote.NoteDetails = dtMain.Rows(i)("NoteDetails").ToString
+                        cNote.NoteTypeID = CInt(dtMain.Rows(i)("NoteTypeID"))
+                        cNote.UserID = CInt(dtMain.Rows(i)("UserID"))
+                        cNote.EntryDate = CDate(dtMain.Rows(i)("EntryDate"))
+                        cNote.VisibleToCustomer = CInt(dtMain.Rows(i)("VisibleToCustomer"))
+
+                        bolSavedOK = service.addTempProdScheduleNotes(cNote, Me.txtPSDetailGUID.Text, False, cnn, trans)
+
+                        If bolSavedOK = False Then
+                            Exit For
+                        End If
+
+                    Next
+
+                    If bolSavedOK Then
+                        trans.Commit()
+                    Else
+                        trans.Rollback()
+                    End If
+
+                Catch ex As Exception
+                    If Not trans Is Nothing Then
+                        trans.Rollback()
+                    End If
+                    If cnn.State = ConnectionState.Open Then
+                        cnn.Close()
+                    End If
+                    EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine & getPageInfo())
+                    bolSavedOK = False
+                Finally
+                    trans.Dispose()
+                    trans = Nothing
+                    If cnn.State = ConnectionState.Open Then
+                        cnn.Close()
+                    End If
+                    cnn.Dispose()
+                    cnn = Nothing
+                End Try
+
+            End If
+            dtMain.Dispose()
+            dtMain = Nothing
+
+            service = Nothing
+        End If
+
+    End Sub
+
+    Protected Sub populateDetails(ByVal intProdScheduleId As Integer)
+
+        If Not Request.QueryString.Count = 0 Then
+            If Not IsNothing(Request.Params("ViewType")) Then
+                intViewType = CInt(Request.Params("ViewType"))
+            End If
+        End If
+        Me.txtViewType.Text = intViewType
+
+        clsProdSchedule = New ProductionSchedule
+        Dim service As New AppService
+        If intViewType = 1 Then
+            clsProdSchedule = service.getProdScheduleClsByID(intProdScheduleId)
+        End If
+
+        Me.txtId.Text = clsProdSchedule.ID
+        Me.txtEnteredDatetime.Enabled = False
+        If clsProdSchedule.ID <> SharedConstants.DEFAULT_INTEGER_VALUE Then
+
+            Me.txtJobnumber.Text = clsProdSchedule.JobNumber
+            Me.txtContractNumber.Text = clsProdSchedule.OrderReference
+            'If Not IsDBNull(clsProdSchedule.CustomerName) Then
+            '    'Me.cboCustomer.SelectedItem.Text = clsProdSchedule.CustomerName
+            '    For i As Integer = 0 To Me.cboCustomer.Items.Count - 1
+            '        If Me.cboCustomer.Items(i).Text = clsProdSchedule.CustomerName Then
+            '            Me.cboCustomer.Items(i).Selected = True
+            '            Me.cboCustomer.SelectedIndex = i
+            '            Me.cboCustomer.SelectedIndex = i
+            '            Exit For
+            '        End If
+            '    Next
+            '    getCustomerState(clsProdSchedule.CustomerName)
+            'End If
+
+
+            Me.cboCustomer.SelectedValue = clsProdSchedule.CustomerID
+            Me.txtCustomerName.Text = clsProdSchedule.CustomerName
+
+            Me.txtCustomerId.Text = Me.cboCustomer.SelectedValue 'clsProdSchedule.CustomerID
+            'getCustomerState()
+
+            Me.txtState.Text = clsProdSchedule.State
+
+            '
+            If intViewType = 1 Then
+                If clsProdSchedule.EnteredDatetime <> SharedConstants.DEFAULT_DATE_VALUE Then
+                    Me.txtEnteredDatetime.Text = Format(clsProdSchedule.EnteredDatetime, "d MMM yyyy")
+                Else
+                    Me.txtEnteredDatetime.Text = Format(Now, "d MMM yyyy")
+                End If
+            End If
+
+            If clsProdSchedule.OrderDate <> SharedConstants.DEFAULT_DATE_VALUE Then
+                Me.txtOrderDate.Text = Format(clsProdSchedule.OrderDate, "d MMM yyyy")
+            End If
+            '
+            '
+            If clsProdSchedule.OrderStatus <> SharedConstants.DEFAULT_INTEGER_VALUE Then
+                'Me.cboOrderStatus.SelectedValue = Me.cboOrderStatus.Items.IndexOf(Me.cboOrderStatus.Items.FindByText(clsProdSchedule.OrderStatus))
+                'Me.cboOrderStatus.SelectedValue = clsProdSchedule.OrderStatus
+                Me.txtInitialStatus.Text = clsProdSchedule.OrderStatus
+            Else
+                'Me.cboOrderStatus.SelectedIndex = -1
+                Me.txtInitialStatus.Text = 0
+            End If
+
+            If clsProdSchedule.CostPrice <> SharedConstants.DEFAULT_DECIMAL_VALUE Then
+                Me.txtCostPrice.Text = Format(clsProdSchedule.CostPrice, "currency")
+            End If
+            If clsProdSchedule.FreightAmount <> SharedConstants.DEFAULT_DECIMAL_VALUE Then
+                Me.txtFreightAmount.Text = Format(clsProdSchedule.FreightAmount, "currency")
+            End If
+
+            If clsProdSchedule.TotalSQM <> SharedConstants.DEFAULT_DECIMAL_VALUE Then
+                Me.txtTotalSQM.Text = clsProdSchedule.TotalSQM
+            End If
+            If clsProdSchedule.TotalPanels <> SharedConstants.DEFAULT_INTEGER_VALUE Then
+                Me.txtTotalPanels.Text = clsProdSchedule.TotalPanels
+            End If
+
+            Dim dtProdList As DataTable = service.getPlantSpecsByProdSchID(intProdScheduleId)
+            If dtProdList.Rows.Count > 0 Then
+                If Not IsDBNull(dtProdList.Rows(0)("PanelsLess700")) Then
+                    Me.txtPanelsLess700.Text = dtProdList.Rows(0)("PanelsLess700")
+                End If
+                If Not IsDBNull(dtProdList.Rows(0)("PanelsMore700")) Then
+                    Me.txtPanelsMore700.Text = dtProdList.Rows(0)("PanelsMore700")
+                End If
+                If Not IsDBNull(dtProdList.Rows(0)("QtyHinges")) Then
+                    Me.txtQtyHinges.Text = dtProdList.Rows(0)("QtyHinges")
+                End If
+                If Not IsDBNull(dtProdList.Rows(0)("QtySliding")) Then
+                    Me.txtQtySliding.Text = dtProdList.Rows(0)("QtySliding")
+                End If
+                If Not IsDBNull(dtProdList.Rows(0)("QtyBifold")) Then
+                    Me.txtQtyBifold.Text = dtProdList.Rows(0)("QtyBifold")
+                End If
+                If Not IsDBNull(dtProdList.Rows(0)("QtyFixed")) Then
+                    Me.txtQtyFixed.Text = dtProdList.Rows(0)("QtyFixed")
+                End If
+                If Not IsDBNull(dtProdList.Rows(0)("QtyZFrame")) Then
+                    Me.txtQtyZFrame.Text = dtProdList.Rows(0)("QtyZFrame")
+                End If
+                If Not IsDBNull(dtProdList.Rows(0)("QtyLFrame")) Then
+                    Me.txtQtyLFrame.Text = dtProdList.Rows(0)("QtyLFrame")
+                End If
+                'If Not IsDBNull(dtProdList.Rows(0)("ColourID")) Then
+                '    Me.cboColourId.SelectedValue = dtProdList.Rows(0)("ColourID")
+                'Else
+                '    Me.cboColourId.SelectedValue = 0
+                'End If
+            End If
+
+            'If clsProdSchedule.PanelsLess700 <> SharedConstants.DEFAULT_INTEGER_VALUE Then
+            '    Me.txtPanelsLess700.Text = clsProdSchedule.PanelsLess700
+            'End If
+            'If clsProdSchedule.PanelsMore700 <> SharedConstants.DEFAULT_INTEGER_VALUE Then
+            '    Me.txtPanelsMore700.Text = clsProdSchedule.PanelsMore700
+            'End If
+            'If clsProdSchedule.QtyHinges <> SharedConstants.DEFAULT_INTEGER_VALUE Then
+            '    Me.txtQtyHinges.Text = clsProdSchedule.QtyHinges
+            'End If
+            'If clsProdSchedule.QtySliding <> SharedConstants.DEFAULT_INTEGER_VALUE Then
+            '    Me.txtQtySliding.Text = clsProdSchedule.QtySliding
+            'End If
+            'If clsProdSchedule.QtyBifold <> SharedConstants.DEFAULT_INTEGER_VALUE Then
+            '    Me.txtQtyBifold.Text = clsProdSchedule.QtyBifold
+            'End If
+            'If clsProdSchedule.QtyFixed <> SharedConstants.DEFAULT_INTEGER_VALUE Then
+            '    Me.txtQtyFixed.Text = clsProdSchedule.QtyFixed
+            'End If
+            'If clsProdSchedule.QtyZFrame <> SharedConstants.DEFAULT_INTEGER_VALUE Then
+            '    Me.txtQtyZFrame.Text = clsProdSchedule.QtyZFrame
+            'End If
+            'If clsProdSchedule.QtyLFrame <> SharedConstants.DEFAULT_INTEGER_VALUE Then
+            '    Me.txtQtyLFrame.Text = clsProdSchedule.QtyLFrame
+            'End If
+            'If clsProdSchedule.OffWhite > 0 Then
+            '    Me.cboOffWhite.SelectedValue = 1
+            'Else
+            '    Me.cboOffWhite.SelectedValue = 0
+            'End If
+            'If clsProdSchedule.BrightWhite > 0 Then
+            '    Me.cboBrightWhite.SelectedValue = 1
+            'Else
+            '    Me.cboBrightWhite.SelectedValue = 0
+            'End If
+            If clsProdSchedule.GRARemakes <> String.Empty Then
+                Me.txtGRARemakes.Text = clsProdSchedule.GRARemakes
+            End If
+            If clsProdSchedule.UpdatesText <> String.Empty Then
+                Me.txtUpdatesText.Text = clsProdSchedule.UpdatesText
+            End If
+
+            If clsProdSchedule.BOMCosted <> String.Empty Then
+                Me.txtBOMCosted.Text = clsProdSchedule.BOMCosted
+            End If
+            If clsProdSchedule.ShutterPro <> String.Empty Then
+                Me.txtShutterPro.Text = clsProdSchedule.ShutterPro
+            End If
+            If clsProdSchedule.ShippingDetails <> String.Empty Then
+                Me.txtShippingDetails.Text = clsProdSchedule.ShippingDetails
+            End If
+
+            'If clsProdSchedule.PlannedShippingDate <> String.Empty Then
+            '    Me.txtPlannedShippingDate.Text = clsProdSchedule.PlannedShippingDate
+            'End If
+            If clsProdSchedule.ExpectedShippingDate <> SharedConstants.DEFAULT_DATE_VALUE Then
+                Me.txtPlannedShippingDate.Text = Format(clsProdSchedule.ExpectedShippingDate, "d MMM yyyy")
+            End If
+
+            If clsProdSchedule.ActualShippingDate <> SharedConstants.DEFAULT_DATE_VALUE Then
+                Me.txtActualShippingDate.Text = Format(clsProdSchedule.ActualShippingDate, "d MMM yyyy")
+            End If
+            '
+            If clsProdSchedule.OrderTypeID <> SharedConstants.DEFAULT_INTEGER_VALUE Then
+                Me.cboOrderType.SelectedValue = clsProdSchedule.OrderTypeID
+            Else
+                Me.cboOrderType.SelectedIndex = 0
+            End If
+            Me.cboOrderType_SelectedIndexChanged(Me, Nothing)
+
+            If clsProdSchedule.PriorityLevel <> SharedConstants.DEFAULT_INTEGER_VALUE Then
+                Me.cboPriority.SelectedValue = clsProdSchedule.PriorityLevel
+            Else
+                Me.cboPriority.SelectedIndex = 0
+            End If
+
+            Me.lblShutterProNumber.Text = clsProdSchedule.ShutterProNumber
+
+            'remake/reorder specific details
+            Me.txtRemakeDescription.Text = clsProdSchedule.RemakeIssueDescription
+
+            If clsProdSchedule.ScheduledDate <> SharedConstants.DEFAULT_DATE_VALUE Then
+                Me.txtScheduledDate.Text = Format(clsProdSchedule.ScheduledDate, "d MMM yyyy")
+                Me.txtScheduledDate.Enabled = False
+            End If
+
+            If clsProdSchedule.EnteredShutterProDate <> SharedConstants.DEFAULT_DATE_VALUE Then
+                Me.txtShutterProEnteredDate.Text = Format(clsProdSchedule.EnteredShutterProDate, "d MMM yyyy")
+                Me.txtShutterProEnteredDate.Enabled = False
+            End If
+
+            If clsProdSchedule.ReceivedDate <> SharedConstants.DEFAULT_DATE_VALUE Then
+                Me.txtReceived.Text = Format(clsProdSchedule.ReceivedDate, "d MMM yyyy")
+                Me.txtReceived.Enabled = False
+            End If
+
+            'fill job stages dates
+            Dim dtJobStages As DataTable = service.runSQLScheduling("select * from dbo.tblJobStages where ScheduleID=" & intProdScheduleId.ToString)
+            If dtJobStages.Rows.Count > 0 Then
+                For i As Integer = 0 To dtJobStages.Rows.Count - 1
+                    If Not IsDBNull(dtJobStages.Rows(i)("CompletedDateTime")) Then
+                        Select Case CInt(dtJobStages.Rows(i)("StageID").ToString)
+                            Case 1
+                                Me.txtCuttingDate.Text = CDate(dtJobStages.Rows(i)("CompletedDateTime")).ToString("d MMM yyyy")
+                                Me.txtCuttingDate.Enabled = False
+                            Case 2
+                                Me.txtPrepDate.Text = CDate(dtJobStages.Rows(i)("CompletedDateTime")).ToString("d MMM yyyy")
+                                Me.txtPrepDate.Enabled = False
+                            Case 3
+                                Me.txtAssemblyDate.Text = CDate(dtJobStages.Rows(i)("CompletedDateTime")).ToString("d MMM yyyy")
+                                Me.txtAssemblyDate.Enabled = False
+                            Case 4
+                                Me.txtFramingDate.Text = CDate(dtJobStages.Rows(i)("CompletedDateTime")).ToString("d MMM yyyy")
+                                Me.txtFramingDate.Enabled = False
+                            Case 5
+                                Me.txtQCDate.Text = CDate(dtJobStages.Rows(i)("CompletedDateTime")).ToString("d MMM yyyy")
+                                Me.txtQCDate.Enabled = False
+                            Case 6
+                                Me.txtWrappingDate.Text = CDate(dtJobStages.Rows(i)("CompletedDateTime")).ToString("d MMM yyyy")
+                                Me.txtWrappingDate.Enabled = False
+                            Case 7
+                                'despatch which is currently not used
+                            Case Else
+                                'not implemented
+                        End Select
+                    End If
+                Next
+            End If
+            dtJobStages.Dispose()
+            dtJobStages = Nothing
+
+            Dim bolCollectFromFactory As Boolean = False
+
+            Dim dtCustomer As DataTable = service.runSQLScheduling("select * from dbo.tblCustomers where CustomeriD = " & clsProdSchedule.CustomerID)
+            If dtCustomer.Rows.Count > 0 Then
+                If Not IsDBNull(dtCustomer.Rows(0)("CollectionFromFactory")) Then
+                    If CInt(dtCustomer.Rows(0)("CollectionFromFactory")) = 1 Then
+                        bolCollectFromFactory = True
+                    End If
+                End If
+            End If
+            dtCustomer.Dispose()
+            dtCustomer = Nothing
+
+            If bolCollectFromFactory Then
+                Me.lblPostProduction1.Text = "Invoice Date"
+                Me.txtPostProduction1.Text = String.Empty
+                If clsProdSchedule.InvoicedDate <> SharedConstants.DEFAULT_DATE_VALUE Then
+                    Me.txtPostProduction1.Text = Format(clsProdSchedule.InvoicedDate, "d MMM yyyy")
+                    Me.txtPostProduction1.Enabled = False
+                    Me.pnlCancellation.visible = False
+                End If
+
+                Me.lblPostProduction2.Text = "Collect Date"
+                Me.txtPostProduction2.Text = String.Empty
+                If clsProdSchedule.CollectedFactoryDate <> SharedConstants.DEFAULT_DATE_VALUE Then
+                    Me.txtPostProduction2.Text = Format(clsProdSchedule.CollectedFactoryDate, "d MMM yyyy")
+                    Me.txtPostProduction2.Enabled = False
+                    Me.pnlCancellation.visible = False
+                End If
+            Else
+                Me.lblPostProduction1.Text = "Despatch Date"
+                Me.txtPostProduction1.Text = String.Empty
+                Dim dtDespatch As DataTable = service.runSQLScheduling("select * from dbo.tblJobStages where (StageID=7) and  (ScheduleID=" & intProdScheduleId.ToString & ")")
+                If dtDespatch.Rows.Count > 0 Then
+                    If Not IsDBNull(dtDespatch.Rows(0)("CompletedDateTime")) Then
+                        Me.txtPostProduction1.Text = CDate(dtDespatch.Rows(0)("CompletedDateTime")).ToString("d MMM yyyy")
+                        Me.txtPostProduction1.Enabled = False
+                        Me.pnlCancellation.visible = False
+                    End If
+                End If
+
+                Me.lblPostProduction2.Text = "Invoice Date"
+                Me.txtPostProduction2.Text = String.Empty
+                If clsProdSchedule.InvoicedDate <> SharedConstants.DEFAULT_DATE_VALUE Then
+                    Me.txtPostProduction2.Text = Format(clsProdSchedule.InvoicedDate, "d MMM yyyy")
+                    Me.txtPostProduction2.Enabled = False
+                    Me.pnlCancellation.visible = False
+                End If
+            End If
+
+            'get status text
+            Dim dtStatus As DataTable = service.runSQLScheduling("select * from dbo.tblStatus")
+            If dtStatus.Rows.Count > 0 Then
+                Dim drows() As DataRow = dtStatus.Select("StatusID=" & clsProdSchedule.OrderStatus)
+                If drows.Length > 0 Then
+                    Me.lblCurrentStatus.Text = drows(0)("StatusName").ToString
+                End If
+                drows = Nothing
+            End If
+            dtStatus.Dispose()
+            dtStatus = Nothing
+
+            If clsProdSchedule.OnHold = 1 Then
+                Me.chkHoldJob.Checked = True
+                Me.lblCurrentStatus.Text = "On Hold" & " - " & Me.lblCurrentStatus.Text
+            End If
+
+            setDateBoxDisabledOverrideBasedOnStatus(clsProdSchedule.OrderStatus)
+
+            service = Nothing
+
+            If clsProdSchedule.CompletedDate <> SharedConstants.DEFAULT_DATE_VALUE Then
+                Me.pnlCancellation.Visible = False
+            End If
+
+            If clsProdSchedule.OrderStatus = 8 Then
+                disableAllControls()
+            End If
+
+        Else
+            'Me.lblStatus.Text = "No Records Found."
+            Me.txtEnteredDatetime.Text = Format(Now, "d MMM yyyy")
+            Me.cboOffWhite.SelectedIndex = -1
+            Me.cboBrightWhite.SelectedIndex = -1
+            Me.cboOrderType.SelectedIndex = -1
+            Me.txtInitialStatus.Text = 0
+            '
+        End If
+        '
+
+    End Sub
+
+    Protected Sub btnSave_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles btnSave.Click
+
+        '
+        If Not Request.QueryString.Count = 0 Then
+            If Not IsNothing(Request.Params("ScheduleId")) Then
+                intScheduleId = CInt(Request.Params("ScheduleId"))
+            End If
+            If Not IsNothing(Request.Params("ViewType")) Then
+                intViewType = CInt(Request.Params("ViewType"))
+            End If
+        End If
+
+        Dim service As New AppService
+
+        Dim bolContinue As Boolean = True
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollLouvreScheduling
+        Dim trans As SqlTransaction = Nothing
+        dbConn = Nothing
+        btnSave.Enabled = False
+        btnSave.CssClass = "form-button-disabled"
+        lblStatus.Text = String.Empty
+
+        Try
+            cnn.Open()
+            trans = cnn.BeginTransaction
+
+            Dim intMaxChangeId As Integer = service.getProductScheduleHistoryNewChgID()
+            clsProdSchedule = service.getProdScheduleClsByID(intScheduleId)
+
+            'Dim clsNewProdSchedule As ProductionSchedule = CType(clsProdSchedule.Clone, ProductionSchedule)
+            Dim clsNewProdSchedule As ProductionSchedule = New ProductionSchedule
+            UpdateProdSchedule(clsNewProdSchedule)
+
+
+            If bolContinue Then
+                If intViewType = 1 Then
+                    bolContinue = service.updateProductionScheduleByID(clsNewProdSchedule, cnn, trans)
+                Else
+                    bolContinue = service.addProductionScheduleRecord(clsNewProdSchedule, cnn, trans)
+                End If
+            End If
+
+            If bolContinue Then
+
+                Dim clsPlantationSpecs As New PlantationSpecs
+                Dim dtPlantSpec As DataTable = service.getPlantSpecsByProdSchID(intScheduleId)
+                If dtPlantSpec.Rows.Count > 0 Then
+                    clsPlantationSpecs = service.convertRowPlantSpecToCLS(dtPlantSpec.Rows(0))
+                End If
+
+                Dim clsNewPlantSpecs As PlantationSpecs = CType(clsPlantationSpecs.Clone, PlantationSpecs)
+                clsNewPlantSpecs.ProductScheduleID = intScheduleId
+                clsNewPlantSpecs.PanelsLess700 = clsNewProdSchedule.PanelsLess700
+                clsNewPlantSpecs.PanelsMore700 = clsNewProdSchedule.PanelsMore700
+                clsNewPlantSpecs.QtySliding = clsNewProdSchedule.QtySliding
+                clsNewPlantSpecs.QtyFixed = clsNewProdSchedule.QtyFixed
+                clsNewPlantSpecs.QtyHinges = clsNewProdSchedule.QtyHinges
+                clsNewPlantSpecs.QtyBifold = clsNewProdSchedule.QtyBifold
+                clsNewPlantSpecs.QtyLFrame = clsNewProdSchedule.QtyLFrame
+                clsNewPlantSpecs.QtyZFrame = clsNewProdSchedule.QtyZFrame
+                'If Me.cboColourId.SelectedValue > 0 Then
+                '    clsNewPlantSpecs.ColourID = 1
+                'Else
+                '    clsNewPlantSpecs.ColourID = 0
+                'End If
+                If intViewType = 1 Then
+                    bolContinue = service.updatePlantationSpecs(clsNewPlantSpecs, cnn, trans)
+                Else
+                    bolContinue = service.AddPlantationSpecs(clsNewPlantSpecs, cnn, trans)
+                End If
+            End If
+
+            If bolContinue Then
+                bolContinue = updateJobStages(intScheduleId, cnn, trans)
+            End If
+
+            If intViewType = 1 And bolContinue Then
+                '
+                bolContinue = service.addProdScheduleHistoryRcd(intMaxChangeId, clsProdSchedule, cnn, trans)
+                '
+            End If
+
+
+            'update details records from temp back to main
+            If bolContinue Then
+
+                Dim dtTemp As DataTable = service.getTempPlantationJobDetailsRecordsByTempGUID(Me.txtPSDetailGUID.Text, cnn, trans)
+                If dtTemp.Rows.Count > 0 Then
+                    For i As Integer = 0 To dtTemp.Rows.Count - 1
+
+                        Dim cPlantationJobDetails As PlantationJobDetails = service.setPlantationJobDetailsFromDatarow(dtTemp.Rows(i))
+
+                        If cPlantationJobDetails.PlantationScheduleListID = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                            'add new
+                            cPlantationJobDetails.PlantationScheduleListID = clsNewProdSchedule.ID
+                            cPlantationJobDetails.PSDetailID = SharedConstants.DEFAULT_INTEGER_VALUE
+                            Dim intNewPSDetailsID As Integer = service.addPlantationJobDetailsRecord(cPlantationJobDetails, cnn, trans)
+                            If intNewPSDetailsID = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                                bolContinue = False
+                            End If
+                        Else
+                            'update existing
+                            cPlantationJobDetails.PSDetailID = cPlantationJobDetails.OriginalPSDetailID
+                            bolContinue = service.updatePlantationJobDetailsRecord(cPlantationJobDetails, cnn, trans)
+                        End If
+
+                        If bolContinue = False Then
+                            Exit For
+                        End If
+
+                    Next
+                End If
+                dtTemp.Dispose()
+                dtTemp = Nothing
+
+            End If
+
+            'copy any new notes from tempnotes into mainnotes
+            If bolContinue Then
+                Dim dtTemp As DataTable = service.runSQLScheduling("select * from dbo.tblTempProdScheduleNotes where TempGUID='" & Me.txtPSDetailGUID.Text & "' and NewNote=1", cnn, trans)
+                For i As Integer = 0 To dtTemp.Rows.Count - 1
+                    Dim cNote As New ProdScheduleNote
+                    cNote.ProdScheduleID = clsNewProdSchedule.ID
+                    cNote.NoteDetails = dtTemp.Rows(i)("NoteDetails").ToString
+                    cNote.NoteTypeID = CInt(dtTemp.Rows(i)("NoteTypeID"))
+                    cNote.UserID = CInt(dtTemp.Rows(i)("UserID"))
+                    cNote.EntryDate = CDate(dtTemp.Rows(i)("EntryDate"))
+                    cNote.VisibleToCustomer = CInt(dtTemp.Rows(i)("VisibleToCustomer"))
+
+                    bolContinue = service.addProdScheduleNoteRcd(cNote, cnn, trans)
+
+                    If bolContinue = False Then
+                        Exit For
+                    End If
+                Next
+                dtTemp.Dispose()
+                dtTemp = Nothing
+            End If
+
+            'txtNotes field added somethings or cboOrderStatus changed
+            'If bolContinue And (Me.txtNotes.Text <> String.Empty Or _
+            '                    Me.txtInitialStatus.Text <> Me.cboOrderStatus.SelectedValue.ToString) Or _
+            '                    clsProdSchedule.UpdatesText <> clsNewProdSchedule.UpdatesText Then
+            '    Dim clsProdScheduleNote As New ProdScheduleNote
+            '    clsProdScheduleNote.ProdScheduleID = clsNewProdSchedule.ID
+            '    clsProdScheduleNote.NoteTypeID = 1
+            '    clsProdScheduleNote.NoteDetails = Me.txtNotes.Text
+            '    clsProdScheduleNote.EntryDate = Now
+            '    clsProdScheduleNote.UserID = CInt(Session("sessUserID"))
+            '    If Me.chkNoteVisibleCustomer.Checked = True Then
+            '        clsProdScheduleNote.VisibleToCustomer = 1
+            '    Else
+            '        clsProdScheduleNote.VisibleToCustomer = 0
+            '    End If
+            '    '
+            '    bolContinue = service.addProdScheduleNoteRcd(clsProdScheduleNote, cnn, trans)
+            '    clsProdScheduleNote = Nothing
+            '    '
+            'End If
+
+            If bolContinue = True Then
+                Attachments(clsNewProdSchedule.ID)
+            End If
+
+            If bolContinue Then
+                trans.Commit()
+
+                clearTempNotesRecords()
+                clearTempDetailsRecords()
+
+                If TypeOf (sender) Is Button Then
+                    Dim btn As Button = CType(sender, Button)
+                    If btn.ID = "btnSave" Then
+                        Response.Redirect("ProductionScheduleList.aspx?" & Request.QueryString.ToString, False)
+                    ElseIf btn.ID = "btnCancellation" Then
+                        Response.Redirect("ConfirmCancelJob.aspx?" & Request.QueryString.ToString, False)
+                    Else
+                        Response.Redirect("ProductionScheduleDetailsNew.aspx?" & Request.QueryString.ToString, False)
+                    End If
+                ElseIf TypeOf (sender) Is TextBox Then
+                    Response.Redirect("ProductionScheduleDetailsNew.aspx?" & Request.QueryString.ToString, False)
+                End If
+
+            Else
+                'EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - Transaction Rolled Back" & Environment.NewLine & getPageInfo())
+                trans.Rollback()
+                If lblStatus.Text = String.Empty Then
+                    lblStatus.Text = "Error saving details. Please try again."
+                End If
+                btnSave.Enabled = True
+                btnSave.CssClass = "form-button"
+            End If
+
+        Catch ex As Exception
+            If Not trans Is Nothing Then
+                trans.Rollback()
+            End If
+            If cnn.State = ConnectionState.Open Then
+                cnn.Close()
+            End If
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine & getPageInfo())
+            bolContinue = False
+        Finally
+            trans.Dispose()
+            trans = Nothing
+            If cnn.State = ConnectionState.Open Then
+                cnn.Close()
+            End If
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+        dbConn = Nothing
+        service = Nothing
+
+        If bolContinue = False Then
+            Dim btn As Button = CType(sender, Button)
+            If btn.ID = "btnSave" Then
+                'Response.Redirect("ProductionScheduleList.aspx?" & Request.QueryString.ToString, False)
+            Else
+                Response.Redirect("ProductionScheduleDetailsNew.aspx?" & Request.QueryString.ToString, False)
+            End If
+        End If
+
+    End Sub
+
+    Protected Sub btnCancel_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles btnCancel.Click
+
+        clearTempDetailsRecords()
+        clearTempNotesRecords()
+
+        Response.Redirect("ProductionScheduleList.aspx?" & Request.QueryString.ToString, False)
+
+    End Sub
+
+    Protected Sub clearTempDetailsRecords()
+
+        Dim service As New AppService
+        service.executeSQLScheduling("delete from dbo.tblTempPlantationJobDetails where TempGUID = '" & Me.txtPSDetailGUID.Text & "'")
+        service = Nothing
+
+        Dim TempDir As String = Server.MapPath("~/UpLoadedFiles/") + txtTempFolder.Text
+        If ViewState("DTUploadFiles") IsNot String.Empty Then
+            ViewState.Remove("DTUploadFiles")
+        End If
+
+        If Directory.Exists(TempDir) Then
+            For Each _file As String In Directory.GetFiles(TempDir)
+                File.Delete(_file)
+            Next
+
+            'Dim AllFiles As System.IO.FileInfo = New IO.FileInfo(TempDir)
+            'AllFiles.Delete()
+            Directory.Delete(TempDir)
+        End If
+
+
+    End Sub
+
+    Protected Sub clearTempNotesRecords()
+
+        Dim service As New AppService
+        service.executeSQLScheduling("delete from dbo.tblTempProdScheduleNotes where TempGUID = '" & Me.txtPSDetailGUID.Text & "'")
+        service = Nothing
+
+    End Sub
+    Protected Sub UpdateProdSchedule(ByRef clsNewProdSchedule As ProductionSchedule)
+
+        Dim service As New AppService
+        If CInt(Me.txtViewType.Text) = 1 Then
+            clsNewProdSchedule.ID = Me.txtId.Text
+            clsNewProdSchedule.JobNumber = Me.txtJobnumber.Text
+        End If
+        clsNewProdSchedule.OrderReference = Me.txtContractNumber.Text
+        'dtCustomers = service.runSQLScheduling("Select CustomerID,CustomerName from tblCustomers Order By SortOrder")
+        'Dim dwTMPs() As DataRow = dtCustomers.Select("CustomerName='" & Me.cboCustomer.SelectedItem.Text & "'")
+        'If dwTMPs.Length > 0 Then
+        '    clsNewProdSchedule.CustomerID = dwTMPs(0)("CustomerID")
+        'End If
+        'clsNewProdSchedule.Customer = Me.cboCustomer.SelectedItem.Text
+
+
+        If Me.cboCustomer.SelectedIndex > -1 Then
+            clsNewProdSchedule.CustomerID = Me.cboCustomer.SelectedValue
+        End If
+
+        clsNewProdSchedule.CustomerName = Trim(Me.txtCustomerName.Text)
+
+        clsNewProdSchedule.EnteredDatetime = CDate(Me.txtEnteredDatetime.Text)
+        If Me.txtState.Text <> String.Empty Then
+            clsNewProdSchedule.State = Me.txtState.Text
+        Else
+            clsNewProdSchedule.State = String.Empty
+        End If
+
+        clsNewProdSchedule.OrderDate = CDate(Me.txtOrderDate.Text)
+
+        If Me.txtCostPrice.Text <> String.Empty Then
+            clsNewProdSchedule.CostPrice = CDec(Me.txtCostPrice.Text)
+            clsNewProdSchedule.UpdatesText = " Sales Price changed to " & CDec(Me.txtCostPrice.Text) & " on " & Format(DateTime.Now, "d MMM yyyy") & "."
+        Else
+            clsNewProdSchedule.CostPrice = SharedConstants.DEFAULT_DECIMAL_VALUE
+        End If
+
+        If Me.txtTotalSQM.Text <> String.Empty Then
+            clsNewProdSchedule.TotalSQM = CDec(Me.txtTotalSQM.Text)
+        Else
+            clsNewProdSchedule.TotalSQM = SharedConstants.DEFAULT_DECIMAL_VALUE
+        End If
+        If Me.txtTotalPanels.Text <> String.Empty Then
+            clsNewProdSchedule.TotalPanels = CInt(Me.txtTotalPanels.Text)
+        Else
+            clsNewProdSchedule.TotalPanels = SharedConstants.DEFAULT_INTEGER_VALUE
+        End If
+        If Me.txtPanelsLess700.Text <> String.Empty Then
+            clsNewProdSchedule.PanelsLess700 = CInt(Me.txtPanelsLess700.Text)
+        Else
+            clsNewProdSchedule.PanelsLess700 = SharedConstants.DEFAULT_INTEGER_VALUE
+        End If
+        If Me.txtPanelsMore700.Text <> String.Empty Then
+            clsNewProdSchedule.PanelsMore700 = CInt(Me.txtPanelsMore700.Text)
+        Else
+            clsNewProdSchedule.PanelsMore700 = SharedConstants.DEFAULT_INTEGER_VALUE
+        End If
+        If Me.txtQtyHinges.Text <> String.Empty Then
+            clsNewProdSchedule.QtyHinges = CInt(Me.txtQtyHinges.Text)
+        Else
+            clsNewProdSchedule.QtyHinges = SharedConstants.DEFAULT_INTEGER_VALUE
+        End If
+        If Me.txtQtySliding.Text <> String.Empty Then
+            clsNewProdSchedule.QtySliding = CInt(Me.txtQtySliding.Text)
+        Else
+            clsNewProdSchedule.QtySliding = SharedConstants.DEFAULT_INTEGER_VALUE
+        End If
+        If Me.txtQtyBifold.Text <> String.Empty Then
+            clsNewProdSchedule.QtyBifold = CInt(Me.txtQtyBifold.Text)
+        Else
+            clsNewProdSchedule.QtyBifold = SharedConstants.DEFAULT_INTEGER_VALUE
+        End If
+        If Me.txtQtyFixed.Text <> String.Empty Then
+            clsNewProdSchedule.QtyFixed = CInt(Me.txtQtyFixed.Text)
+        Else
+            clsNewProdSchedule.QtyFixed = SharedConstants.DEFAULT_INTEGER_VALUE
+        End If
+        If Me.txtQtyZFrame.Text <> String.Empty Then
+            clsNewProdSchedule.QtyZFrame = CInt(Me.txtQtyZFrame.Text)
+        Else
+            clsNewProdSchedule.QtyZFrame = SharedConstants.DEFAULT_INTEGER_VALUE
+        End If
+        If Me.txtQtyLFrame.Text <> String.Empty Then
+            clsNewProdSchedule.QtyLFrame = CInt(Me.txtQtyLFrame.Text)
+        Else
+            clsNewProdSchedule.QtyLFrame = SharedConstants.DEFAULT_INTEGER_VALUE
+        End If
+        If Me.cboOffWhite.SelectedValue > 0 Then
+            clsNewProdSchedule.OffWhite = 1
+        Else
+            clsNewProdSchedule.OffWhite = 0
+        End If
+        If Me.cboBrightWhite.SelectedValue > 0 Then
+            clsNewProdSchedule.BrightWhite = 1
+        Else
+            clsNewProdSchedule.BrightWhite = 0
+        End If
+        If Me.txtGRARemakes.Text <> String.Empty Then
+            clsNewProdSchedule.GRARemakes = CStr(Me.txtGRARemakes.Text)
+        End If
+
+        'update text append
+        If Me.txtUpdatesText.Text <> String.Empty Then
+            clsNewProdSchedule.UpdatesText = CStr(Me.txtUpdatesText.Text)
+        End If
+        If Me.txtNotes.Text <> String.Empty Then
+            clsNewProdSchedule.UpdatesText &= vbCrLf & Me.txtNotes.Text
+        End If
+
+
+        'If Me.txtInitialStatus.Text <> Me.cboOrderStatus.SelectedValue.ToString Then
+        '    clsNewProdSchedule.UpdatesText &= vbCrLf & " Changed to " & Me.cboOrderStatus.SelectedItem.Text & " on " & Format(DateTime.Now, "d MMM yyyy") & "."
+        'End If
+
+        If Me.txtBOMCosted.Text <> String.Empty Then
+            clsNewProdSchedule.BOMCosted = CStr(Me.txtBOMCosted.Text)
+        End If
+        If Me.txtShutterPro.Text <> String.Empty Then
+            clsNewProdSchedule.ShutterPro = CStr(Me.txtShutterPro.Text)
+        End If
+        If Me.txtShippingDetails.Text <> String.Empty Then
+            clsNewProdSchedule.ShippingDetails = CStr(Me.txtShippingDetails.Text)
+        End If
+
+        'If Me.txtPlannedShippingDate.Text <> String.Empty Then
+        '    clsNewProdSchedule.PlannedShippingDate = CStr(Me.txtPlannedShippingDate.Text)
+        'End If
+        If Me.txtPlannedShippingDate.Text <> String.Empty Then
+            clsNewProdSchedule.ExpectedShippingDate = CDate(Me.txtPlannedShippingDate.Text)
+        End If
+
+        If Me.txtActualShippingDate.Text <> String.Empty Then
+            clsNewProdSchedule.ActualShippingDate = CDate(Me.txtActualShippingDate.Text)
+        Else
+            clsNewProdSchedule.ActualShippingDate = SharedConstants.DEFAULT_DATE_VALUE
+        End If
+        ''
+
+        If Me.txtScheduledDate.Text <> String.Empty Then
+            clsNewProdSchedule.ScheduledDate = CDate(Me.txtScheduledDate.Text)
+        Else
+            clsNewProdSchedule.ScheduledDate = SharedConstants.DEFAULT_DATE_VALUE
+        End If
+
+        If Me.cboOrderType.SelectedIndex > 0 Then
+            clsNewProdSchedule.OrderTypeID = CInt(Me.cboOrderType.SelectedValue)
+        End If
+
+        If Me.cboPriority.SelectedIndex > 0 Then
+            clsNewProdSchedule.PriorityLevel = CInt(Me.cboPriority.SelectedValue)
+        Else
+            clsNewProdSchedule.PriorityLevel = SharedConstants.DEFAULT_INTEGER_VALUE
+        End If
+
+        clsNewProdSchedule.ShutterProNumber = Me.lblShutterProNumber.Text
+
+        clsNewProdSchedule.RemakeIssueDescription = Me.txtRemakeDescription.Text
+
+        If Me.txtShutterProEnteredDate.Text <> String.Empty Then
+            clsNewProdSchedule.EnteredShutterProDate = CDate(Me.txtShutterProEnteredDate.Text)
+        Else
+            clsNewProdSchedule.EnteredShutterProDate = SharedConstants.DEFAULT_DATE_VALUE
+        End If
+
+        Dim bolCollectFromFactory As Boolean = False
+        Dim dtCustomer As DataTable = service.runSQLScheduling("select * from dbo.tblCustomers where CustomeriD=" & Me.cboCustomer.SelectedValue.ToString)
+        If dtCustomer.Rows.Count > 0 Then
+            If Not IsDBNull(dtCustomer.Rows(0)("CollectionFromFactory")) Then
+                If CInt(dtCustomer.Rows(0)("CollectionFromFactory")) = 1 Then
+                    bolCollectFromFactory = True
+                End If
+            End If
+        End If
+        dtCustomer.Dispose()
+        dtCustomer = Nothing
+
+        If bolCollectFromFactory Then
+            If Me.txtPostProduction1.Text <> String.Empty Then
+                clsNewProdSchedule.InvoicedDate = CDate(Me.txtPostProduction1.Text)
+            Else
+                clsNewProdSchedule.InvoicedDate = SharedConstants.DEFAULT_DATE_VALUE
+            End If
+
+            If Me.txtPostProduction2.Text <> String.Empty Then
+                clsNewProdSchedule.CollectedFactoryDate = CDate(Me.txtPostProduction2.Text)
+                clsNewProdSchedule.CompletedDate = DateTime.Now
+            Else
+                clsNewProdSchedule.CollectedFactoryDate = SharedConstants.DEFAULT_DATE_VALUE
+                clsNewProdSchedule.CompletedDate = SharedConstants.DEFAULT_DATE_VALUE
+            End If
+        Else
+            'despatch is first - handle separately
+
+            If Me.txtPostProduction2.Text <> String.Empty Then
+                clsNewProdSchedule.InvoicedDate = CDate(Me.txtPostProduction2.Text)
+                clsNewProdSchedule.CompletedDate = DateTime.Now
+            Else
+                clsNewProdSchedule.InvoicedDate = SharedConstants.DEFAULT_DATE_VALUE
+                clsNewProdSchedule.CompletedDate = SharedConstants.DEFAULT_DATE_VALUE
+            End If
+        End If
+
+        If Me.chkHoldJob.Checked = True Then
+            clsNewProdSchedule.OnHold = 1
+        Else
+            clsNewProdSchedule.OnHold = 0
+        End If
+
+        If Me.txtReceived.Text <> String.Empty Then
+            clsNewProdSchedule.ReceivedDate = CDate(Me.txtReceived.Text)
+        Else
+            clsNewProdSchedule.ReceivedDate = SharedConstants.DEFAULT_DATE_VALUE
+        End If
+
+        If Me.txtFreightAmount.Text <> String.Empty Then
+            clsNewProdSchedule.FreightAmount = CDec(Me.txtFreightAmount.Text)
+        Else
+            clsNewProdSchedule.FreightAmount = SharedConstants.DEFAULT_DECIMAL_VALUE
+        End If
+
+        clsNewProdSchedule.OrderStatus = calculateStatus()
+
+        clsNewProdSchedule.ProductTypeID = CInt(Me.txtProductTypeID.Text)
+
+        service = Nothing
+
+    End Sub
+
+    Protected Function updateJobStages(intScheuleID As Integer, cnn As SqlConnection, ByRef trans As SqlTransaction) As Boolean
+        Dim bolSavedOK As Boolean = True
+
+        Dim service As New AppService
+
+        Dim dt As DataTable = service.runSQLScheduling("select * from dbo.tblJobStages where ScheduleID = " & intScheduleId.ToString, cnn, trans)
+        For i As Integer = 1 To 7
+
+            Dim drows() As DataRow = dt.Select("StageID=" & i.ToString)
+            Dim txt As TextBox
+            Select Case i
+                Case 1 'cutting
+                    txt = Me.txtCuttingDate
+                Case 2 'prep
+                    txt = Me.txtPrepDate
+                Case 3 'assembly
+                    txt = Me.txtAssemblyDate
+                Case 4 'framing
+                    txt = Me.txtFramingDate
+                Case 5 'qc
+                    txt = Me.txtQCDate
+                Case 6 'wrapping
+                    txt = Me.txtWrappingDate
+                Case 7
+                    'despatch is handled below - do nothing here
+                Case Else
+                    'shouldn't happen
+            End Select
+
+            If Not IsNothing(txt) Then
+                If drows.Length = 0 Then
+                    'add record regardless
+                    Dim jStage As JobStages = New JobStages
+                    jStage.ScheduleID = intScheuleID
+                    jStage.StageID = i
+                    If txt.Text = String.Empty Then
+                        jStage.StageStatus = 0
+                    Else
+                        jStage.StageStatus = 3
+                        jStage.CompletedDateTime = CDate(txt.Text)
+                        jStage.CompletedByID = CInt(Session("sessUserID"))
+                    End If
+
+                    Dim intID As Integer = service.addJobStages(jStage, cnn, trans)
+                    If intID = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                        bolSavedOK = False
+                        Exit For
+                    End If
+                    bolSavedOK = service.addJobStagesHistoryRecord(jStage, CInt(Session("sessUserID")), cnn, trans)
+                    If bolSavedOK = False Then
+                        Exit For
+                    End If
+                Else
+                    If txt.Enabled = True Then
+                        Dim jStage As JobStages = New JobStages
+                        jStage.JobStagesID = CInt(drows(0)("JobStagesID"))
+                        jStage.ScheduleID = CInt(drows(0)("ScheduleID"))
+                        jStage.StageID = CInt(drows(0)("StageID"))
+                        jStage.StageStatus = CInt(drows(0)("StageStatus"))
+                        If jStage.StageStatus = 3 Then
+                            jStage.CompletedDateTime = CDate(drows(0)("CompletedDateTime"))
+                            If Not IsDBNull(drows(0)("CompletedByID")) Then
+                                jStage.CompletedByID = CInt(drows(0)("CompletedByID"))
+                            End If
+                        End If
+
+                        If txt.Text <> String.Empty Then
+                            jStage.StageStatus = 3
+                            jStage.CompletedDateTime = CDate(txt.Text)
+                            jStage.CompletedByID = CInt(Session("sessUserID"))
+                        Else
+                            jStage.StageStatus = 0
+                            jStage.CompletedDateTime = SharedConstants.DEFAULT_DATE_VALUE
+                            jStage.CompletedByID = SharedConstants.DEFAULT_INTEGER_VALUE
+                        End If
+
+                        bolSavedOK = service.updateJobStages(jStage, cnn, trans)
+                        If bolSavedOK = False Then
+                            Exit For
+                        End If
+                        bolSavedOK = service.addJobStagesHistoryRecord(jStage, CInt(Session("sessUserID")), cnn, trans)
+                        If bolSavedOK = False Then
+                            Exit For
+                        End If
+                    End If
+                End If
+            End If
+
+            drows = Nothing
+            txt = Nothing
+
+        Next
+
+        If bolSavedOK Then
+            Dim bolCollectFromFactory As Boolean = False
+            Dim dtCustomer As DataTable = service.runSQLScheduling("select * from dbo.tblCustomers where CustomeriD=" & Me.cboCustomer.SelectedValue.ToString, cnn, trans)
+            If dtCustomer.Rows.Count > 0 Then
+                If Not IsDBNull(dtCustomer.Rows(0)("CollectionFromFactory")) Then
+                    If CInt(dtCustomer.Rows(0)("CollectionFromFactory")) = 1 Then
+                        bolCollectFromFactory = True
+                    End If
+                End If
+            End If
+            dtCustomer.Dispose()
+            dtCustomer = Nothing
+
+            If bolCollectFromFactory = False Then
+
+                'update despatch
+                Dim drows() As DataRow = dt.Select("StageID=7")
+                If drows.Length = 0 Then
+                    'add record regardless
+                    Dim jStage As JobStages = New JobStages
+                    jStage.ScheduleID = intScheuleID
+                    jStage.StageID = 7
+                    If Me.txtPostProduction1.Text = String.Empty Then
+                        jStage.StageStatus = 0
+                    Else
+                        jStage.StageStatus = 3
+                        jStage.CompletedDateTime = CDate(Me.txtPostProduction1.Text)
+                        jStage.CompletedByID = CInt(Session("sessUserID"))
+                    End If
+
+                    Dim intID As Integer = service.addJobStages(jStage, cnn, trans)
+                    If intID = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                        bolSavedOK = False
+                    End If
+                    If bolSavedOK Then
+                        bolSavedOK = service.addJobStagesHistoryRecord(jStage, CInt(Session("sessUserID")), cnn, trans)
+                    End If
+                Else
+                    If Me.txtPostProduction1.Enabled = True Then
+                        Dim jStage As JobStages = New JobStages
+                        jStage.JobStagesID = CInt(drows(0)("JobStagesID"))
+                        jStage.ScheduleID = CInt(drows(0)("ScheduleID"))
+                        jStage.StageID = CInt(drows(0)("StageID"))
+                        jStage.StageStatus = CInt(drows(0)("StageStatus"))
+                        If jStage.StageStatus = 3 Then
+                            jStage.CompletedDateTime = CDate(drows(0)("CompletedDateTime"))
+                            If Not IsDBNull(drows(0)("CompletedByID")) Then
+                                jStage.CompletedByID = CInt(drows(0)("CompletedByID"))
+                            End If
+                        End If
+
+                        If Me.txtPostProduction1.Text <> String.Empty Then
+                            jStage.StageStatus = 3
+                            jStage.CompletedDateTime = CDate(Me.txtPostProduction1.Text)
+                            jStage.CompletedByID = CInt(Session("sessUserID"))
+                        Else
+                            jStage.StageStatus = 0
+                            jStage.CompletedDateTime = SharedConstants.DEFAULT_DATE_VALUE
+                            jStage.CompletedByID = SharedConstants.DEFAULT_INTEGER_VALUE
+                        End If
+
+                        bolSavedOK = service.updateJobStages(jStage, cnn, trans)
+                        If bolSavedOK Then
+                            bolSavedOK = service.addJobStagesHistoryRecord(jStage, CInt(Session("sessUserID")), cnn, trans)
+                        End If
+                    End If
+                End If
+                drows = Nothing
+
+            End If
+        End If
+        dt.Dispose()
+        dt = Nothing
+
+        service = Nothing
+
+        Return bolSavedOK
+
+    End Function
+
+    Protected Sub processClearButton(sender As Object, e As System.EventArgs) Handles btnClearReceived.Click, btnClearShutterPro.Click, btnClearScheduled.Click,
+                              btnClearCutting.Click, btnClearPrep.Click, btnClearAssembly.Click, btnClearFraming.Click, btnClearQC.Click,
+                              btnClearWrapping.Click, btnClearPostProduction1.Click, btnClearPostProduction2.Click
+
+        Dim btn As Button = CType(sender, Button)
+        Select Case btn.ID
+            Case "btnClearReceived"
+                Me.txtReceived.Text = String.Empty
+
+                Me.txtShutterProEnteredDate.Text = String.Empty
+                Me.txtScheduledDate.Text = String.Empty
+                Me.txtCuttingDate.Text = String.Empty
+                Me.txtPrepDate.Text = String.Empty
+                Me.txtAssemblyDate.Text = String.Empty
+                Me.txtFramingDate.Text = String.Empty
+                Me.txtQCDate.Text = String.Empty
+                Me.txtWrappingDate.Text = String.Empty
+                Me.txtPostProduction1.Text = String.Empty
+                Me.txtPostProduction2.Text = String.Empty
+
+                Me.txtReceived.Enabled = True
+            Case "btnClearShutterPro"
+                Me.txtShutterProEnteredDate.Text = String.Empty
+
+                Me.txtScheduledDate.Text = String.Empty
+                Me.txtCuttingDate.Text = String.Empty
+                Me.txtPrepDate.Text = String.Empty
+                Me.txtAssemblyDate.Text = String.Empty
+                Me.txtFramingDate.Text = String.Empty
+                Me.txtQCDate.Text = String.Empty
+                Me.txtWrappingDate.Text = String.Empty
+                Me.txtPostProduction1.Text = String.Empty
+                Me.txtPostProduction2.Text = String.Empty
+
+                Me.txtShutterProEnteredDate.Enabled = True
+            Case "btnClearScheduled"
+                Me.txtScheduledDate.Text = String.Empty
+
+                Me.txtCuttingDate.Text = String.Empty
+                Me.txtPrepDate.Text = String.Empty
+                Me.txtAssemblyDate.Text = String.Empty
+                Me.txtFramingDate.Text = String.Empty
+                Me.txtQCDate.Text = String.Empty
+                Me.txtWrappingDate.Text = String.Empty
+                Me.txtPostProduction1.Text = String.Empty
+                Me.txtPostProduction2.Text = String.Empty
+
+                Me.txtScheduledDate.Enabled = True
+            Case "btnClearCutting"
+                Me.txtCuttingDate.Text = String.Empty
+
+                Me.txtPrepDate.Text = String.Empty
+                Me.txtAssemblyDate.Text = String.Empty
+                Me.txtFramingDate.Text = String.Empty
+                Me.txtQCDate.Text = String.Empty
+                Me.txtWrappingDate.Text = String.Empty
+                Me.txtPostProduction1.Text = String.Empty
+                Me.txtPostProduction2.Text = String.Empty
+
+                Me.txtCuttingDate.Enabled = True
+            Case "btnClearPrep"
+                Me.txtPrepDate.Text = String.Empty
+
+                Me.txtAssemblyDate.Text = String.Empty
+                Me.txtFramingDate.Text = String.Empty
+                Me.txtQCDate.Text = String.Empty
+                Me.txtWrappingDate.Text = String.Empty
+                Me.txtPostProduction1.Text = String.Empty
+                Me.txtPostProduction2.Text = String.Empty
+
+                Me.txtPrepDate.Enabled = True
+            Case "btnClearAssembly"
+                Me.txtAssemblyDate.Text = String.Empty
+
+                Me.txtFramingDate.Text = String.Empty
+                Me.txtQCDate.Text = String.Empty
+                Me.txtWrappingDate.Text = String.Empty
+                Me.txtPostProduction1.Text = String.Empty
+                Me.txtPostProduction2.Text = String.Empty
+
+                Me.txtAssemblyDate.Enabled = True
+            Case "btnClearFraming"
+                Me.txtFramingDate.Text = String.Empty
+
+                Me.txtQCDate.Text = String.Empty
+                Me.txtWrappingDate.Text = String.Empty
+                Me.txtPostProduction1.Text = String.Empty
+                Me.txtPostProduction2.Text = String.Empty
+
+                Me.txtFramingDate.Enabled = True
+            Case "btnClearQC"
+                Me.txtQCDate.Text = String.Empty
+
+                Me.txtWrappingDate.Text = String.Empty
+                Me.txtPostProduction1.Text = String.Empty
+                Me.txtPostProduction2.Text = String.Empty
+
+                Me.txtQCDate.Enabled = True
+            Case "btnClearWrapping"
+                Me.txtWrappingDate.Text = String.Empty
+
+                Me.txtPostProduction1.Text = String.Empty
+                Me.txtPostProduction2.Text = String.Empty
+
+                Me.txtWrappingDate.Enabled = True
+            Case "btnClearPostProduction1"
+                Me.txtPostProduction1.Text = String.Empty
+
+                Me.txtPostProduction2.Text = String.Empty
+
+                Me.txtPostProduction1.Enabled = True
+            Case "btnClearPostProduction2"
+                Me.txtPostProduction2.Text = String.Empty
+                Me.txtPostProduction2.Enabled = True
+            Case Else
+                'do nothing
+        End Select
+
+
+        Me.btnSave_Click(sender, Nothing)
+
+    End Sub
+
+    Private Sub btnCancellation_Click(sender As Object, e As EventArgs) Handles btnCancellation.Click
+
+        Me.btnSave_Click(sender, Nothing)
+
+    End Sub
+
+    Protected Sub checkAndSetClearButtonVisibilityForStatusDates()
+
+        If Me.txtReceived.Enabled = False Then
+            If Me.txtShutterProEnteredDate.Enabled Then
+                Me.btnClearReceived.Visible = True
+            End If
+        End If
+
+        If Me.txtShutterProEnteredDate.Enabled = False Then
+            If Me.txtScheduledDate.Enabled Then
+                Me.btnClearShutterPro.Visible = True
+            End If
+        End If
+
+        If Me.txtScheduledDate.Enabled = False Then
+            If Me.txtCuttingDate.Enabled Then
+                Me.btnClearScheduled.Visible = True
+            End If
+        End If
+
+        If Me.txtCuttingDate.Enabled = False Then
+            If Me.txtPrepDate.Enabled Then
+                Me.btnClearCutting.Visible = True
+            End If
+        End If
+
+        If Me.txtPrepDate.Enabled = False Then
+            If Me.txtAssemblyDate.Enabled Then
+                Me.btnClearPrep.Visible = True
+            End If
+        End If
+
+        If Me.txtAssemblyDate.Enabled = False Then
+            If Me.txtFramingDate.Enabled Then
+                Me.btnClearAssembly.Visible = True
+            End If
+        End If
+
+        If Me.txtFramingDate.Enabled = False Then
+            If Me.txtQCDate.Enabled Then
+                Me.btnClearFraming.Visible = True
+            End If
+        End If
+
+        If Me.txtQCDate.Enabled = False Then
+            If Me.txtWrappingDate.Enabled Then
+                Me.btnClearQC.Visible = True
+            End If
+        End If
+
+        If Me.txtWrappingDate.Enabled = False Then
+            If Me.txtPostProduction1.Enabled Then
+                Me.btnClearWrapping.Visible = True
+            End If
+        End If
+
+        If Me.txtPostProduction1.Enabled = False Then
+            If Me.txtPostProduction2.Enabled Then
+                Me.btnClearPostProduction1.Visible = True
+            End If
+        End If
+
+        If Me.txtPostProduction2.Enabled = False Then
+            Me.btnClearPostProduction2.Visible = True
+        End If
+
+    End Sub
+    Protected Function calculateStatus() As Integer
+        Dim intStatusID As Integer = 0
+
+        If Me.txtReceived.Enabled = False Then
+            If Me.txtShutterProEnteredDate.Enabled Then
+                intStatusID = 2
+            End If
+        Else
+            If Me.txtReceived.Text <> String.Empty Then
+                intStatusID = 2
+            Else
+                intStatusID = 1
+            End If
+
+        End If
+
+        If Me.txtShutterProEnteredDate.Enabled = False Then
+            If Me.txtScheduledDate.Enabled Then
+                intStatusID = 6
+            End If
+        Else
+            If Me.txtShutterProEnteredDate.Text <> String.Empty Then
+                intStatusID = 6
+            End If
+        End If
+
+        If Me.txtScheduledDate.Enabled = False Then
+            If Me.txtCuttingDate.Enabled Then
+                intStatusID = 3
+            End If
+        Else
+            If Me.txtScheduledDate.Text <> String.Empty Then
+                intStatusID = 3
+            End If
+        End If
+
+        If Me.txtCuttingDate.Enabled = False Then
+            If Me.txtPrepDate.Enabled Then
+                intStatusID = 3
+            End If
+        End If
+
+        If Me.txtPrepDate.Enabled = False Then
+            If Me.txtAssemblyDate.Enabled Then
+                intStatusID = 3
+            End If
+        End If
+
+        If Me.txtAssemblyDate.Enabled = False Then
+            If Me.txtFramingDate.Enabled Then
+                intStatusID = 3
+            End If
+        End If
+
+        If Me.txtFramingDate.Enabled = False Then
+            If Me.txtQCDate.Enabled Then
+                intStatusID = 3
+            End If
+        End If
+
+        If Me.txtQCDate.Enabled = False Then
+            If Me.txtWrappingDate.Enabled Then
+                intStatusID = 3
+            End If
+        End If
+
+        If Me.txtWrappingDate.Enabled = False Then
+            If Me.txtPostProduction1.Enabled Then
+                intStatusID = 3
+            End If
+        End If
+
+        If Me.lblPostProduction1.Text = "Invoice Date" Then
+            If Me.txtPostProduction1.Enabled = False Then
+                If Me.txtPostProduction2.Enabled Then
+                    intStatusID = 5
+                End If
+            Else
+                If Me.txtPostProduction1.Text <> String.Empty Then
+                    intStatusID = 5
+                End If
+            End If
+        Else
+            If Me.txtPostProduction1.Enabled = False Then
+                If Me.txtPostProduction2.Enabled Then
+                    intStatusID = 4
+                End If
+            Else
+                If Me.txtPostProduction1.Text <> String.Empty Then
+                    intStatusID = 4
+                End If
+            End If
+        End If
+
+        If Me.lblPostProduction2.Text = "Invoice Date" Then
+            If Me.txtPostProduction2.Enabled = False Then
+                intStatusID = 5
+            Else
+                If Me.txtPostProduction2.Text <> String.Empty Then
+                    intStatusID = 5
+                End If
+            End If
+        Else
+            If Me.txtPostProduction2.Enabled = False Then
+                intStatusID = 7
+            Else
+                If Me.txtPostProduction2.Text <> String.Empty Then
+                    intStatusID = 7
+                End If
+            End If
+        End If
+
+        Return intStatusID
+
+    End Function
+
+    Protected Sub setDateBoxDisabledOverrideBasedOnStatus(intStatusID As Integer)
+
+        Select Case intStatusID
+            Case 1 'awaiting acceptance
+                Me.txtOrderDate.Enabled = False
+            Case 2 'order accepted
+                Me.txtOrderDate.Enabled = False
+                Me.txtReceived.Enabled = False
+            Case 3 'scheduled/in production
+                Me.txtOrderDate.Enabled = False
+                Me.txtReceived.Enabled = False
+                Me.txtShutterProEnteredDate.Enabled = False
+                Me.txtScheduledDate.Enabled = False
+            Case 4 'despatch
+                If Me.lblPostProduction2.Text = "Invoice Date" Then
+                    Me.txtOrderDate.Enabled = False
+                    Me.txtReceived.Enabled = False
+                    Me.txtShutterProEnteredDate.Enabled = False
+                    Me.txtScheduledDate.Enabled = False
+                    Me.txtCuttingDate.Enabled = False
+                    Me.txtPrepDate.Enabled = False
+                    Me.txtAssemblyDate.Enabled = False
+                    Me.txtFramingDate.Enabled = False
+                    Me.txtQCDate.Enabled = False
+                    Me.txtWrappingDate.Enabled = False
+                    Me.txtPostProduction1.Enabled = False
+                End If
+            Case 5 'invoiced
+                If Me.lblPostProduction1.Text = "Invoice Date" Then
+                    Me.txtOrderDate.Enabled = False
+                    Me.txtReceived.Enabled = False
+                    Me.txtShutterProEnteredDate.Enabled = False
+                    Me.txtScheduledDate.Enabled = False
+                    Me.txtCuttingDate.Enabled = False
+                    Me.txtPrepDate.Enabled = False
+                    Me.txtAssemblyDate.Enabled = False
+                    Me.txtFramingDate.Enabled = False
+                    Me.txtQCDate.Enabled = False
+                    Me.txtWrappingDate.Enabled = False
+                    Me.txtPostProduction1.Enabled = False
+                Else
+                    Me.txtOrderDate.Enabled = False
+                    Me.txtReceived.Enabled = False
+                    Me.txtShutterProEnteredDate.Enabled = False
+                    Me.txtScheduledDate.Enabled = False
+                    Me.txtCuttingDate.Enabled = False
+                    Me.txtPrepDate.Enabled = False
+                    Me.txtAssemblyDate.Enabled = False
+                    Me.txtFramingDate.Enabled = False
+                    Me.txtQCDate.Enabled = False
+                    Me.txtWrappingDate.Enabled = False
+                    Me.txtPostProduction1.Enabled = False
+                    Me.txtPostProduction2.Enabled = False
+                End If
+            Case 6 'entered into shutter pro
+                Me.txtOrderDate.Enabled = False
+                Me.txtReceived.Enabled = False
+                Me.txtShutterProEnteredDate.Enabled = False
+            Case 7 'collected from factory
+                Me.txtOrderDate.Enabled = False
+                Me.txtReceived.Enabled = False
+                Me.txtShutterProEnteredDate.Enabled = False
+                Me.txtScheduledDate.Enabled = False
+                Me.txtCuttingDate.Enabled = False
+                Me.txtPrepDate.Enabled = False
+                Me.txtAssemblyDate.Enabled = False
+                Me.txtFramingDate.Enabled = False
+                Me.txtQCDate.Enabled = False
+                Me.txtWrappingDate.Enabled = False
+                Me.txtPostProduction1.Enabled = False
+                Me.txtPostProduction2.Enabled = False
+            Case 8 'cancelled
+                Me.txtOrderDate.Enabled = False
+                Me.txtReceived.Enabled = False
+                Me.txtShutterProEnteredDate.Enabled = False
+                Me.txtScheduledDate.Enabled = False
+                Me.txtCuttingDate.Enabled = False
+                Me.txtPrepDate.Enabled = False
+                Me.txtAssemblyDate.Enabled = False
+                Me.txtFramingDate.Enabled = False
+                Me.txtQCDate.Enabled = False
+                Me.txtWrappingDate.Enabled = False
+                Me.txtPostProduction1.Enabled = False
+                Me.txtPostProduction2.Enabled = False
+        End Select
+
+    End Sub
+
+    Protected Sub cboOrderType_SelectedIndexChanged(sender As Object, e As System.EventArgs) Handles cboOrderType.SelectedIndexChanged
+
+        Me.lblOrderCharge.Text = String.Empty
+
+        If Me.cboOrderType.SelectedIndex > 0 Then
+            Select Case CInt(Me.cboOrderType.SelectedValue)
+                Case 1 'regular order to be built
+                    Me.lblOrderCharge.Text = String.Empty
+                    Me.pnlRemakeDescription.Visible = False
+                    Me.pnlRemakeType.Visible = False
+                    Me.pnlOriginalOrder.Visible = False
+
+                    If dgvDetails.Rows.Count > 0 Then
+                        Me.pnlOpeningDetails.Visible = True
+                    Else
+                        Me.pnlOpeningDetails.Visible = False
+                    End If
+
+                Case 2 'remake - charge ozroll
+                    Me.lblOrderCharge.Text = " - Charge To Ozroll"
+                    Me.pnlRemakeDescription.Visible = True
+                    Me.pnlRemakeType.Visible = True
+                    Me.pnlOpeningDetails.Visible = True
+                    Me.pnlOriginalOrder.Visible = True
+                Case 3 'reorder - charge modern
+                    Me.lblOrderCharge.Text = " - Charge To Customer"
+                    Me.pnlRemakeDescription.Visible = True
+                    Me.pnlRemakeType.Visible = True
+                    Me.pnlOpeningDetails.Visible = True
+                    Me.pnlOriginalOrder.Visible = True
+                Case Else
+                    Me.lblOrderCharge.Text = String.Empty
+                    Me.pnlRemakeDescription.Visible = False
+                    Me.pnlRemakeType.Visible = False
+                    Me.pnlOpeningDetails.Visible = False
+                    Me.pnlOriginalOrder.Visible = False
+            End Select
+        End If
+
+    End Sub
+
+    Protected Sub compareDates(sender As Object, e As EventArgs) Handles txtOrderDate.TextChanged, txtShutterProEnteredDate.TextChanged, txtScheduledDate.TextChanged,
+                              txtCuttingDate.TextChanged, txtPrepDate.TextChanged, txtAssemblyDate.TextChanged, txtFramingDate.TextChanged, txtQCDate.TextChanged,
+                              txtWrappingDate.TextChanged, txtPostProduction1.TextChanged, txtPostProduction2.TextChanged, txtReceived.TextChanged
+
+        Dim txt As TextBox = CType(sender, TextBox)
+
+        If txt.Text <> String.Empty Then
+            Select Case txt.ID
+                Case "txtReceived"
+                    If Me.txtOrderDate.Text <> String.Empty Then
+                        If DateDiff(DateInterval.Day, CDate(Me.txtOrderDate.Text), CDate(txt.Text)) < 0 Then
+                            txt.Text = String.Empty
+                        End If
+                    Else
+                        txt.Text = String.Empty
+                    End If
+
+                Case "txtShutterProEnteredDate"
+                    If Me.txtReceived.Text <> String.Empty Then
+                        If DateDiff(DateInterval.Day, CDate(Me.txtReceived.Text), CDate(txt.Text)) < 0 Then
+                            txt.Text = String.Empty
+                        End If
+                    Else
+                        txt.Text = String.Empty
+                    End If
+
+                Case "txtScheduledDate"
+                    If Me.txtShutterProEnteredDate.Text <> String.Empty Then
+                        If DateDiff(DateInterval.Day, CDate(Me.txtShutterProEnteredDate.Text), CDate(txt.Text)) < 0 Then
+                            txt.Text = String.Empty
+                        End If
+                    Else
+                        txt.Text = String.Empty
+                    End If
+
+                Case "txtCuttingDate"
+                    If Me.txtScheduledDate.Text <> String.Empty Then
+                        If DateDiff(DateInterval.Day, CDate(Me.txtScheduledDate.Text), CDate(txt.Text)) < 0 Then
+                            txt.Text = String.Empty
+                        End If
+                    Else
+                        txt.Text = String.Empty
+                    End If
+
+                Case "txtPrepDate"
+                    If Me.txtCuttingDate.Text <> String.Empty Then
+                        If DateDiff(DateInterval.Day, CDate(Me.txtCuttingDate.Text), CDate(txt.Text)) < 0 Then
+                            txt.Text = String.Empty
+                        End If
+                    Else
+                        txt.Text = String.Empty
+                    End If
+
+                Case "txtAssemblyDate"
+                    If Me.txtPrepDate.Text <> String.Empty Then
+                        If DateDiff(DateInterval.Day, CDate(Me.txtPrepDate.Text), CDate(txt.Text)) < 0 Then
+                            txt.Text = String.Empty
+                        End If
+                    Else
+                        txt.Text = String.Empty
+                    End If
+
+                Case "txtFramingDate"
+                    If Me.txtAssemblyDate.Text <> String.Empty Then
+                        If DateDiff(DateInterval.Day, CDate(Me.txtAssemblyDate.Text), CDate(txt.Text)) < 0 Then
+                            txt.Text = String.Empty
+                        End If
+                    Else
+                        txt.Text = String.Empty
+                    End If
+
+                Case "txtQCDate"
+                    If Me.txtFramingDate.Text <> String.Empty Then
+                        If DateDiff(DateInterval.Day, CDate(Me.txtFramingDate.Text), CDate(txt.Text)) < 0 Then
+                            txt.Text = String.Empty
+                        End If
+                    Else
+                        txt.Text = String.Empty
+                    End If
+
+                Case "txtWrappingDate"
+                    If Me.txtQCDate.Text <> String.Empty Then
+                        If DateDiff(DateInterval.Day, CDate(Me.txtQCDate.Text), CDate(txt.Text)) < 0 Then
+                            txt.Text = String.Empty
+                        End If
+                    Else
+                        txt.Text = String.Empty
+                    End If
+
+                Case "txtPostProduction1"
+                    If Me.txtWrappingDate.Text <> String.Empty Then
+                        If DateDiff(DateInterval.Day, CDate(Me.txtWrappingDate.Text), CDate(txt.Text)) < 0 Then
+                            txt.Text = String.Empty
+                        End If
+                    Else
+                        txt.Text = String.Empty
+                    End If
+
+                Case "txtPostProduction2"
+                    If Me.txtPostProduction1.Text <> String.Empty Then
+                        If DateDiff(DateInterval.Day, CDate(Me.txtPostProduction1.Text), CDate(txt.Text)) < 0 Then
+                            txt.Text = String.Empty
+                        End If
+                    Else
+                        txt.Text = String.Empty
+                    End If
+
+                Case Else
+
+            End Select
+
+
+        End If
+
+        txt = Nothing
+
+        checkAllDatesValid(sender)
+
+        If Me.txtViewType.Text = "1" Then
+            btnSave_Click(sender, e)
+        End If
+
+    End Sub
+
+    Protected Sub checkPermissions()
+
+        Dim service As New AppService
+        Dim cUserPermissions As UserPermissionsContainer = service.Permissions.UserHasPermissions(CInt(Session("sessUserID")))
+
+        'clear date status buttons
+        If Not cUserPermissions.HasPermission(SharedEnums.Permissions.AddNote) Then
+            makeAllClearButtonsHidden()
+        End If
+
+        'set date textbox permission disabling
+
+        'daily schedule update
+        If Not cUserPermissions.HasPermission(SharedEnums.Permissions.TrackOrderButton) Then
+            txtCuttingDate.Enabled = False
+            txtPrepDate.Enabled = False
+            txtAssemblyDate.Enabled = False
+            txtFramingDate.Enabled = False
+            txtQCDate.Enabled = False
+            txtWrappingDate.Enabled = False
+        End If
+
+        'schedule date update
+        If Not cUserPermissions.HasPermission(SharedEnums.Permissions.AddLouvreButton) Then
+            txtScheduledDate.Enabled = False
+        End If
+
+        'est shipping date update
+        If Not cUserPermissions.HasPermission(SharedEnums.Permissions.TrackLouvreButton) Then
+            txtPlannedShippingDate.Enabled = False
+        End If
+
+        'awaiting acceptance
+        If Not cUserPermissions.HasPermission(SharedEnums.Permissions.CreateLoginButton) Then
+            txtReceived.Enabled = False
+        End If
+
+        'to be entered shutter pro
+        If Not cUserPermissions.HasPermission(SharedEnums.Permissions.TicketsButton) Then
+            txtShutterProEnteredDate.Enabled = False
+        End If
+
+        'to be despatched
+        If Not cUserPermissions.HasPermission(SharedEnums.Permissions.NotDecidedYet) Then
+            If lblPostProduction2.Text = "Invoice Date" Then
+                txtPostProduction1.Enabled = False
+            End If
+        End If
+
+        'to be collected
+        If Not cUserPermissions.HasPermission(SharedEnums.Permissions.CollectFactory) Then
+            If lblPostProduction1.Text = "Invoice Date" Then
+                txtPostProduction2.Enabled = False
+            End If
+        End If
+
+        'to be invoiced
+        If Not cUserPermissions.HasPermission(SharedEnums.Permissions.AwaitingInvoice) Then
+            If lblPostProduction2.Text = "Invoice Date" Then
+                txtPostProduction2.Enabled = False
+            Else
+                txtPostProduction1.Enabled = False
+            End If
+        End If
+
+    End Sub
+
+    Protected Sub makeAllClearButtonsHidden()
+
+        Me.btnClearReceived.Visible = False
+        Me.btnClearShutterPro.Visible = False
+        Me.btnClearScheduled.Visible = False
+
+        Me.btnClearCutting.Visible = False
+        Me.btnClearPrep.Visible = False
+        Me.btnClearAssembly.Visible = False
+        Me.btnClearFraming.Visible = False
+        Me.btnClearQC.Visible = False
+        Me.btnClearWrapping.Visible = False
+
+        Me.btnClearPostProduction1.Visible = False
+        Me.btnClearPostProduction2.Visible = False
+
+    End Sub
+
+    Protected Sub checkAllDatesValid(sender As Object)
+
+        Dim txt As TextBox = CType(sender, TextBox)
+
+        Select Case txt.ID
+            Case "txtReceived"
+                If txt.Text = String.Empty Then
+                    Me.txtShutterProEnteredDate.Text = String.Empty
+                    Me.txtScheduledDate.Text = String.Empty
+                    Me.txtCuttingDate.Text = String.Empty
+                    Me.txtPrepDate.Text = String.Empty
+                    Me.txtAssemblyDate.Text = String.Empty
+                    Me.txtFramingDate.Text = String.Empty
+                    Me.txtQCDate.Text = String.Empty
+                    Me.txtWrappingDate.Text = String.Empty
+                    Me.txtPostProduction1.Text = String.Empty
+                    Me.txtPostProduction2.Text = String.Empty
+                Else
+                    If Me.txtShutterProEnteredDate.Text <> String.Empty Then
+                        If DateDiff(DateInterval.Day, CDate(Me.txtShutterProEnteredDate.Text), CDate(txt.Text)) > 0 Then
+                            txt.Text = String.Empty
+                            Me.txtShutterProEnteredDate.Text = String.Empty
+                            Me.txtScheduledDate.Text = String.Empty
+                            Me.txtCuttingDate.Text = String.Empty
+                            Me.txtPrepDate.Text = String.Empty
+                            Me.txtAssemblyDate.Text = String.Empty
+                            Me.txtFramingDate.Text = String.Empty
+                            Me.txtQCDate.Text = String.Empty
+                            Me.txtWrappingDate.Text = String.Empty
+                            Me.txtPostProduction1.Text = String.Empty
+                            Me.txtPostProduction2.Text = String.Empty
+                        End If
+                    End If
+                End If
+
+            Case "txtShutterProEnteredDate"
+                If txt.Text = String.Empty Then
+                    Me.txtScheduledDate.Text = String.Empty
+                    Me.txtCuttingDate.Text = String.Empty
+                    Me.txtPrepDate.Text = String.Empty
+                    Me.txtAssemblyDate.Text = String.Empty
+                    Me.txtFramingDate.Text = String.Empty
+                    Me.txtQCDate.Text = String.Empty
+                    Me.txtWrappingDate.Text = String.Empty
+                    Me.txtPostProduction1.Text = String.Empty
+                    Me.txtPostProduction2.Text = String.Empty
+                Else
+                    If Me.txtScheduledDate.Text <> String.Empty Then
+                        If DateDiff(DateInterval.Day, CDate(Me.txtScheduledDate.Text), CDate(txt.Text)) > 0 Then
+                            txt.Text = String.Empty
+                            Me.txtScheduledDate.Text = String.Empty
+                            Me.txtCuttingDate.Text = String.Empty
+                            Me.txtPrepDate.Text = String.Empty
+                            Me.txtAssemblyDate.Text = String.Empty
+                            Me.txtFramingDate.Text = String.Empty
+                            Me.txtQCDate.Text = String.Empty
+                            Me.txtWrappingDate.Text = String.Empty
+                            Me.txtPostProduction1.Text = String.Empty
+                            Me.txtPostProduction2.Text = String.Empty
+                        End If
+                    End If
+                End If
+
+            Case "txtScheduledDate"
+                If txt.Text = String.Empty Then
+                    Me.txtCuttingDate.Text = String.Empty
+                    Me.txtPrepDate.Text = String.Empty
+                    Me.txtAssemblyDate.Text = String.Empty
+                    Me.txtFramingDate.Text = String.Empty
+                    Me.txtQCDate.Text = String.Empty
+                    Me.txtWrappingDate.Text = String.Empty
+                    Me.txtPostProduction1.Text = String.Empty
+                    Me.txtPostProduction2.Text = String.Empty
+                Else
+                    If Me.txtCuttingDate.Text <> String.Empty Then
+                        If DateDiff(DateInterval.Day, CDate(Me.txtCuttingDate.Text), CDate(txt.Text)) > 0 Then
+                            txt.Text = String.Empty
+                            Me.txtCuttingDate.Text = String.Empty
+                            Me.txtPrepDate.Text = String.Empty
+                            Me.txtAssemblyDate.Text = String.Empty
+                            Me.txtFramingDate.Text = String.Empty
+                            Me.txtQCDate.Text = String.Empty
+                            Me.txtWrappingDate.Text = String.Empty
+                            Me.txtPostProduction1.Text = String.Empty
+                            Me.txtPostProduction2.Text = String.Empty
+                        End If
+                    End If
+                End If
+
+            Case "txtCuttingDate"
+                If txt.Text = String.Empty Then
+                    Me.txtPrepDate.Text = String.Empty
+                    Me.txtAssemblyDate.Text = String.Empty
+                    Me.txtFramingDate.Text = String.Empty
+                    Me.txtQCDate.Text = String.Empty
+                    Me.txtWrappingDate.Text = String.Empty
+                    Me.txtPostProduction1.Text = String.Empty
+                    Me.txtPostProduction2.Text = String.Empty
+                Else
+                    If Me.txtPrepDate.Text <> String.Empty Then
+                        If DateDiff(DateInterval.Day, CDate(Me.txtPrepDate.Text), CDate(txt.Text)) > 0 Then
+                            txt.Text = String.Empty
+                            Me.txtPrepDate.Text = String.Empty
+                            Me.txtAssemblyDate.Text = String.Empty
+                            Me.txtFramingDate.Text = String.Empty
+                            Me.txtQCDate.Text = String.Empty
+                            Me.txtWrappingDate.Text = String.Empty
+                            Me.txtPostProduction1.Text = String.Empty
+                            Me.txtPostProduction2.Text = String.Empty
+                        End If
+                    End If
+                End If
+
+            Case "txtPrepDate"
+                If txt.Text = String.Empty Then
+                    Me.txtAssemblyDate.Text = String.Empty
+                    Me.txtFramingDate.Text = String.Empty
+                    Me.txtQCDate.Text = String.Empty
+                    Me.txtWrappingDate.Text = String.Empty
+                    Me.txtPostProduction1.Text = String.Empty
+                    Me.txtPostProduction2.Text = String.Empty
+                Else
+                    If Me.txtAssemblyDate.Text <> String.Empty Then
+                        If DateDiff(DateInterval.Day, CDate(Me.txtAssemblyDate.Text), CDate(txt.Text)) > 0 Then
+                            txt.Text = String.Empty
+                            Me.txtAssemblyDate.Text = String.Empty
+                            Me.txtFramingDate.Text = String.Empty
+                            Me.txtQCDate.Text = String.Empty
+                            Me.txtWrappingDate.Text = String.Empty
+                            Me.txtPostProduction1.Text = String.Empty
+                            Me.txtPostProduction2.Text = String.Empty
+                        End If
+                    End If
+                End If
+
+            Case "txtAssemblyDate"
+                If txt.Text = String.Empty Then
+                    Me.txtFramingDate.Text = String.Empty
+                    Me.txtQCDate.Text = String.Empty
+                    Me.txtWrappingDate.Text = String.Empty
+                    Me.txtPostProduction1.Text = String.Empty
+                    Me.txtPostProduction2.Text = String.Empty
+                Else
+                    If Me.txtFramingDate.Text <> String.Empty Then
+                        If DateDiff(DateInterval.Day, CDate(Me.txtFramingDate.Text), CDate(txt.Text)) > 0 Then
+                            txt.Text = String.Empty
+                            Me.txtFramingDate.Text = String.Empty
+                            Me.txtQCDate.Text = String.Empty
+                            Me.txtWrappingDate.Text = String.Empty
+                            Me.txtPostProduction1.Text = String.Empty
+                            Me.txtPostProduction2.Text = String.Empty
+                        End If
+                    End If
+                End If
+
+            Case "txtFramingDate"
+                If txt.Text = String.Empty Then
+                    Me.txtQCDate.Text = String.Empty
+                    Me.txtWrappingDate.Text = String.Empty
+                    Me.txtPostProduction1.Text = String.Empty
+                    Me.txtPostProduction2.Text = String.Empty
+                Else
+                    If Me.txtQCDate.Text <> String.Empty Then
+                        If DateDiff(DateInterval.Day, CDate(Me.txtQCDate.Text), CDate(txt.Text)) > 0 Then
+                            txt.Text = String.Empty
+                            Me.txtQCDate.Text = String.Empty
+                            Me.txtWrappingDate.Text = String.Empty
+                            Me.txtPostProduction1.Text = String.Empty
+                            Me.txtPostProduction2.Text = String.Empty
+                        End If
+                    End If
+                End If
+
+            Case "txtQCDate"
+                If txt.Text = String.Empty Then
+                    Me.txtWrappingDate.Text = String.Empty
+                    Me.txtPostProduction1.Text = String.Empty
+                    Me.txtPostProduction2.Text = String.Empty
+                Else
+                    If Me.txtWrappingDate.Text <> String.Empty Then
+                        If DateDiff(DateInterval.Day, CDate(Me.txtWrappingDate.Text), CDate(txt.Text)) > 0 Then
+                            txt.Text = String.Empty
+                            Me.txtWrappingDate.Text = String.Empty
+                            Me.txtPostProduction1.Text = String.Empty
+                            Me.txtPostProduction2.Text = String.Empty
+                        End If
+                    End If
+                End If
+
+            Case "txtWrappingDate"
+                If txt.Text = String.Empty Then
+                    Me.txtPostProduction1.Text = String.Empty
+                    Me.txtPostProduction2.Text = String.Empty
+                Else
+                    If Me.txtPostProduction1.Text <> String.Empty Then
+                        If DateDiff(DateInterval.Day, CDate(Me.txtPostProduction1.Text), CDate(txt.Text)) > 0 Then
+                            txt.Text = String.Empty
+                            Me.txtPostProduction1.Text = String.Empty
+                            Me.txtPostProduction2.Text = String.Empty
+                        End If
+                    End If
+                End If
+
+            Case "txtPostProduction1"
+                If txt.Text = String.Empty Then
+                    Me.txtPostProduction2.Text = String.Empty
+                Else
+                    If Me.txtPostProduction2.Text <> String.Empty Then
+                        If DateDiff(DateInterval.Day, CDate(Me.txtPostProduction2.Text), CDate(txt.Text)) > 0 Then
+                            txt.Text = String.Empty
+                            Me.txtPostProduction2.Text = String.Empty
+                        End If
+                    End If
+                End If
+
+            Case "txtPostProduction2"
+
+            Case Else
+
+        End Select
+
+        txt = Nothing
+
+    End Sub
+
+    Protected Sub loadNotesToAccordian()
+
+        Dim service As New AppService
+        Dim dt As DataTable = service.runSQLScheduling("select * from dbo.tblTempProdScheduleNotes where TempGUID='" & Me.txtPSDetailGUID.Text & "' order by EntryDate DESC")
+
+        Dim col As DataColumn = New DataColumn
+        col.ColumnName = "DisplayHeaderText"
+        col.DataType = System.Type.GetType("System.String")
+        dt.Columns.Add(col)
+        col = Nothing
+
+        'set text of notes button to show number of notes
+        Me.btnViewNotes.Text = "Notes (" & dt.Rows.Count & ")"
+
+        Dim dtUsers As DataTable = service.getUsersRecords
+
+        For i As Integer = 0 To dt.Rows.Count - 1
+            Dim strText As String = String.Empty
+
+            Dim drows() As DataRow = dtUsers.Select("UserID=" & dt.Rows(i)("UserID").ToString)
+            If drows.Length > 0 Then
+                strText = "Entered on " & Format(CDate(dt.Rows(i)("EntryDate")), "d MMM yyyy h:mm tt") & " by " & drows(0)("UserFirstName").ToString & " " & drows(0)("UserLastName").ToString
+            Else
+                strText = "Entered on " & Format(CDate(dt.Rows(i)("EntryDate")), "d MMM yyyy h:mm tt")
+            End If
+            drows = Nothing
+
+            If Not IsDBNull(dt.Rows(i)("VisibleToCustomer")) Then
+                If CInt(dt.Rows(i)("VisibleToCustomer")) = 1 Then
+                    strText &= " - Visible To Customer"
+                End If
+            End If
+
+            dt.Rows(i)("DisplayHeaderText") = strText
+
+        Next
+
+        Me.acc1.DataSource = New DataTableReader(dt)
+        Me.acc1.DataBind()
+
+        service = Nothing
+
+    End Sub
+
+    Private Sub btnCancelNote_Click(sender As Object, e As EventArgs) Handles btnCancelNote.Click
+
+        Me.txtNewNoteText.Text = String.Empty
+        Me.chkNoteVisible.Checked = False
+        Me.pnlAddNote.Visible = False
+
+    End Sub
+
+    Private Sub btnAddNewNote_Click(sender As Object, e As EventArgs) Handles btnAddNewNote.Click
+
+        Me.txtNewNoteText.Text = String.Empty
+        Me.chkNoteVisible.Checked = False
+        Me.pnlAddNote.Visible = True
+
+    End Sub
+
+    Private Sub btnSaveNote_Click(sender As Object, e As EventArgs) Handles btnSaveNote.Click
+
+        If Trim(Me.txtNewNoteText.Text) <> String.Empty Then
+
+            Dim service As New AppService
+
+            Dim dbConn As New DBConnection
+            Dim cnn As SqlClient.SqlConnection = dbConn.getSQLConnection_To_OzRollLouvreScheduling
+            Dim trans As SqlClient.SqlTransaction
+
+            Dim bolSavedOK As Boolean = True
+
+            Try
+                cnn.Open()
+                trans = cnn.BeginTransaction
+
+                Dim cNote As New ProdScheduleNote
+                cNote.ProdScheduleID = SharedConstants.DEFAULT_INTEGER_VALUE
+                cNote.NoteDetails = Me.txtNewNoteText.Text
+                cNote.NoteTypeID = 1
+                cNote.UserID = CInt(Session("sessUserID"))
+                cNote.EntryDate = DateTime.Now
+                If Me.chkNoteVisible.Checked Then
+                    cNote.VisibleToCustomer = 1
+                Else
+                    cNote.VisibleToCustomer = 0
+                End If
+
+
+                bolSavedOK = service.addTempProdScheduleNotes(cNote, Me.txtPSDetailGUID.Text, True, cnn, trans)
+
+                If bolSavedOK Then
+                    trans.Commit()
+                Else
+                    trans.Rollback()
+                End If
+
+            Catch ex As Exception
+                If Not trans Is Nothing Then
+                    trans.Rollback()
+                End If
+                If cnn.State = ConnectionState.Open Then
+                    cnn.Close()
+                End If
+                EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine & getPageInfo())
+            Finally
+                If Not IsNothing(trans) Then
+                    trans.Dispose()
+                End If
+                trans = Nothing
+                If cnn.State = ConnectionState.Open Then
+                    cnn.Close()
+                End If
+                cnn.Dispose()
+                cnn = Nothing
+            End Try
+
+            If bolSavedOK Then
+                Me.txtNewNoteText.Text = String.Empty
+                Me.chkNoteVisible.Checked = False
+                Me.pnlAddNote.Visible = False
+
+                loadNotesToAccordian()
+            End If
+
+        End If
+
+    End Sub
+
+    Private Sub btnOrderForm_Click(sender As Object, e As EventArgs) Handles btnOrderForm.Click
+
+        'Dim strRptsPath As String = Server.MapPath("") & "\ExcelRpts"
+        'Dim objBuffer As Byte() = Nothing
+        ''ExcelReport.createReport(strRptsPath, objBuffer, dtScheduleList)
+        'Dim rptFileName As String = PlantationOrderForm.generatePlantationOrderForm(strRptsPath, objBuffer, CInt(Me.txtId.Text), 1)
+        'Dim strRPTFileName As String = IO.Path.Combine(strRptsPath, rptFileName)
+        'If objBuffer IsNot Nothing Then
+        '    '----
+        '    Response.BinaryWrite(objBuffer)
+        '    Response.ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        '    Response.AddHeader("content-disposition", "attachment;  filename=" & rptFileName)
+        '    Response.End()
+        '    '
+        'End If
+        'objBuffer = Nothing
+
+    End Sub
+
+    Protected Sub loadOrderFormLinks()
+
+        Dim service As New AppService
+
+        'check if order form should be diplayed - records for job in ozrolls details table
+        Dim dtDetails As DataTable = service.getPlantationJobDetailsRecordsByPlantationScheduleID(CInt(Me.txtId.Text))
+        If dtDetails.Rows.Count > 0 Then
+
+            'get details to search modern tables from
+            Dim dtOrder As DataTable = service.runSQLScheduling("select dbo.tblProductionScheduleList.*, dbo.tblCustomers.SiteID from dbo.tblProductionScheduleList inner join dbo.tblCustomers on dbo.tblProductionScheduleList.CustomeriD = dbo.tblCustomers.CustomeriD where dbo.tblProductionScheduleList.ID = " & Me.txtId.Text)
+            If dtOrder.Rows.Count > 0 Then
+
+                If Not IsDBNull(dtOrder.Rows(0)("SiteID")) And Not IsDBNull(dtOrder.Rows(0)("JobNumber")) Then
+
+                    Dim strSQL As String = "select * from dbo.tblEOrderSubmission where [Type] = 1 and JobNumber = " & dtOrder.Rows(0)("JobNumber").ToString
+                    Dim dtOrderForms As DataTable = service.runSQLHive(CInt(dtOrder.Rows(0)("SiteID")), strSQL)
+
+                    If dtOrderForms.Rows.Count > 0 Then
+                        For i As Integer = 0 To dtOrderForms.Rows.Count - 1
+                            '\\HIVEAUTO11\c$\My Documents\Plantation Shutters Order\Plantation Shutters Order PIL532525 for Modern NSW (17 May 2017) - 001.xls                            
+                            Dim strFileName As String = Right(dtOrderForms.Rows(i)("FileName").ToString, Len(dtOrderForms.Rows(i)("FileName").ToString) - 55)
+                            strFileName = Left(strFileName, Len(strFileName) - 3) & "pdf"
+                            If IO.File.Exists(Server.MapPath("~") & "orderforms\" & strFileName) Then
+                                Dim strOrderForm As String = "orderforms/" & strFileName
+                                Me.lblOrderForm.Text &= "<a target=""_blank"" href=""" & ResolveUrl(strOrderForm) & """>Display Order Form</a><br />"
+                                Me.pnlOrderForms.Visible = True
+                            End If
+                        Next
+                    Else
+                        Me.pnlOrderForms.Visible = False
+                    End If
+                    dtOrderForms.Dispose()
+                    dtOrderForms = Nothing
+                Else
+                    Me.pnlOrderForms.Visible = False
+                End If
+
+            Else
+                Me.pnlOrderForms.Visible = False
+            End If
+            dtOrder.Dispose()
+            dtOrder = Nothing
+        Else
+            Me.pnlOrderForms.Visible = False
+        End If
+
+        dtDetails.Dispose()
+        dtDetails = Nothing
+
+        service = Nothing
+
+    End Sub
+
+
+#Region "Shutter Details Function"
+
+    Protected Sub dgvDetails_RowCommand(ByVal sender As Object, ByVal e As System.Web.UI.WebControls.GridViewCommandEventArgs) Handles dgvDetails.RowCommand
+
+        If (e.CommandName = "PlantationDetail") Then
+            Dim index As Integer = Convert.ToInt32(e.CommandArgument)
+            Dim row As GridViewRow = dgvDetails.Rows(index)
+
+            Dim intPSDetailsID As Integer = CInt(dgvDetails.DataKeys(row.RowIndex).Values("PSDetailID"))
+            loadShutterDetailsToPopup(intPSDetailsID)
+
+            Me.txtHiddenPSDetailID.Text = intPSDetailsID.ToString
+
+            ModalPopupExtender.Show()
+
+        End If
+
+    End Sub
+
+    Protected Sub loadShutterDetailsForDataGrid()
+
+        Dim service As New AppService
+        Dim dt As DataTable = service.getTempPlantationJobDetailsRecordsByTempGUID(Me.txtPSDetailGUID.Text)
+
+        service = Nothing
+
+        dt = SharedFunctions.performDatatableSelect(dt, "Deleted=0")
+
+        Me.dgvDetails.DataSource = dt
+        Me.dgvDetails.DataBind()
+
+        If dt.Rows.Count > 0 Then
+            Me.pnlOpeningDetails.Visible = True
+        End If
+
+    End Sub
+
+    Protected Sub btnSaveDetails_Click(sender As Object, e As System.EventArgs) Handles btnSaveDetails.Click
+
+        'modal popup save button
+
+        Dim service As New AppService
+
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlClient.SqlConnection = dbConn.getSQLConnection_To_OzRollLouvreScheduling
+        Dim trans As SqlClient.SqlTransaction
+
+        Dim bolSavedOK As Boolean = True
+
+        Try
+            Dim cPlantationJobDetails As New PlantationJobDetails
+            If CInt(Me.txtHiddenPSDetailID.Text) > 0 Then
+                cPlantationJobDetails = service.getTempPlantationJobDetailsRecord(CInt(Me.txtHiddenPSDetailID.Text))
+            End If
+
+            cPlantationJobDetails = prepareShutterDetailForSave(cPlantationJobDetails)            
+            cPlantationJobDetails.TempGUID = Me.txtPSDetailGUID.Text
+
+            cPlantationJobDetails.CostPrice = CalculatePlantationShutterPrice(2, cPlantationJobDetails)
+
+            cnn.Open()
+            trans = cnn.BeginTransaction
+
+            If cPlantationJobDetails.PSDetailID = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                bolSavedOK = service.addTempPlantationJobDetailsRecord(cPlantationJobDetails, cnn, trans)
+            Else
+                bolSavedOK = service.updateTempPlantationJobDetailsRecord(cPlantationJobDetails, cnn, trans)
+            End If
+
+            If bolSavedOK Then
+                trans.Commit()
+            Else
+                trans.Rollback()
+            End If
+
+        Catch ex As Exception
+            If Not trans Is Nothing Then
+                trans.Rollback()
+            End If
+            If cnn.State = ConnectionState.Open Then
+                cnn.Close()
+            End If
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine & getPageInfo())
+        Finally
+            If Not IsNothing(trans) Then
+                trans.Dispose()
+            End If
+            trans = Nothing
+            If cnn.State = ConnectionState.Open Then
+                cnn.Close()
+            End If
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+
+        If bolSavedOK Then
+            resetPopupControlsToDefault()
+            Me.txtPSDetailID.Text = "0"
+            loadShutterDetailsForDataGrid()
+            recalculateJobPriceFromDetails
+        End If
+
+
+    End Sub
+
+    Protected Sub btnCancelDetails_Click(sender As Object, e As System.EventArgs) Handles btnCancelDetails.Click
+
+        resetPopupControlsToDefault()
+        Me.txtPSDetailID.Text = "0"
+
+    End Sub
+
+    Protected Sub loadShutterDetailsToPopup(intPSDetailID As Integer)
+
+        Dim service As New AppService
+
+        Dim cQuoteDetail As PlantationJobDetails = service.getTempPlantationJobDetailsRecord(intPSDetailID)
+
+        If Not cQuoteDetail.PSDetailID = SharedConstants.DEFAULT_INTEGER_VALUE Then
+            Me.txtHiddenPSDetailID.Text = intPSDetailID.ToString
+
+            If Not cQuoteDetail.RemakeTypeID = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                Me.cboRemakeType.SelectedValue = cQuoteDetail.RemakeTypeID
+            End If
+
+            If Not cQuoteDetail.InstallationAreaID = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                cboInstallationArea.SelectedValue = cQuoteDetail.InstallationAreaID
+                cboInstallationArea_SelectedIndexChanged(Me, Nothing)
+            End If
+
+            If Not cQuoteDetail.RoomLocationID = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                cboRoomLocation.SelectedValue = cQuoteDetail.RoomLocationID
+                cboRoomLocation_SelectedIndexChanged(Me, Nothing)
+                If Not cQuoteDetail.RoomLocationOther = String.Empty Then
+                    txtRLOther.Text = cQuoteDetail.RoomLocationOther
+                End If
+            End If
+
+            If Not cQuoteDetail.Width = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                txtWidth.Text = CInt(cQuoteDetail.Width)
+            End If
+
+            If Not cQuoteDetail.Height = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                txtHeight.Text = CInt(cQuoteDetail.Height)
+            End If
+
+            If Not cQuoteDetail.MountConfigID = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                cboMountConfig.SelectedValue = cQuoteDetail.MountConfigID
+            End If
+
+            If Not cQuoteDetail.MountStyleID = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                cboMountStyle.SelectedValue = cQuoteDetail.MountStyleID
+            End If
+
+            If Not cQuoteDetail.PanelQtyID = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                cboPanelQty.SelectedValue = cQuoteDetail.PanelQtyID
+            End If
+
+            If Not cQuoteDetail.MaterialID = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                cboMaterial.SelectedValue = cQuoteDetail.MaterialID
+            End If
+
+            If Not cQuoteDetail.BladeSizeID = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                cboBladeSize.SelectedValue = cQuoteDetail.BladeSizeID
+            End If
+
+            If Not cQuoteDetail.ColourID = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                cboColour.SelectedValue = cQuoteDetail.ColourID
+            End If
+
+            If Not cQuoteDetail.MidRailHeight = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                txtMidRailHeight.Text = CInt(cQuoteDetail.MidRailHeight)
+                txtMidRailHeight_TextChanged(Me, Nothing)
+            End If
+
+            If Not cQuoteDetail.MountMethodID = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                cboMountMethod.SelectedValue = cQuoteDetail.MountMethodID
+                pnlSliding.Visible = False
+                pnlStainlessSteelWheels.Visible = False
+                If cboMountMethod.SelectedIndex > 0 Then
+                    pnlLayoutOther.Visible = False
+                    txtLayoutOther.Text = String.Empty
+
+                    SharedFunctions.fillDropDownList(service.getPSLayoutByMountAndPanelQty(cboMountMethod.SelectedValue, cboPanelQty.SelectedValue), "ID", "Description", cboLayout, True)
+                    SharedFunctions.fillDropDownList(service.getPSFrameType(cboMountMethod.SelectedValue), "Id", "Description", cboFrameType, True)
+
+                    If cboMountMethod.SelectedItem.Text = "Sliding" Or cboMountMethod.SelectedItem.Text = "Bifold IN" Or cboMountMethod.SelectedItem.Text = "Bifold OUT" Then
+                        pnlSliding.Visible = True
+                        pnlStainlessSteelWheels.Visible = True
+                        pnlboards.Visible = True
+                    Else
+                        pnlboards.Visible = False
+                    End If
+
+                    If cboMountMethod.SelectedItem.Text = "Sliding" Or cboMountMethod.SelectedItem.Text = "Bifold IN" Or cboMountMethod.SelectedItem.Text = "Bifold OUT" Then
+                        pnlStainlessSteelWheels.Visible = True
+                    End If
+
+                    cboTrack.Items.Clear()
+                    If cboMountMethod.SelectedItem.Text = "Sliding" Then
+                        SharedFunctions.fillDropDownList(service.getPSTrack(), "ID", "Description", cboTrack, True)
+                    Else
+                        Dim lstItem As New ListItem
+                        lstItem.Value = 0
+                        lstItem.Text = ""
+                        cboTrack.Items.Add(lstItem)
+                        lstItem = New ListItem
+                        lstItem.Value = 1
+                        lstItem.Text = "Yes"
+                        cboTrack.Items.Add(lstItem)
+                        lstItem = New ListItem
+                        lstItem.Value = 2
+                        lstItem.Text = "No"
+                        cboTrack.Items.Add(lstItem)
+                    End If
+                    If Not cQuoteDetail.Track = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                        cboTrack.SelectedValue = cQuoteDetail.Track
+                    End If
+
+                    If Not cQuoteDetail.Sideboards = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                        cboSideboards.SelectedValue = cQuoteDetail.Sideboards
+                    End If
+                    If Not cQuoteDetail.Bottomboards = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                        cboBottomboards.SelectedValue = cQuoteDetail.Bottomboards
+                    End If
+
+                Else
+                    cboFrameType.Items.Clear()
+                    cboLayout.Items.Clear()
+                End If
+            End If
+
+            If Not cQuoteDetail.LayoutID = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                cboLayout.SelectedValue = cQuoteDetail.LayoutID
+                cboLayout_SelectedIndexChanged(Me, Nothing)
+                If Not cQuoteDetail.LayoutOther = String.Empty Then
+                    txtLayoutOther.Text = cQuoteDetail.LayoutOther
+                End If
+            End If
+
+            If Not cQuoteDetail.SlidingGuideID = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                cboBottomGuide.SelectedValue = cQuoteDetail.SlidingGuideID
+            End If
+
+            If Not cQuoteDetail.SlidingOpenCloseID = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                cboSliding.SelectedValue = cQuoteDetail.SlidingOpenCloseID
+            End If
+
+            If Not cQuoteDetail.HingeColourID = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                cboHingeColour.SelectedValue = cQuoteDetail.HingeColourID
+            End If
+
+            If Not cQuoteDetail.FrameTypeID = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                Dim litem As ListItem = cboFrameType.Items.FindByValue(cQuoteDetail.FrameTypeID)
+                If Not IsNothing(litem) Then
+                    cboFrameType.SelectedValue = cQuoteDetail.FrameTypeID
+                    If cboMountMethod.SelectedItem.Text = "Fixed" Then
+                        cboSides.Enabled = False
+                        cboSides.CssClass = "form-select-disable"
+                    Else
+                        cboSides.Enabled = True
+                        cboSides.CssClass = "form-select"
+                    End If
+                End If
+            End If
+
+            If Not cQuoteDetail.SidesID = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                cboSides.SelectedValue = cQuoteDetail.SidesID
+            End If
+
+            If Not cQuoteDetail.ControlTypeID = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                cboControlType.SelectedValue = cQuoteDetail.ControlTypeID
+            End If
+
+            If Not cQuoteDetail.Track = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                cboTrack.SelectedValue = cQuoteDetail.Track
+            End If
+
+            If Not cQuoteDetail.TPostQtyID = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                cboTPostQty.SelectedValue = cQuoteDetail.TPostQtyID
+            End If
+
+            If Not cQuoteDetail.SplitBladeID = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                cboSplitBlade.SelectedValue = cQuoteDetail.SplitBladeID
+                cboSplitBlade_SelectedIndexChanged(Me, Nothing)
+                If Not cQuoteDetail.SplitBladeHeight = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                    txtHeightSplitBlade.Text = cQuoteDetail.SplitBladeHeight
+                End If
+            End If
+
+            If Not cQuoteDetail.HangStripID = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                cboHangStrip.SelectedValue = cQuoteDetail.HangStripID
+            End If
+
+            If Not cQuoteDetail.LightBlockID = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                cboLightBlock.SelectedValue = cQuoteDetail.LightBlockID
+            End If
+
+            If Not cQuoteDetail.AngleBayID = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                cboAngleBay.SelectedValue = cQuoteDetail.AngleBayID
+            End If
+
+            If Not cQuoteDetail.FixedBlades = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                cboFixedBlades.SelectedValue = cQuoteDetail.FixedBlades
+            End If
+
+            If Not cQuoteDetail.StainlessSteelWheels = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                cboStainlessSteelWheels.SelectedValue = cQuoteDetail.StainlessSteelWheels
+            End If
+
+            If Not cQuoteDetail.SpecialRequirements = String.Empty Then
+                txtSpecialRequirements.Text = CStr(cQuoteDetail.SpecialRequirements)
+            End If
+
+        End If
+
+        service = Nothing
+
+    End Sub
+
+    Protected Function prepareShutterDetailForSave(cPlantationJobDetails As PlantationJobDetails) As PlantationJobDetails
+
+        Try
+            If CInt(Me.txtHiddenPSDetailID.Text) > 0 Then
+                cPlantationJobDetails.PSDetailID = CInt(Me.txtHiddenPSDetailID.Text)                
+            End If
+
+            'cPlantationJobDetails.ShutterID = CInt(txtSelectedShutter.Text)
+
+            If Me.cboRemakeType.SelectedIndex > 0 Then
+                cPlantationJobDetails.RemakeTypeID = CInt(Me.cboRemakeType.SelectedValue)
+            End If
+
+            If IsNumeric(cboInstallationArea.SelectedValue) Then
+                cPlantationJobDetails.InstallationAreaID = CInt(cboInstallationArea.SelectedValue)
+                cPlantationJobDetails.InstallationArea = cboInstallationArea.SelectedItem.Text
+            End If
+
+            If IsNumeric(cboRoomLocation.SelectedValue) Then
+                cPlantationJobDetails.RoomLocationID = CInt(cboRoomLocation.SelectedValue)
+                cPlantationJobDetails.RoomLocation = cboRoomLocation.SelectedItem.Text
+
+                If pnlRoomLocation.Visible = True Then
+                    cPlantationJobDetails.RoomLocationOther = txtRLOther.Text
+                End If
+            End If
+
+            If IsNumeric(txtWidth.Text) Then
+                cPlantationJobDetails.Width = CInt(txtWidth.Text)
+            End If
+
+            If IsNumeric(txtHeight.Text) Then
+                cPlantationJobDetails.Height = CInt(txtHeight.Text)
+            End If
+
+            If IsNumeric(cboMountConfig.SelectedValue) Then
+                cPlantationJobDetails.MountConfigID = CInt(cboMountConfig.SelectedValue)
+                cPlantationJobDetails.MountConfig = cboMountConfig.SelectedItem.Text
+            End If
+
+            If IsNumeric(cboMountStyle.SelectedValue) Then
+                cPlantationJobDetails.MountStyleID = CInt(cboMountStyle.SelectedValue)
+                cPlantationJobDetails.MountStyle = cboMountStyle.SelectedItem.Text
+            End If
+
+            If IsNumeric(cboPanelQty.SelectedValue) Then
+                cPlantationJobDetails.PanelQtyID = CInt(cboPanelQty.SelectedValue)
+                cPlantationJobDetails.PanelQty = cboPanelQty.SelectedItem.Text
+            End If
+
+            If IsNumeric(cboMaterial.SelectedValue) Then
+                cPlantationJobDetails.MaterialID = CInt(cboMaterial.SelectedValue)
+                cPlantationJobDetails.Material = cboMaterial.SelectedItem.Text
+            End If
+
+            If IsNumeric(cboBladeSize.SelectedValue) Then
+                cPlantationJobDetails.BladeSizeID = CInt(cboBladeSize.SelectedValue)
+                cPlantationJobDetails.BladeSize = cboBladeSize.SelectedItem.Text
+            End If
+
+            If IsNumeric(cboColour.SelectedValue) Then
+                cPlantationJobDetails.ColourID = CInt(cboColour.SelectedValue)
+                cPlantationJobDetails.Colour = cboColour.SelectedItem.Text
+            End If
+
+            If IsNumeric(txtMidRailHeight.Text) Then
+                cPlantationJobDetails.MidRailHeight = CInt(txtMidRailHeight.Text)
+            End If
+
+            If IsNumeric(cboMountMethod.SelectedValue) Then
+                cPlantationJobDetails.MountMethodID = CInt(cboMountMethod.SelectedValue)
+                cPlantationJobDetails.MountMethod = cboMountMethod.SelectedItem.Text
+            End If
+
+
+            If IsNumeric(cboLayout.SelectedValue) Then
+                cPlantationJobDetails.LayoutID = CInt(cboLayout.SelectedValue)
+                cPlantationJobDetails.Layout = cboLayout.SelectedItem.Text
+            End If
+
+            If pnlLayoutOther.Visible = True Then
+                If txtLayoutOther.Text <> String.Empty Then
+                    cPlantationJobDetails.LayoutOther = CStr(txtLayoutOther.Text)
+                End If
+            End If
+
+            If pnlSliding.Visible = True Then
+                If IsNumeric(cboBottomGuide.SelectedValue) Then
+                    cPlantationJobDetails.SlidingGuideID = CInt(cboBottomGuide.SelectedValue)
+                    cPlantationJobDetails.SlidingGuide = cboBottomGuide.SelectedItem.Text
+                End If
+
+                If IsNumeric(cboSliding.SelectedValue) Then
+                    cPlantationJobDetails.SlidingOpenCloseID = CInt(cboSliding.SelectedValue)
+                    cPlantationJobDetails.SlidingOpenClose = cboSliding.SelectedItem.Text
+                End If
+            End If
+
+            If IsNumeric(cboHingeColour.SelectedValue) Then
+                cPlantationJobDetails.HingeColourID = CInt(cboHingeColour.SelectedValue)
+                cPlantationJobDetails.HingeColour = cboHingeColour.SelectedItem.Text
+            End If
+
+            If IsNumeric(cboFrameType.SelectedValue) Then
+                cPlantationJobDetails.FrameTypeID = CInt(cboFrameType.SelectedValue)
+                cPlantationJobDetails.FrameType = cboFrameType.SelectedItem.Text
+            End If
+
+            If IsNumeric(cboSides.SelectedValue) Then
+                cPlantationJobDetails.SidesID = CInt(cboSides.SelectedValue)
+                cPlantationJobDetails.Sides = cboSides.SelectedItem.Text
+            End If
+
+            If IsNumeric(cboControlType.SelectedValue) Then
+                cPlantationJobDetails.ControlTypeID = CInt(cboControlType.SelectedValue)
+                cPlantationJobDetails.ControlType = cboControlType.SelectedItem.Text
+            End If
+
+            If IsNumeric(cboTrack.SelectedValue) Then
+                cPlantationJobDetails.Track = CInt(cboTrack.SelectedValue)
+            End If
+
+            If IsNumeric(cboTPostQty.SelectedValue) Then
+                cPlantationJobDetails.TPostQtyID = CInt(cboTPostQty.SelectedValue)
+                cPlantationJobDetails.TPostQty = cboTPostQty.SelectedItem.Text
+            End If
+
+            If pnlSplitBlade.Visible = True Then
+                If IsNumeric(cboSplitBlade.SelectedValue) Then
+                    cPlantationJobDetails.SplitBladeID = CInt(cboSplitBlade.SelectedValue)
+                    cPlantationJobDetails.SplitBlade = cboSplitBlade.SelectedItem.Text
+
+                    If pnlSplitBladeHeight.Visible = True Then
+                        If IsNumeric(txtHeightSplitBlade.Text) Then
+                            cPlantationJobDetails.SplitBladeHeight = txtHeightSplitBlade.Text
+                        End If
+                    End If
+                End If
+            End If
+
+            If IsNumeric(cboHangStrip.SelectedValue) Then
+                cPlantationJobDetails.HangStripID = CInt(cboHangStrip.SelectedValue)
+                cPlantationJobDetails.HangStrip = cboHangStrip.SelectedItem.Text
+            End If
+
+            If pnlLightBlock.Visible = True Then
+                If IsNumeric(cboLightBlock.SelectedValue) Then
+                    cPlantationJobDetails.LightBlockID = CInt(cboLightBlock.SelectedValue)
+                    cPlantationJobDetails.LightBlock = cboLightBlock.SelectedItem.Text
+                End If
+            End If
+
+            If IsNumeric(cboAngleBay.SelectedValue) Then
+                cPlantationJobDetails.AngleBayID = CInt(cboAngleBay.SelectedValue)
+                cPlantationJobDetails.AngleBay = cboAngleBay.SelectedItem.Text
+            End If
+
+            If IsNumeric(cboFixedBlades.SelectedValue) Then
+                cPlantationJobDetails.FixedBlades = CInt(cboFixedBlades.SelectedValue)
+            End If
+
+            If IsNumeric(cboStainlessSteelWheels.SelectedValue) Then
+                cPlantationJobDetails.StainlessSteelWheels = CInt(cboStainlessSteelWheels.SelectedValue)
+            End If
+
+            If txtSpecialRequirements.Text <> String.Empty Then
+                cPlantationJobDetails.SpecialRequirements = txtSpecialRequirements.Text
+            End If
+
+            If pnlboards.Visible = True Then
+                cPlantationJobDetails.Sideboards = CInt(cboSideboards.SelectedValue)
+                cPlantationJobDetails.Bottomboards = CInt(cboBottomboards.SelectedValue)
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+        End Try
+
+        Return cPlantationJobDetails
+
+
+    End Function
+
+    Protected Sub btnAddDetails_Click(sender As Object, e As System.EventArgs) Handles btnAddDetails.Click
+
+        resetPopupControlsToDefault()
+        ModalPopupExtender.Show()
+
+    End Sub
+
+    Protected Sub resetPopupControlsToDefault()
+
+        Me.txtHiddenPSDetailID.Text = "0"
+
+        Me.cboRemakeType.SelectedIndex = 0
+
+        cboInstallationArea.SelectedValue = cboInstallationArea.Items.FindByText("Internal").Value
+        cboHingeColour.Items.Clear()
+        cboInstallationArea_SelectedIndexChanged(Me, Nothing)
+
+        cboRoomLocation.SelectedIndex = 0
+        pnlRoomLocation.Visible = False
+        txtRLOther.Text = String.Empty
+
+        txtWidth.Text = String.Empty
+        txtHeight.Text = String.Empty
+
+
+        cboMountConfig.SelectedValue = cboMountConfig.Items.FindByText("Reveal").Value
+        cboFrameType.SelectedIndex = -1
+
+        cboMountStyle.SelectedValue = cboMountStyle.Items.FindByText("Full H").Value
+
+        cboPanelQty.SelectedIndex = 0
+        cboMaterial.SelectedValue = cboMaterial.Items.FindByText("Insulite").Value
+
+        cboBladeSize.SelectedValue = cboBladeSize.Items.FindByText("90").Value
+        cboColour.SelectedIndex = 0
+
+        txtMidRailHeight.Text = String.Empty
+        cboMountMethod.SelectedValue = cboMountMethod.Items.FindByText("H.Hinge").Value
+        cboMountMethod_SelectedIndexChanged(Me, Nothing)
+
+        If cboLayout.Items.Count > 0 Then
+            cboLayout.SelectedIndex = 0
+        End If
+
+        pnlLayoutOther.Visible = False
+        txtLayoutOther.Text = String.Empty
+
+        cboBottomGuide.SelectedIndex = 0
+        cboSliding.SelectedIndex = 0
+        pnlSliding.Visible = False
+
+        cboSides.SelectedIndex = 0
+        cboControlType.SelectedValue = cboControlType.Items.FindByText("Ultra C").Value
+
+        cboTPostQty.SelectedIndex = 0
+
+        cboSplitBlade.SelectedIndex = 0
+        pnlSplitBlade.Visible = True
+
+        txtHeightSplitBlade.Text = String.Empty
+        pnlSplitBladeHeight.Visible = False
+
+        cboHangStrip.SelectedIndex = 0
+        cboLightBlock.SelectedIndex = 0
+
+        cboAngleBay.SelectedIndex = 0
+        cboFixedBlades.SelectedIndex = 0
+
+        cboStainlessSteelWheels.SelectedIndex = 0
+        pnlStainlessSteelWheels.Visible = False
+
+        txtSpecialRequirements.Text = String.Empty
+
+    End Sub
+
+    Private Sub LoadControls()
+        Dim intLocation As Integer
+        Try
+            Me.cboRemakeType.SelectedIndex = 0
+
+            cboInstallationArea.SelectedValue = cboInstallationArea.Items.FindByText("Internal").Value
+            cboHingeColour.Items.Clear()
+            cboInstallationArea_SelectedIndexChanged(Me, Nothing)
+
+            cboRoomLocation.SelectedIndex = 0
+            pnlRoomLocation.Visible = False
+            txtRLOther.Text = String.Empty
+
+            txtWidth.Text = String.Empty
+            txtHeight.Text = String.Empty
+
+
+            cboMountConfig.SelectedValue = cboMountConfig.Items.FindByText("Reveal").Value
+            cboFrameType.SelectedIndex = -1
+
+            cboMountStyle.SelectedValue = cboMountStyle.Items.FindByText("Full H").Value
+
+            cboPanelQty.SelectedIndex = 0
+            cboMaterial.SelectedValue = cboMaterial.Items.FindByText("Insulite").Value
+
+            cboBladeSize.SelectedValue = cboBladeSize.Items.FindByText("90").Value
+            cboColour.SelectedIndex = 0
+
+            txtMidRailHeight.Text = String.Empty
+            cboMountMethod.SelectedValue = cboMountMethod.Items.FindByText("H.Hinge").Value
+            cboMountMethod_SelectedIndexChanged(Me, Nothing)
+
+            If cboLayout.Items.Count > 0 Then
+                cboLayout.SelectedIndex = 0
+            End If
+
+            pnlLayoutOther.Visible = False
+            txtLayoutOther.Text = String.Empty
+
+            cboBottomGuide.SelectedIndex = 0
+            cboSliding.SelectedIndex = 0
+            pnlSliding.Visible = False
+
+            cboSides.SelectedIndex = 0
+            cboControlType.SelectedValue = cboControlType.Items.FindByText("Ultra C").Value
+
+            cboTPostQty.SelectedIndex = 0
+
+            cboSplitBlade.SelectedIndex = 0
+            pnlSplitBlade.Visible = True
+
+            txtHeightSplitBlade.Text = String.Empty
+            pnlSplitBladeHeight.Visible = False
+
+            cboHangStrip.SelectedIndex = 0
+            cboLightBlock.SelectedIndex = 0
+
+            cboAngleBay.SelectedIndex = 0
+            cboFixedBlades.SelectedIndex = 0
+
+            cboStainlessSteelWheels.SelectedIndex = 0
+            pnlStainlessSteelWheels.Visible = False
+
+            txtSpecialRequirements.Text = String.Empty
+
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & "; Location:  -  " & CStr(intLocation))
+        End Try
+    End Sub
+
+    Protected Sub setAllControlsToViewModeOnly()
+
+        Try
+            'Handles the shutter details section
+            Me.cboRemakeType.Enabled = False
+            Me.cboRemakeType.CssClass = "form-select-disable"
+            cboInstallationArea.Enabled = False
+            cboInstallationArea.CssClass = "form-select-disable"
+            cboRoomLocation.Enabled = False
+            cboRoomLocation.CssClass = "form-select-disable"
+            txtRLOther.Enabled = False
+            txtWidth.Enabled = False
+            txtHeight.Enabled = False
+            cboMountConfig.Enabled = False
+            cboMountConfig.CssClass = "form-select-disable"
+            cboMountStyle.Enabled = False
+            cboMountStyle.CssClass = "form-select-disable"
+            cboPanelQty.Enabled = False
+            cboPanelQty.CssClass = "form-select-disable"
+            cboMaterial.Enabled = False
+            cboMaterial.CssClass = "form-select-disable"
+            cboBladeSize.Enabled = False
+            cboBladeSize.CssClass = "form-select-disable"
+            cboColour.Enabled = False
+            cboColour.CssClass = "form-select-disable"
+            txtMidRailHeight.Enabled = False
+            cboMountMethod.Enabled = False
+            cboMountMethod.CssClass = "form-select-disable"
+            cboLayout.Enabled = False
+            cboLayout.CssClass = "form-select-disable"
+            txtLayoutOther.Enabled = False
+            cboBottomGuide.Enabled = False
+            cboBottomGuide.CssClass = "form-select-disable"
+            cboSliding.Enabled = False
+            cboSliding.CssClass = "form-select-disable"
+            cboHingeColour.Enabled = False
+            cboHingeColour.CssClass = "form-select-disable"
+            cboFrameType.Enabled = False
+            cboFrameType.CssClass = "form-select-disable"
+            cboSides.Enabled = False
+            cboSides.CssClass = "form-select-disable"
+            cboControlType.Enabled = False
+            cboControlType.CssClass = "form-select-disable"
+            cboTrack.Enabled = False
+            cboTrack.CssClass = "form-select-disable"
+            cboTPostQty.Enabled = False
+            cboTPostQty.CssClass = "form-select-disable"
+            cboSplitBlade.Enabled = False
+            cboSplitBlade.CssClass = "form-select-disable"
+            txtHeightSplitBlade.Enabled = False
+            txtHeight.Enabled = False
+            cboHangStrip.Enabled = False
+            cboHangStrip.CssClass = "form-select-disable"
+            cboLightBlock.Enabled = False
+            cboLightBlock.CssClass = "form-select-disable"
+            cboAngleBay.Enabled = False
+            cboAngleBay.CssClass = "form-select-disable"
+            cboFixedBlades.Enabled = False
+            cboFixedBlades.CssClass = "form-select-disable"
+            cboStainlessSteelWheels.Enabled = False
+            cboStainlessSteelWheels.CssClass = "form-select-disable"
+
+            txtSpecialRequirements.Enabled = False
+
+            cboSideboards.Enabled = False
+            cboSideboards.CssClass = "form-select-disable"
+            cboBottomboards.Enabled = False
+            cboBottomboards.CssClass = "form-select-disable"
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+        End Try
+    End Sub
+
+    Protected Function AllShutterDetailsValid() As Boolean
+        'If CInt(Me.cboRemakeType.SelectedValue) <> 2 Then
+        'This means that it will only check if a regular order or if a whole opening remake/rorder
+
+        Dim bolContinue As Boolean = True
+        lblShutterStatus.Text = String.Empty
+
+        If bolContinue Then
+            If cboInstallationArea.SelectedIndex <= 0 Then
+                bolContinue = False
+                lblShutterStatus.Text = "Please select a Installation Area."
+            End If
+        End If
+
+        If bolContinue Then
+            If CInt(Me.cboRemakeType.SelectedValue) <> 2 Then
+                If cboRoomLocation.SelectedIndex <= 0 Then
+                    bolContinue = False
+                    lblShutterStatus.Text = "Please select a Room Location."
+                ElseIf txtRLOther.Visible = True Then
+                    If txtRLOther.Text = String.Empty Then
+                        bolContinue = False
+                        lblShutterStatus.Text = "Please enter a Room Location."
+                    End If
+                End If
+            End If
+        End If
+
+        If bolContinue Then
+            If txtWidth.Text = String.Empty Then
+                bolContinue = False
+                lblShutterStatus.Text = "Please enter a Width."
+            Else
+                If Not IsNumeric(txtWidth.Text) Then
+                    bolContinue = False
+                    lblShutterStatus.Text = "Please enter a valid Width."
+                End If
+            End If
+        End If
+
+        If bolContinue Then
+            If txtHeight.Text = String.Empty Then
+                bolContinue = False
+                lblShutterStatus.Text = "Please enter a Height."
+            Else
+                If Not IsNumeric(txtHeight.Text) Then
+                    bolContinue = False
+                    lblShutterStatus.Text = "Please enter a valid Height."
+                End If
+            End If
+        End If
+
+        If bolContinue Then
+            If CInt(Me.cboRemakeType.SelectedValue) <> 2 Then
+                If cboMountConfig.SelectedIndex <= 0 Then
+                    bolContinue = False
+                    lblShutterStatus.Text = "Please select a Mount Config."
+                End If
+            End If
+        End If
+
+        If bolContinue Then
+            If CInt(Me.cboRemakeType.SelectedValue) <> 2 Then
+                If cboMountStyle.SelectedIndex <= 0 Then
+                    bolContinue = False
+                    lblShutterStatus.Text = "Please select a Mount Style."
+                End If
+            End If
+        End If
+
+        If bolContinue Then
+            If cboPanelQty.SelectedIndex <= 0 Then
+                bolContinue = False
+                lblShutterStatus.Text = "Please select a Panel Quantity."
+            End If
+        End If
+
+        If bolContinue Then
+            If cboMaterial.SelectedIndex <= 0 Then
+                bolContinue = False
+                lblShutterStatus.Text = "Please select a Material."
+            End If
+        End If
+
+        If bolContinue Then
+            If cboBladeSize.SelectedIndex <= 0 Then
+                bolContinue = False
+                lblShutterStatus.Text = "Please select a Blade Size."
+            End If
+        End If
+
+        If bolContinue Then
+            If cboColour.SelectedIndex <= 0 Then
+                bolContinue = False
+                lblShutterStatus.Text = "Please select a Colour."
+            End If
+        End If
+
+        If bolContinue Then
+            If Not txtMidRailHeight.Text = String.Empty Then
+                If Not IsNumeric(txtMidRailHeight.Text) Then
+                    bolContinue = False
+                    lblShutterStatus.Text = "Please enter a valid Mid Rail Height."
+                ElseIf CInt(txtHeight.Text) > 1500 Then
+                    If CInt(txtMidRailHeight.Text) < 100 Or CInt(txtMidRailHeight.Text) > 2300 Then
+                        bolContinue = False
+                        lblShutterStatus.Text = "Mid Rail Height should be between 100mm to 2300mm"
+                    End If
+                End If
+            ElseIf CInt(txtHeight.Text) > 1500 Then
+                bolContinue = False
+                lblShutterStatus.Text = "Please enter a Mid Rail Height."
+            End If
+        End If
+
+        If bolContinue Then
+            If cboMountMethod.SelectedIndex <= 0 Then
+                bolContinue = False
+                lblShutterStatus.Text = "Please select a Mount Method."
+            End If
+        End If
+
+        If pnlboards.Visible = True Then
+            If CInt(Me.cboRemakeType.SelectedValue) <> 2 Then
+                If bolContinue Then
+                    If cboSideboards.SelectedIndex <= 0 Then
+                        bolContinue = False
+                        lblShutterStatus.Text = "Please select a Sideboards."
+                    End If
+                End If
+
+                If bolContinue Then
+                    If cboBottomboards.SelectedIndex <= 0 Then
+                        bolContinue = False
+                        lblShutterStatus.Text = "Please select a Bottomboards."
+                    End If
+                End If
+            End If
+        End If
+
+        If bolContinue Then
+            If cboLayout.SelectedIndex <= 0 Then
+                bolContinue = False
+                lblShutterStatus.Text = "Please select a Layout."
+            End If
+            If bolContinue And pnlLayoutOther.Visible = True Then
+                If txtLayoutOther.Text = String.Empty Then
+                    bolContinue = False
+                    lblShutterStatus.Text = "Please enter Other Layout."
+                End If
+            End If
+        End If
+
+        If bolContinue And pnlSliding.Visible = True Then
+            If CInt(Me.cboRemakeType.SelectedValue) <> 2 Then
+                If cboBottomGuide.SelectedIndex <= 0 Then
+                    bolContinue = False
+                    lblShutterStatus.Text = "Please select a Bottom Guide."
+                End If
+                If cboMountMethod.SelectedItem.Text = "Sliding" Then
+                    If cboSliding.SelectedIndex <= 0 Then
+                        bolContinue = False
+                        lblShutterStatus.Text = "Please select a Sliding option."
+                    End If
+                End If
+            End If
+        End If
+
+        If bolContinue Then
+            If CInt(Me.cboRemakeType.SelectedValue) <> 2 Then
+                If Not (cboMountMethod.SelectedItem.Text = "Sliding" Or cboMountMethod.SelectedItem.Text = "Fixed") Then
+                    If cboHingeColour.SelectedIndex <= 0 Then
+                        bolContinue = False
+                        lblShutterStatus.Text = "Please select a Hinge Colour."
+                    End If
+                End If
+            End If
+        End If
+
+        If bolContinue Then
+            If CInt(Me.cboRemakeType.SelectedValue) <> 2 Then
+                If cboFrameType.SelectedIndex < 0 Then
+                    bolContinue = False
+                    lblShutterStatus.Text = "Please select a Frame Type."
+                End If
+            End If
+        End If
+
+        If bolContinue Then
+            If CInt(Me.cboRemakeType.SelectedValue) <> 2 Then
+                If cboFrameType.SelectedItem.Text <> "Direct Mount" Then
+                    If cboSides.SelectedIndex <= 0 Then
+                        bolContinue = False
+                        lblShutterStatus.Text = "Please select a Sides layout."
+                    End If
+                End If
+            End If
+        End If
+
+        If bolContinue Then
+            If cboControlType.SelectedIndex <= 0 Then
+                bolContinue = False
+                lblShutterStatus.Text = "Please select a Control Type."
+            End If
+        End If
+
+        If bolContinue Then
+            If CInt(Me.cboRemakeType.SelectedValue) <> 2 Then
+                If cboTrack.SelectedIndex <= 0 Then
+                    bolContinue = False
+                    lblShutterStatus.Text = "Please select a Track option."
+                End If
+            End If
+        End If
+
+        'If bolContinue Then
+        '    If cboTPostQty.SelectedIndex <= 0 Then
+        '        bolContinue = False
+        '        lblShutterStatus.Text = "Please select a T Post Qty."
+        '    End If
+        'End If
+
+        If bolContinue And pnlSplitBlade.Visible = True Then
+
+            If cboSplitBlade.SelectedIndex <= 0 Then
+                bolContinue = False
+                lblShutterStatus.Text = "Please select a Split Blade option."
+            End If
+            If pnlSplitBladeHeight.Visible = True Then
+                If Not txtHeightSplitBlade.Text = String.Empty Then
+                    If Not IsNumeric(txtHeightSplitBlade.Text) Then
+                        bolContinue = False
+                        lblShutterStatus.Text = "Please enter a valid Split Blade Height."
+                    End If
+                End If
+            End If
+        End If
+
+        'If bolContinue Then
+        '    If cboHangStrip.SelectedIndex <= 0 Then
+        '        bolContinue = False
+        '        lblShutterStatus.Text = "Please select a Hang Strip."
+        '    End If
+        'End If
+
+        If bolContinue Then
+            If CInt(Me.cboRemakeType.SelectedValue) <> 2 Then
+                If pnlLightBlock.Visible = True And cboFrameType.SelectedItem.Text = "Direct Mount" Then
+                    If cboLightBlock.SelectedIndex <= 0 Then
+                        bolContinue = False
+                        lblShutterStatus.Text = "Please select a Light Block."
+                    End If
+                End If
+            End If
+        End If
+
+        If bolContinue Then
+            If CInt(Me.cboRemakeType.SelectedValue) <> 2 Then
+                Dim strLayout As String = String.Empty
+                Dim bolFlag As Boolean = False
+
+                If cboMountMethod.SelectedItem.Text <> "Sliding" Then
+                    If cboLayout.SelectedItem.Text = "Other" Then
+                        strLayout = txtLayoutOther.Text
+                    Else
+                        strLayout = cboLayout.SelectedItem.Text
+                    End If
+
+                    If Not strLayout = String.Empty Then
+                        For i As Integer = 0 To Len(strLayout) - 1
+
+                            If strLayout.Substring(i, 1) = "B" Or strLayout.Substring(i, 1) = "C" Then
+                                bolFlag = True
+                            End If
+                        Next
+
+                    End If
+                End If
+
+                If bolFlag = True Then
+                    If cboAngleBay.SelectedIndex <= 0 Then
+                        bolContinue = False
+                        lblShutterStatus.Text = "Please select a Angle Bay."
+                    End If
+                Else
+                    cboAngleBay.SelectedIndex = -1
+                End If
+            End If
+        End If
+
+        'If bolContinue Then
+        '    If cboFixedBlades.SelectedIndex <= 0 Then
+        '        bolContinue = False
+        '        lblShutterStatus.Text = "Please select a Fixed Blades."
+        '    End If
+        'End If
+
+        If bolContinue And pnlStainlessSteelWheels.Visible = True Then
+            If cboStainlessSteelWheels.SelectedIndex <= 0 Then
+                bolContinue = False
+                lblShutterStatus.Text = "Please select a Stainless Steel Wheels."
+            End If
+        End If
+
+        Return bolContinue
+    End Function
+    Protected Sub cboInstallationArea_SelectedIndexChanged(ByVal sender As Object, ByVal e As System.EventArgs) Handles cboInstallationArea.SelectedIndexChanged
+        If cboInstallationArea.SelectedIndex > 0 Then
+            Dim service As New AppService
+            SharedFunctions.fillDropDownList(service.getPSHingeColour(cboInstallationArea.SelectedValue), "ID", "Description", cboHingeColour, True)
+            service = Nothing
+
+            If cboInstallationArea.SelectedItem.Text = "Internal" Then
+                cboStainlessSteelWheels.SelectedValue = 2 'cboTrack.Items.FindByText("No").Value
+            ElseIf cboInstallationArea.SelectedItem.Text = "External / Wet Area" Then
+                cboStainlessSteelWheels.SelectedValue = 1 'cboTrack.Items.FindByText("Yes").Value
+            End If
+        End If
+
+    End Sub
+    Protected Sub cboMountMethod_SelectedIndexChanged(ByVal sender As Object, ByVal e As System.EventArgs) Handles cboMountMethod.SelectedIndexChanged
+        pnlSliding.Visible = False
+        pnlStainlessSteelWheels.Visible = False
+        cboFrameType.Items.Clear()
+        cboLayout.Items.Clear()
+
+        Dim service As New AppService
+
+        If cboMountMethod.SelectedIndex > 0 Then
+            pnlLayoutOther.Visible = False
+            txtLayoutOther.Text = String.Empty
+
+            If cboPanelQty.SelectedIndex > 0 Then
+                SharedFunctions.fillDropDownList(service.getPSLayoutByMountAndPanelQty(cboMountMethod.SelectedValue, cboPanelQty.SelectedValue), "ID", "Description", cboLayout, True)
+                cboLayout_SelectedIndexChanged(Me, Nothing) 'Ramandeep
+            End If
+
+            SharedFunctions.fillDropDownList(service.getPSFrameType(cboMountMethod.SelectedValue), "ID", "Description", cboFrameType, True)
+
+
+            If cboMountMethod.SelectedItem.Text = "Sliding" Or cboMountMethod.SelectedItem.Text = "Bifold IN" Or cboMountMethod.SelectedItem.Text = "Bifold OUT" Then
+                pnlSliding.Visible = True
+                pnlboards.Visible = True
+            Else
+                pnlboards.Visible = False
+            End If
+
+            If cboMountMethod.SelectedItem.Text = "Fixed" Then
+                cboSides.SelectedValue = cboSides.Items.FindByText("TB").Value
+                cboSides.Enabled = False
+                cboSides.CssClass = "form-select-disable"
+            Else
+                cboSides.Enabled = True
+                cboSides.CssClass = "form-select"
+            End If
+
+            cboTrack.Items.Clear()
+            If cboMountMethod.SelectedItem.Text = "Sliding" Then
+                pnlStainlessSteelWheels.Visible = True
+                SharedFunctions.fillDropDownList(service.getPSTrack(), "ID", "Description", cboTrack, True)
+            Else
+                Dim lstItem As New ListItem
+                lstItem.Value = 0
+                lstItem.Text = ""
+                cboTrack.Items.Add(lstItem)
+                lstItem = New ListItem
+                lstItem.Value = 1
+                lstItem.Text = "Yes"
+                cboTrack.Items.Add(lstItem)
+                lstItem = New ListItem
+                lstItem.Value = 2
+                lstItem.Text = "No"
+                cboTrack.Items.Add(lstItem)
+
+                If cboMountMethod.SelectedItem.Text = "Bifold IN" Or cboMountMethod.SelectedItem.Text = "Bifold OUT" Then
+                    pnlStainlessSteelWheels.Visible = True
+                    cboTrack.SelectedValue = cboTrack.Items.FindByText("Yes").Value
+                Else
+                    cboTrack.SelectedValue = cboTrack.Items.FindByText("No").Value
+                End If
+            End If
+
+            If cboMountMethod.SelectedItem.Text = "H.Hinge" Or cboMountMethod.SelectedItem.Text = "P.Hinge" Then
+                cboFrameType.SelectedValue = cboFrameType.Items.FindByText("Z Frame").Value
+            End If
+
+            If cboMountMethod.SelectedItem.Text = "Sliding" Or cboMountMethod.SelectedItem.Text = "Bifold IN" Or cboMountMethod.SelectedItem.Text = "Bifold OUT" Then
+                If cboInstallationArea.SelectedItem.Text = "External / Wet Area" Then
+                    cboStainlessSteelWheels.SelectedValue = 1
+                Else
+                    cboStainlessSteelWheels.SelectedValue = 2
+                End If
+            Else
+                cboStainlessSteelWheels.SelectedValue = 2
+            End If
+
+        End If
+
+        service = Nothing
+    End Sub
+
+    Protected Sub cboFrameType_SelectedIndexChanged(ByVal sender As Object, ByVal e As System.EventArgs) Handles cboFrameType.SelectedIndexChanged
+        If cboFrameType.SelectedItem.Text = "L Frame" Or cboFrameType.SelectedItem.Text = "Z Frame" Then
+            cboSides.SelectedValue = cboSides.Items.FindByText("LRTB").Value
+        End If
+    End Sub
+
+    Protected Sub txtMidRailHeight_TextChanged(ByVal sender As Object, ByVal e As System.EventArgs) Handles txtMidRailHeight.TextChanged
+        'pnlSplitBlade.Visible = False
+        If Not txtMidRailHeight.Text = String.Empty Then
+            If IsNumeric(txtMidRailHeight.Text) Then
+                pnlSplitBlade.Visible = True
+                cboSplitBlade.SelectedValue = cboSplitBlade.Items.FindByText("Split T").Value
+                pnlSplitBladeHeight.Visible = True
+            End If
+        End If
+    End Sub
+
+    Protected Sub cboSplitBlade_SelectedIndexChanged(ByVal sender As Object, ByVal e As System.EventArgs) Handles cboSplitBlade.SelectedIndexChanged
+        pnlSplitBladeHeight.Visible = False
+        If cboMountMethod.SelectedIndex > 0 Then
+            If Not cboSplitBlade.SelectedItem.Text = "N" Then
+                pnlSplitBladeHeight.Visible = True
+            End If
+        End If
+    End Sub
+
+    Protected Sub cboRoomLocation_SelectedIndexChanged(ByVal sender As Object, ByVal e As System.EventArgs) Handles cboRoomLocation.SelectedIndexChanged
+        Try
+            txtRLOther.Text = String.Empty
+            If cboRoomLocation.SelectedItem.Text = "Other" Then
+                pnlRoomLocation.Visible = True
+            Else
+                pnlRoomLocation.Visible = False
+            End If
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+        End Try
+    End Sub
+
+    Protected Sub cboLayout_SelectedIndexChanged(ByVal sender As Object, ByVal e As System.EventArgs) Handles cboLayout.SelectedIndexChanged
+        Try
+
+            txtLayoutOther.Text = String.Empty
+            If cboLayout.SelectedIndex > 0 Then
+                If cboLayout.SelectedItem.Text = "Other" Then
+                    pnlLayoutOther.Visible = True
+                Else
+                    pnlLayoutOther.Visible = False
+                    CountTPost()
+                End If
+            Else
+                cboTPostQty.SelectedIndex = -1
+                pnlLayoutOther.Visible = False
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+        End Try
+    End Sub
+
+    Protected Sub cboColour_SelectedIndexChanged(ByVal sender As Object, ByVal e As System.EventArgs) Handles cboColour.SelectedIndexChanged
+        If Not cboHingeColour.Items.FindByText(cboColour.SelectedItem.Text) Is Nothing Then
+            cboHingeColour.SelectedValue = cboHingeColour.Items.FindByText(cboColour.SelectedItem.Text).Value
+        End If
+    End Sub
+
+    Protected Sub cboPanelQty_SelectedIndexChanged(ByVal sender As Object, ByVal e As System.EventArgs) Handles cboPanelQty.SelectedIndexChanged
+
+        pnlLayoutOther.Visible = False
+
+        Try
+
+            If cboPanelQty.SelectedIndex > 0 And cboMountMethod.SelectedIndex > 0 Then
+                Dim service As New AppService
+                SharedFunctions.fillDropDownList(service.getPSLayoutByMountAndPanelQty(cboMountMethod.SelectedValue, cboPanelQty.SelectedValue), "ID", "Description", cboLayout, True)
+                service = Nothing
+                cboLayout_SelectedIndexChanged(Me, Nothing)
+            Else
+                cboLayout.Items.Clear()
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+        End Try
+
+    End Sub
+
+    Protected Sub cboMountConfig_SelectedIndexChanged(ByVal sender As Object, ByVal e As System.EventArgs) Handles cboMountConfig.SelectedIndexChanged
+        cboFrameType.SelectedIndex = -1
+    End Sub
+
+    Protected Sub txtHeight_TextChanged(ByVal sender As Object, ByVal e As System.EventArgs) Handles txtHeight.TextChanged
+        If CInt(txtHeight.Text) > 1500 Then
+            pnlMidRail.Visible = True
+        Else
+            pnlMidRail.Visible = False
+            txtMidRailHeight.Text = String.Empty
+        End If
+    End Sub
+
+    Protected Sub txtLayoutOther_TextChanged(ByVal sender As Object, ByVal e As System.EventArgs) Handles txtLayoutOther.TextChanged
+        If Not txtLayoutOther.Text.Trim() = String.Empty Then
+            CountTPost()
+        Else
+            cboTPostQty.SelectedIndex = -1
+        End If
+    End Sub
+
+
+    Private Sub CountTPost()
+        Dim strLayout As String = String.Empty
+        Dim bolFlag As Boolean = False
+        If cboLayout.SelectedItem.Text = "Other" Then
+            strLayout = txtLayoutOther.Text
+        Else
+            strLayout = cboLayout.SelectedItem.Text
+        End If
+        Dim NoOfTPost As Integer = 0
+        If Not strLayout = String.Empty Then
+            For i As Integer = 0 To Len(strLayout) - 1
+                If strLayout.Substring(i, 1) = "B" Or strLayout.Substring(i, 1) = "T" Or strLayout.Substring(i, 1) = "C" Then
+                    NoOfTPost += 1
+                End If
+                If strLayout.Substring(i, 1) = "B" Or strLayout.Substring(i, 1) = "C" Then
+                    bolFlag = True
+                End If
+            Next
+            If bolFlag = False Then
+                cboAngleBay.SelectedIndex = -1
+            End If
+            If Not cboTPostQty.Items.FindByText(NoOfTPost) Is Nothing Then
+                cboTPostQty.SelectedValue = cboTPostQty.Items.FindByText(NoOfTPost).Value
+            Else
+                cboTPostQty.SelectedIndex = 0
+            End If
+        Else
+            cboTPostQty.SelectedIndex = -1
+        End If
+    End Sub
+
+
+#End Region
+
+    Protected Sub disableAllControls()
+
+        Me.txtOrderDate.Enabled = False
+        Me.txtReceived.Enabled = False
+        Me.txtShutterProEnteredDate.Enabled = False
+        Me.txtScheduledDate.Enabled = False
+        Me.txtCuttingDate.Enabled = False
+        Me.txtPrepDate.Enabled = False
+        Me.txtAssemblyDate.Enabled = False
+        Me.txtFramingDate.Enabled = False
+        Me.txtQCDate.Enabled = False
+        Me.txtWrappingDate.Enabled = False
+        Me.txtPostProduction1.Enabled = False
+        Me.txtPostProduction2.Enabled = False
+
+        Me.cboOrderType.Enabled = False
+        Me.txtActualShippingDate.Enabled = False
+        Me.txtContractNumber.Enabled = False
+        Me.txtCostPrice.Enabled = False
+        Me.txtFreightAmount.Enabled = False
+        Me.txtPanelsLess700.Enabled = False
+        Me.txtPanelsMore700.Enabled = False
+        Me.txtPlannedShippingDate.Enabled = False
+        Me.txtCustomerName.Enabled = False
+        Me.cboCustomer.Enabled = False
+        Me.txtState.Enabled = False
+        Me.txtTotalPanels.Enabled = False
+        Me.txtTotalSQM.Enabled = False
+        Me.txtQtyBifold.Enabled = False
+        Me.txtQtyFixed.Enabled = False
+        Me.txtQtyHinges.Enabled = False
+        Me.txtQtyLFrame.Enabled = False
+        Me.txtQtySliding.Enabled = False
+        Me.txtQtyZFrame.Enabled = False
+
+
+        Me.cboOffWhite.Enabled = False
+        Me.cboBrightWhite.Enabled = False
+        Me.cboPriority.Enabled = False
+
+        Me.btnSave.Enabled = False
+        makeAllClearButtonsHidden()
+
+    End Sub
+
+    Protected Function CalculatePlantationShutterPrice(intManufactureLocation As Integer, cPlantationJobDetail As PlantationJobDetails) As Decimal
+
+        Dim service As New AppService
+
+        Dim intMaterial As Integer = 0
+        Dim intInstallationArea As Integer = 0
+        Dim intMountMethod As Integer = 0
+        Dim intControlType As Integer = 0
+
+        Dim intBladeSizeID As Integer = 0
+
+        Dim dteEffectiveDate As Date = DateTime.Now
+
+        Dim decCostPrice As Decimal = 0
+        Dim intHeight As Integer = 0
+        Dim intWidth As Integer = 0
+        Dim intPanelQty As Integer = 0
+
+        Dim intColourID As Integer = 0
+
+        Try
+            If cPlantationJobDetail.Height <> SharedConstants.DEFAULT_INTEGER_VALUE Then
+                intHeight = cPlantationJobDetail.Height
+            End If
+
+            If cPlantationJobDetail.Width <> SharedConstants.DEFAULT_INTEGER_VALUE Then
+                intWidth = cPlantationJobDetail.Width
+            End If
+
+            If cPlantationJobDetail.PanelQtyID <> SharedConstants.DEFAULT_INTEGER_VALUE Then
+                intPanelQty = cPlantationJobDetail.PanelQtyID
+            End If
+
+            If cPlantationJobDetail.MaterialID <> SharedConstants.DEFAULT_INTEGER_VALUE Then
+                intMaterial = cPlantationJobDetail.MaterialID
+            End If
+
+            If cPlantationJobDetail.InstallationAreaID <> SharedConstants.DEFAULT_INTEGER_VALUE Then
+                intInstallationArea = cPlantationJobDetail.InstallationAreaID
+            End If
+
+            If cPlantationJobDetail.MountMethodID <> SharedConstants.DEFAULT_INTEGER_VALUE Then
+                intMountMethod = cPlantationJobDetail.MountMethodID
+            End If
+
+            If cPlantationJobDetail.ControlTypeID <> SharedConstants.DEFAULT_INTEGER_VALUE Then
+                intControlType = cPlantationJobDetail.ControlTypeID
+            End If
+
+            If cPlantationJobDetail.BladeSizeID <> SharedConstants.DEFAULT_INTEGER_VALUE Then
+                intBladeSizeID = cPlantationJobDetail.BladeSizeID
+            End If
+
+            If cPlantationJobDetail.ColourID <> SharedConstants.DEFAULT_INTEGER_VALUE Then
+                intColourID = cPlantationJobDetail.ColourID
+            End If
+
+
+            Dim intPanelWidth As Decimal = 0
+            Dim PerOpening As Integer = 1
+            Dim LMHeight As Decimal = CInt(intHeight) / 1000
+            Dim dblSQ As Double = (intHeight / 1000) * (intWidth / 1000)
+            Dim intqty As Integer = intPanelQty
+            Dim dblLM As Double = intWidth / 1000
+
+            'If dblSQ < 1 Then
+            '    dblSQ = 1
+            'End If
+
+            Dim bolContinue As Boolean = True
+
+            If intPanelQty > 0 Then
+                intPanelWidth = CInt(intWidth / intPanelQty)
+            Else
+                bolContinue = False
+            End If
+
+            If bolContinue Then
+                Dim dt As DataTable = service.getPSPrice(intMaterial, intInstallationArea, intMountMethod, intManufactureLocation, intControlType, dteEffectiveDate, intPanelWidth, intBladeSizeID)
+
+                If dt.Rows.Count > 0 Then
+
+                    decCostPrice = 0
+
+                    For i As Integer = 0 To dt.Rows.Count - 1
+                        Dim j As Integer = SharedFunctions.nz(dt.Rows(i).Item("CalculationID"), 0)
+
+                        If j = 1 Then 'M2
+                            'Dim dblSQ As Double = (intHeight / 1000) * (intWidth / 1000)
+
+                            decCostPrice += SharedFunctions.nz(dt.Rows(i).Item("CostPrice"), 0) * dblSQ
+
+                            If intColourID = 2 Then
+                                'temporary price increase method for bright white
+                                decCostPrice += 245 * dblSQ
+                            End If
+
+                        End If
+
+                        'If j = 2 Then 'Per Panel
+                        '    'Dim intqty As Integer = intPanelQty
+                        '    decCostPrice += SharedFunctions.nz(dt.Rows(i).Item("CostPrice"), 0) * intqty
+                        'End If
+
+                        'If j = 3 Then 'Per LM
+
+                        '    'Dim dblLM As Double = intWidth / 1000
+                        '    'intLM = ((intHeight / 1000) * 2) + ((intWidth / 1000) * 2)
+
+                        '    decCostPrice += SharedFunctions.nz(dt.Rows(i).Item("CostPrice"), 0) * dblLM
+                        'End If
+
+                        'If j = 4 Then 'Per Opening
+                        '    decCostPrice += SharedFunctions.nz(dt.Rows(i).Item("CostPrice"), 0) * 1
+                        'End If
+                    Next
+                End If
+                dt.Dispose()
+                dt = Nothing
+            End If
+
+            If intMountMethod = 3 Or intMountMethod = 4 Or intMountMethod = 5 Then
+                'sliding, bifold in and bifold out     
+                Dim intTrack As Integer = 0
+                If cPlantationJobDetail.Track <> SharedConstants.DEFAULT_INTEGER_VALUE Then
+                    intTrack = cPlantationJobDetail.Track
+                End If
+                If intInstallationArea <= 0 Or intTrack <= 0 Then
+                    bolContinue = False
+                Else
+                    Dim intNoOfTrack As Integer = 0
+
+                    If intMountMethod = 5 Then
+                        'sliding - qty of track selected
+                        intNoOfTrack = intTrack
+                    Else
+                        'bifold - sinlge track only available
+                        If intTrack = 1 Then
+                            intNoOfTrack = 1
+                        End If
+                    End If
+
+                    If intNoOfTrack > 0 Then
+                        Dim dtPrice As DataTable
+                        If intMaterial = 1 Then
+                            dtPrice = service.getPSPriceMount(intInstallationArea, intManufactureLocation, intMountMethod, intNoOfTrack, dteEffectiveDate, 0, 0, intMaterial)
+                        Else
+                            dtPrice = service.getPSPriceMount(intManufactureLocation, 0, intMountMethod, intNoOfTrack, dteEffectiveDate, 0, 0, intMaterial)
+                        End If
+
+                        'Dim dtPrice As DataTable = service.getPSPriceMount(CInt(txtCurSiteID.Text), CInt(cboInstallationArea.SelectedValue), 2, CInt(cboMountingMethod.SelectedValue), intNoOfTrack, CDate(txtCurQuoteDate.Text), 0, 0)
+                        If dtPrice.Rows.Count > 0 Then
+                            For i As Integer = 0 To dtPrice.Rows.Count - 1
+
+                                If CInt(dtPrice.Rows(i).Item("CalculationID")) = 5 Then ' Per LM by Height
+                                    decCostPrice += CDec(dtPrice.Rows(i).Item("CostPrice")) * LMHeight
+                                    'ElseIf CInt(dtPrice.Rows(i).Item("CalculationID")) = 4 Then 'Per Opening
+                                    '    decCostPrice += CDec(dtPrice.Rows(i).Item("CostPrice")) * PerOpening
+                                End If
+                            Next
+
+                        Else
+                            bolContinue = False
+                        End If
+                    End If
+
+                    If bolContinue = True Then
+                        Dim intSideboards As Integer = 0
+                        If cPlantationJobDetail.Sideboards <> SharedConstants.DEFAULT_INTEGER_VALUE Then
+                            intSideboards = cPlantationJobDetail.Sideboards
+                        End If
+
+                        If intSideboards = 1 Then
+                            '1=yes, 2=no
+                            Dim dtPrice As DataTable
+                            If intMaterial = 1 Then
+                                dtPrice = service.getPSPriceMount(intInstallationArea, intManufactureLocation, intMountMethod, intNoOfTrack, dteEffectiveDate, 0, 0, intMaterial)
+                            Else
+                                dtPrice = service.getPSPriceMount(intInstallationArea, 0, intMountMethod, intNoOfTrack, dteEffectiveDate, 0, 0, intMaterial)
+                            End If
+
+                            'Dim dtPrice As DataTable = service.getPSPriceMount(CInt(txtCurSiteID.Text), CInt(cboInstallationArea.SelectedValue), 2, CInt(cboMountingMethod.SelectedValue), intNoOfTrack, CDate(txtCurQuoteDate.Text), CInt(cboSideboards.SelectedValue), 0)
+                            If dtPrice.Rows.Count > 0 Then
+                                For i As Integer = 0 To dtPrice.Rows.Count - 1
+
+                                    If CInt(dtPrice.Rows(i).Item("CalculationID")) = 4 Then 'Per Opening
+                                        decCostPrice += CDec(dtPrice.Rows(i).Item("CostPrice")) * PerOpening
+                                    End If
+                                Next
+
+                            Else
+                                bolContinue = False
+                            End If
+                        End If
+                    End If
+
+                    If bolContinue = True Then
+                        Dim intBottomBoards As Integer = 0
+                        If cPlantationJobDetail.Bottomboards <> SharedConstants.DEFAULT_INTEGER_VALUE Then
+                            intBottomBoards = cPlantationJobDetail.Bottomboards
+                        End If
+                        If intBottomBoards = 1 Then
+                            '1=yes, 2 = no
+                            Dim dtPrice As DataTable
+                            If intMaterial = 1 Then
+                                dtPrice = service.getPSPriceMount(intInstallationArea, intManufactureLocation, intMountMethod, intNoOfTrack, dteEffectiveDate, 0, 0, intMaterial)
+                            Else
+                                dtPrice = service.getPSPriceMount(intInstallationArea, 0, intMountMethod, intNoOfTrack, dteEffectiveDate, 0, 0, intMaterial)
+                            End If
+
+                            'Dim dtPrice As DataTable = service.getPSPriceMount(CInt(txtCurSiteID.Text), CInt(cboInstallationArea.SelectedValue), 2, CInt(cboMountingMethod.SelectedValue), intNoOfTrack, CDate(txtCurQuoteDate.Text), 0, CInt(cboBottomboards.SelectedValue))
+                            If dtPrice.Rows.Count > 0 Then
+                                For i As Integer = 0 To dtPrice.Rows.Count - 1
+
+                                    If CInt(dtPrice.Rows(i).Item("CalculationID")) = 4 Then 'Per Opening
+                                        decCostPrice += CDec(dtPrice.Rows(i).Item("CostPrice")) * PerOpening
+                                    End If
+                                Next
+
+                            Else
+                                bolContinue = False
+                            End If
+                        End If
+                    End If
+                End If
+            End If
+
+            Dim intFrameType As Integer = 0
+            If cPlantationJobDetail.FrameTypeID <> SharedConstants.DEFAULT_INTEGER_VALUE Then
+                intFrameType = cPlantationJobDetail.FrameTypeID
+            End If
+
+            If intFrameType = 1 Or intFrameType = 2 Or intFrameType = 3 Then
+                '1=l frame, 2=z frame, 3=u channel
+                Dim dtPrice As DataTable
+                If bolContinue = True Then
+                    If ((intFrameType = 1 Or intFrameType = 2)) Then
+                        'corner post
+                        Dim strLayout As String = String.Empty
+                        Dim bolFlag As Boolean = False
+
+                        Dim intLayout As Integer = 0
+                        If cPlantationJobDetail.LayoutID <> SharedConstants.DEFAULT_INTEGER_VALUE Then
+                            intLayout = cPlantationJobDetail.LayoutID
+                        End If
+                        If intLayout = 23 Then
+                            'other
+                            strLayout = cPlantationJobDetail.LayoutOther
+                        Else
+                            strLayout = cPlantationJobDetail.Layout
+                        End If
+
+                        Dim intCount As Integer = 0
+                        If Not strLayout = String.Empty Then
+                            For i As Integer = 0 To Len(strLayout) - 1
+
+                                If strLayout.Substring(i, 1) = "C" Then
+                                    intCount += 1
+                                End If
+                            Next
+                        End If
+
+                        If intMaterial = 1 Then
+                            dtPrice = service.getPSPriceFrame(intManufactureLocation, intFrameType, dteEffectiveDate, 0, 1, intMaterial)
+                        Else
+                            dtPrice = service.getPSPriceFrame(0, 0, dteEffectiveDate, 0, 0, intMaterial)
+                        End If
+
+                        'dtPrice = service.getPSPriceFrame(CInt(txtCurSiteID.Text), 2, CInt(cboFrameType.SelectedValue), CDate(txtCurQuoteDate.Text), 0, 1)
+                        If dtPrice.Rows.Count > 0 Then
+                            For i As Integer = 0 To dtPrice.Rows.Count - 1
+                                If CInt(dtPrice.Rows(i).Item("CalculationID")) = 5 Then ' Per LM by Height
+                                    decCostPrice += CDec(dtPrice.Rows(i).Item("CostPrice")) * LMHeight * intCount
+                                End If
+                            Next
+
+                        Else
+                            bolContinue = False
+                        End If
+                    End If
+                End If
+
+                If bolContinue = True Then
+                    If ((intFrameType = 1 Or intFrameType = 2 Or intFrameType = 3)) Then
+
+                        Dim intCount As Integer = 0
+                        If intMountMethod = 5 Then
+                            'sliding
+                            Dim strLayout As String = String.Empty
+                            Dim bolFlag As Boolean = False
+
+                            Dim intLayout As Integer = 0
+                            If cPlantationJobDetail.LayoutID <> SharedConstants.DEFAULT_INTEGER_VALUE Then
+                                intLayout = cPlantationJobDetail.LayoutID
+                            End If
+                            If intLayout = 23 Then
+                                'other
+                                strLayout = cPlantationJobDetail.LayoutOther
+                            Else
+                                strLayout = cPlantationJobDetail.Layout
+                            End If
+
+                            If Not strLayout = String.Empty Then
+                                For i As Integer = 0 To Len(strLayout) - 1
+
+                                    If strLayout.Substring(i, 1) = "B" Then
+                                        intCount += 1
+                                    End If
+                                Next
+                            End If
+                        End If
+
+                        'bay post
+                        If intMaterial = 1 Then
+                            dtPrice = service.getPSPriceFrame(intManufactureLocation, intFrameType, dteEffectiveDate, 1, 0, intMaterial)
+                        Else
+                            dtPrice = service.getPSPriceFrame(0, 0, dteEffectiveDate, 0, 0, intMaterial)
+                        End If
+
+                        'dtPrice = service.getPSPriceFrame(CInt(txtCurSiteID.Text), 2, CInt(cboFrameType.SelectedValue), CDate(txtCurQuoteDate.Text), 1, 0)
+                        If dtPrice.Rows.Count > 0 Then
+                            For i As Integer = 0 To dtPrice.Rows.Count - 1
+                                If CInt(dtPrice.Rows(i).Item("CalculationID")) = 5 Then ' Per LM by Height
+                                    decCostPrice += CDec(dtPrice.Rows(i).Item("CostPrice")) * LMHeight * intCount
+                                End If
+                            Next
+
+                        Else
+                            bolContinue = False
+                        End If
+                    End If
+                End If
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine & getPageInfo())
+        End Try
+
+        service = Nothing
+
+        Return decCostPrice
+    End Function
+
+    Protected Sub recalculateJobPriceFromDetails()
+        Dim service As New AppService
+
+        Dim decFreightPercentage As Decimal = 0
+        Dim dtCust As DataTable = service.runSQLScheduling("select * from dbo.tblCustomers where CustomeriD=" & Me.cboCustomer.SelectedValue.ToString)
+        If dtCust.Rows.Count > 0 Then
+            If Not IsDBNull(dtCust.Rows(0)("FreightPercentage")) Then
+                decFreightPercentage = CDec(dtCust.Rows(0)("FreightPercentage"))
+            End If
+        End If
+        dtCust.Dispose()
+        dtCust = Nothing
+
+        Dim dtShutters As DataTable = service.getTempPlantationJobDetailsRecordsByTempGUID(Me.txtPSDetailGUID.Text)
+        If dtShutters.Rows.Count > 0 Then
+            Dim decCost As Decimal = SharedFunctions.performDatatableSelectSum(dtShutters, "CostPrice", "Deleted=0")
+
+            Me.txtCostPrice.Text = Format(decCost, "currency")
+            Me.txtFreightAmount.Text = Format(CDec(decCost * decFreightPercentage), "currency")
+        End If
+        dtShutters.Dispose()
+        dtShutters = Nothing
+
+        service = Nothing
+
+    End Sub
+
+    Protected Sub UploadButton_Click(sender As Object, e As EventArgs) Handles UploadButton.Click
+        Dim service As New AppService
+        Dim RetArray As String() = {"", "", "", "", "", "", ""}, ResolvedURL As String
+        Dim datePrefix As String = "_" + DateTime.Now.ToString("yyyyMMdd_HHmmss")
+        RetArray(4) = "3"   'Reference Type =3 for Contact ID
+        RetArray(5) = txtCustomerId.Text
+        If FileUploads.HasFile And txtIntScheduleID.Text <> "-99" Then
+            Dim Filesplit As String()
+            RetArray(1) = IO.Path.GetFileName(FileUploads.FileName).ToString()
+            RetArray(3) = txtIntScheduleID.Text  'ScheduleID ID 
+            Filesplit = RetArray(1).Split(".")
+            RetArray(1) = IIf(Filesplit.Length = 0, RetArray(1) + datePrefix, Filesplit(0) + datePrefix + "." + Filesplit(1))
+            RetArray(0) = Server.MapPath("~/UpLoadedFiles/")
+            RetArray(6) = RetArray(0) + txtTempFolder.Text + "\"
+            RetArray = SharedFunctions.UploadFiles(FileUploads, RetArray)
+            If RetArray(2).ToLower.IndexOf("uploaded") = -1 Then
+                lblStatus.Text = RetArray(2)
+                Exit Sub
+            End If
+            'Added For Label Functionality
+            ResolvedURL = "~/UpLoadedFiles/" & txtTempFolder.Text & "/" & RetArray(1)
+            Me.lblAttachments.Text &= "<a target=""_blank"" href=""" & ResolveUrl(ResolvedURL) & """>" & RetArray(1) & "</a><br />"
+            '------------------------
+            lblStatus.Text = RetArray(2)
+            RetArray(0) = ""                       ' To Check if Files Uploaded are New
+            RetArray(6) = RetArray(6) + RetArray(1)
+            AddToDT(RetArray)
+        Else
+            lblStatus.Text = "Upload status: Please select the a file to Upload."
+        End If
+        If txtIntScheduleID.Text = "-99" Then
+            lblStatus.Text = "Upload status: Please select the Customer Contact before proceeding."
+        End If
+    End Sub
+    Protected Sub Attachments(ScheduleID As Integer)
+        Dim service As New AppService
+        Dim intRecCount As Integer = 0
+        Dim RetArray As String() = {"", "", "", "", "", "", ""}
+        Dim dtsave As DataTable = ViewState("DTUploadFiles")
+
+        Dim TempDir1 As String = Server.MapPath("~/UpLoadedFiles/") + txtTempFolder.Text
+        Dim TempDir2 As String = Server.MapPath("~/UpLoadedFiles/") + ScheduleID.ToString()
+        'Dim AllFiles As System.IO.FileInfo = New IO.FileInfo(TempDir)
+        'AllFiles.Delete()
+        Dim CharPos As Integer
+        Dim datePrefix As String = "_" + DateTime.Now.ToString("yyyyMMdd_HHmmss")
+        RetArray(0) = Server.MapPath("~/UpLoadedFiles/")
+        RetArray(3) = ScheduleID  'ScheduleID ID 
+        RetArray(4) = "3"   'Reference Type =3 for Contact ID
+        RetArray(5) = txtCustomerId.Text
+        For Each _file As String In Directory.GetFiles(TempDir1)
+            If Not Directory.Exists(TempDir2) Then
+                Directory.CreateDirectory(TempDir2)
+            End If
+            CharPos = _file.LastIndexOf("\")
+            RetArray(1) = _file.Substring(CharPos + 1, _file.Length - CharPos - 1)
+            RetArray(6) = TempDir2 + "\" + RetArray(1)
+
+            If dtsave.Rows(intRecCount).Item("deleted") = "2" Then
+                File.Copy(_file, RetArray(6))
+                service.addUploadedFiles(RetArray)
+            End If
+            intRecCount += 1
+        Next
+    End Sub
+
+    Private Sub AddToDT(ByVal DataArray As String())
+        Dim dtNew As New DataTable
+        dtNew = ViewState("DTUploadFiles")
+        Dim dtRowNo As Integer = dtNew.Rows.Count() + 1
+        Dim drow As DataRow = dtNew.NewRow
+        drow("ID") = dtRowNo
+        drow.Item("referenceID") = IIf(DataArray(3).Trim.Length = 0, 0, DataArray(3))
+        drow.Item("referenceType") = DataArray(4)
+        drow.Item("uploadBy") = DataArray(5)
+        drow.Item("deleted") = IIf(DataArray(0).Trim.Length = 0, "2", DataArray(0))
+        drow.Item("filename") = DataArray(6)
+        dtNew.Rows.Add(drow)
+        ' ViewState("DTUploadFiles") = dtNew
+        drow = Nothing
+        If DataArray(0).Trim.Length = 0 Then
+            btnSave.Enabled = True
+            AddButton(dtNew.Rows.Count - 1, True)
+        End If
+    End Sub
+    Private Sub CreateUpLoadDataTable()
+        If ViewState("DTUploadFiles") = String.Empty Then
+            Dim DTUploadFiles As New DataTable
+
+            Dim col As DataColumn = New DataColumn
+            col.ColumnName = "ID"
+            col.DataType = System.Type.GetType("System.Int32")
+            DTUploadFiles.Columns.Add(col)
+            col = Nothing
+
+            col = New DataColumn
+            col.ColumnName = "referenceID"
+            col.DataType = System.Type.GetType("System.Int32")
+            DTUploadFiles.Columns.Add(col)
+            col = Nothing
+
+            col = New DataColumn
+            col.ColumnName = "referenceType"
+            col.DataType = System.Type.GetType("System.Int32")
+            DTUploadFiles.Columns.Add(col)
+            col = Nothing
+
+            col = New DataColumn
+            col.ColumnName = "uploadBy"
+            col.DataType = System.Type.GetType("System.Int32")
+            DTUploadFiles.Columns.Add(col)
+            col = Nothing
+
+            col = New DataColumn
+            col.ColumnName = "deleted"
+            col.DataType = System.Type.GetType("System.Int32")
+            DTUploadFiles.Columns.Add(col)
+            col = Nothing
+
+            col = New DataColumn
+            col.ColumnName = "delby"
+            col.DataType = System.Type.GetType("System.Int32")
+            DTUploadFiles.Columns.Add(col)
+            col = Nothing
+
+            col = New DataColumn
+            col.ColumnName = "filename"
+            col.DataType = System.Type.GetType("System.String")
+            DTUploadFiles.Columns.Add(col)
+            col = Nothing
+
+            col = New DataColumn
+            col.ColumnName = "delDate"
+            col.DataType = System.Type.GetType("System.DateTime")
+            DTUploadFiles.Columns.Add(col)
+            col = Nothing
+            ViewState("DTUploadFiles") = DTUploadFiles
+        End If
+    End Sub
+
+    Protected Sub LoadAttchments(fromLoad As Boolean)
+        Dim service As New AppService
+        Dim RetArray As String() = {"", "", "", "", "", "", ""}
+        Dim TempDir1 As String = Server.MapPath("~/UpLoadedFiles/") + txtTempFolder.Text
+        Dim TempDir2 As String = Server.MapPath("~/UpLoadedFiles/") + txtIntScheduleID.Text
+        Dim SQLStr As String = "Select * from dbo.tblUpLoadFiles where referenceID=" + txtIntScheduleID.Text
+        Dim FileName As String, FileName2 As String, ResolvedURL As String, CharPos As Integer
+        Dim dt1 As DataTable
+        lblAttachments.Text = ""
+        If fromLoad Then
+            dt1 = service.runSQLScheduling(SQLStr)
+        Else
+            dt1 = ViewState("DTUploadFiles")
+            TempDir2 = TempDir1
+        End If
+
+
+        For i = 0 To dt1.Rows.Count - 1
+            If Not Directory.Exists(TempDir2) Then
+                Exit For
+            End If
+            If Not Directory.Exists(TempDir1) Then
+                Directory.CreateDirectory(TempDir1)
+            End If
+
+            FileName = dt1.Rows(i).Item("filename")
+            CharPos = FileName.LastIndexOf("\")
+            FileName2 = FileName.Substring(CharPos + 1, FileName.Length - CharPos - 1)
+            ResolvedURL = "~/UpLoadedFiles/" & txtTempFolder.Text & "/" & FileName2
+
+            If IO.File.Exists(FileName) Then
+                Me.lblAttachments.Text &= "<a target=""_blank"" href=""" & ResolveUrl(ResolvedURL) & """>" & FileName2 & "</a><br />"
+                AddButton(i, IIf(dt1.Rows(i).Item("deleted").ToString = "2", True, False))
+            End If
+
+            If fromLoad Then
+                FileName2 = TempDir1 + "\" + FileName2
+                File.Copy(FileName, FileName2)
+                RetArray(0) = dt1.Rows(i).Item("deleted")
+                RetArray(1) = FileName2
+                RetArray(2) = FileName.Substring(CharPos + 1, FileName.Length - CharPos - 1)
+                RetArray(3) = dt1.Rows(i).Item("referenceID")
+                RetArray(4) = dt1.Rows(i).Item("referenceType")
+                RetArray(5) = dt1.Rows(i).Item("uploadby")
+                RetArray(6) = FileName2
+                AddToDT(RetArray)
+            End If
+        Next
+    End Sub
+
+    Private Sub AddButton(RowNo As Integer, btnEnable As Boolean)
+        Dim b15 As New Button
+        b15.Text = "Delete"
+        b15.ID = "btnDelete" & RowNo
+        b15.CssClass = "form-button"
+        b15.Enabled = btnEnable
+        b15.Attributes.Add("OnClick", "PostDelete(this.id)")
+        Me.pnlButtons.Controls.Add(b15)
+    End Sub
+
+    Protected Sub btnDeleteAll_Click(ByVal sender As Object, ByVal e As System.EventArgs)
+
+    End Sub
+
+    Protected Sub UploadButton2_Click(sender As Object, e As EventArgs) Handles UploadButton2.Click
+        Dim currButton As Button = CType(sender, Button)
+        Dim btnName As String = txtbuttonName.Text
+        btnName = btnName.Substring(9, btnName.Length - 9)
+        Dim rowNo As Integer = CInt(btnName)
+        DeleteFromDT(rowNo, currButton)
+    End Sub
+
+    Private Sub DeleteFromDT(ByVal RowNo As Integer, btnDel As Button)
+        Dim dtNew As New DataTable
+        dtNew = ViewState("DTUploadFiles")
+        dtNew.Rows(RowNo).Delete()
+        RemoveHandler btnDel.Click, AddressOf btnDeleteAll_Click
+        Me.pnlButtons.Controls.Remove(btnDel)
+        dtNew.AcceptChanges()
+        ViewState("DTUploadFiles") = dtNew
+    End Sub
+
+End Class

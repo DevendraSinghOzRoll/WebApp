@@ -1,0 +1,59 @@
+﻿
+Public Class LouvreJobOptimise
+
+    Implements ICloneable
+
+    Private _AutoID As Integer
+    Private _ScheduleID As Integer
+    Private _ReadyToOptimise As DateTime
+    Private _OptimiseCompleted As DateTime
+
+    Public Property AutoID() As Integer
+        Get
+            Return _AutoID
+        End Get
+        Set(value As Integer)
+            _AutoID = value
+        End Set
+    End Property
+    Public Property ScheduleID() As Integer
+        Get
+            Return _ScheduleID
+        End Get
+        Set(value As Integer)
+            _ScheduleID = value
+        End Set
+    End Property
+
+    Public Property ReadyToOptimise() As DateTime
+        Get
+            Return _ReadyToOptimise
+        End Get
+        Set(value As DateTime)
+            _ReadyToOptimise = value
+        End Set
+    End Property
+    Public Property OptimiseCompleted() As DateTime
+        Get
+            Return _OptimiseCompleted
+        End Get
+        Set(value As DateTime)
+            _OptimiseCompleted = value
+        End Set
+    End Property
+
+    Public Sub New()
+
+        _AutoID = Constants.DEFAULT_INTEGER_VALUE
+        _ScheduleID = Constants.DEFAULT_INTEGER_VALUE
+        _ReadyToOptimise = Constants.DEFAULT_DATE_VALUE
+        _OptimiseCompleted = Constants.DEFAULT_DATE_VALUE
+
+    End Sub
+
+    Public Function Clone() As Object Implements ICloneable.Clone
+
+        Return MyBase.MemberwiseClone
+
+    End Function
+End Class

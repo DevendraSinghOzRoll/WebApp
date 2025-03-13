@@ -1,0 +1,115 @@
+﻿Imports Microsoft.VisualBasic
+
+Public Class StockUsage
+
+    Implements ICloneable
+
+    Private _ID As Integer
+    Private _LineID As Integer
+    Private _SybizProductID As Integer
+    Private _ProductType As Integer
+    Private _ProductCode As String
+    Private _Quantity As Decimal
+    Private _UnitCost As Decimal
+    Private _TotalCost As Decimal
+    Private _Deleted As Integer
+    Private _TransferToSybiz As DateTime
+    Public Sub New()
+        _ID = Constants.DEFAULT_INTEGER_VALUE
+        _LineID = Constants.DEFAULT_INTEGER_VALUE
+        _SybizProductID = Constants.DEFAULT_INTEGER_VALUE
+        _ProductType = Constants.DEFAULT_INTEGER_VALUE
+        _TransferToSybiz = Constants.DEFAULT_DATE_VALUE
+        _ProductCode = String.Empty
+        _Quantity = Constants.DEFAULT_DECIMAL_VALUE
+        _UnitCost = Constants.DEFAULT_DECIMAL_VALUE
+        _TotalCost = Constants.DEFAULT_DECIMAL_VALUE
+        _Deleted = Constants.DEFAULT_INTEGER_VALUE
+        _TransferToSybiz = Constants.DEFAULT_DATE_VALUE
+    End Sub
+    Public Property ID() As Integer
+        Get
+            Return _ID
+        End Get
+        Set(value As Integer)
+            _ID = value
+        End Set
+    End Property
+    Public Property LineID() As Integer
+        Get
+            Return _LineID
+        End Get
+        Set(value As Integer)
+            _LineID = value
+        End Set
+    End Property
+    Public Property SybizProductID() As Integer
+        Get
+            Return _SybizProductID
+        End Get
+        Set(value As Integer)
+            _SybizProductID = value
+        End Set
+    End Property
+    Public Property ProductType() As Integer
+        Get
+            Return _ProductType
+        End Get
+        Set(value As Integer)
+            _ProductType = value
+        End Set
+    End Property
+    Public Property ProductCode() As String
+        Get
+            Return _ProductCode
+        End Get
+        Set(value As String)
+            _ProductCode = value
+        End Set
+    End Property
+    Public Property Quantity() As Decimal
+        Get
+            Return _Quantity
+        End Get
+        Set(value As Decimal)
+            _Quantity = value
+        End Set
+    End Property
+    Public Property UnitCost() As Decimal
+        Get
+            Return _UnitCost
+        End Get
+        Set(value As Decimal)
+            _UnitCost = value
+        End Set
+    End Property
+    Public Property TotalCost() As Decimal
+        Get
+            Return _TotalCost
+        End Get
+        Set(value As Decimal)
+            _TotalCost = value
+        End Set
+    End Property
+    Public Property Deleted() As Integer
+        Get
+            Return _Deleted
+        End Get
+        Set(value As Integer)
+            _Deleted = value
+        End Set
+    End Property
+    Public Property TransferToSybiz() As DateTime
+        Get
+            Return _TransferToSybiz
+        End Get
+        Set(value As DateTime)
+            _TransferToSybiz = value
+        End Set
+    End Property
+    Public Function Clone() As Object Implements System.ICloneable.Clone
+        Return MyBase.MemberwiseClone
+    End Function
+
+End Class
+

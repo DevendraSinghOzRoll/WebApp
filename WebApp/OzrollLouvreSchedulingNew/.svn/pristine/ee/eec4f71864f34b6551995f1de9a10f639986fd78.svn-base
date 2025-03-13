@@ -1,0 +1,149 @@
+﻿
+Partial Class PlantationJobList
+    Inherits System.Web.UI.Page
+
+    Protected Sub Page_Load(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.Load
+
+        If Not IsPostBack Then
+
+            Dim service As New AppService
+            Dim dt As DataTable = service.runSQLScheduling("select * from dbo.tblSites where Discontinued=0 order by SortOrder")
+            service = Nothing
+
+            Me.cboBranch.DataSource = dt
+            Me.cboBranch.DataValueField = "SiteID"
+            Me.cboBranch.DataTextField = "SiteName"
+
+            Dim drow As DataRow = dt.NewRow
+            drow("SiteID") = 0
+            drow("SiteName") = String.Empty
+            dt.Rows.InsertAt(drow, 0)
+
+            drow = dt.NewRow
+            drow("SiteID") = -1
+            drow("SiteName") = "All Branches"
+            dt.Rows.InsertAt(drow, 1)
+
+            Me.cboBranch.DataBind()
+
+            Me.cboBranch.SelectedValue = 0
+
+            refreshList()
+
+        End If
+
+    End Sub
+
+    Protected Sub dgvScheduleList_RowCommand(ByVal sender As Object, ByVal e As System.Web.UI.WebControls.GridViewCommandEventArgs) Handles dgvScheduleList.RowCommand
+
+        If (e.CommandName = "ShutterDetail") Then
+            Dim index As Integer = Convert.ToInt32(e.CommandArgument)
+            Dim row As GridViewRow = dgvScheduleList.Rows(index)
+
+            Dim intSiteID As Integer = CInt(dgvScheduleList.DataKeys(row.RowIndex).Values("SiteID"))
+            Dim intJobNumber As Integer = CInt(dgvScheduleList.DataKeys(row.RowIndex).Values("JobNumber"))
+
+            Response.Redirect("PlantationJobDetails.aspx?JobNumber=" & intJobNumber.ToString & "&SiteID=" & intSiteID.ToString, False)
+
+        End If
+
+    End Sub
+
+    Protected Sub cboBranch_SelectedIndexChanged(ByVal sender As Object, ByVal e As System.EventArgs) Handles cboBranch.SelectedIndexChanged
+
+        refreshList()
+
+    End Sub
+
+    Protected Sub refreshList()
+
+        If Me.cboBranch.SelectedIndex > 0 Then
+            Dim intSiteID As Integer = CInt(Me.cboBranch.SelectedValue)
+
+            Dim strSQL As String = String.Empty
+
+            If intSiteID = -1 Then
+                strSQL = "select * from dbo.tblPlantationJobs where StatusID <>5"
+            Else
+                strSQL = "select * from dbo.tblPlantationJobs where SiteID = " & intSiteID.ToString & " and StatusID <>5"
+            End If
+
+            'strSQL = "select Orders.JobNumber, Orders.ContractNo, Appointments.AppointDate, Customers.LastName, tblPlantationShutters.NoOfShutters, tblPlantationShutters.NoOfPanels, tblPlantationShutters.TotalSQM, tblOrdersReceived.DateOrdered " & _
+            '        "from dbo.Orders inner join dbo.Appointments on dbo.Orders.AppointmentID = Appointments.AppointmentID " & _
+            '        "inner join dbo.Customers on dbo.Orders.CustomerID = Customers.CustomerID " & _
+            '        "inner join dbo.tblOrdersReceived on dbo.Orders.JobNumber = tblOrdersReceived.JobNumber " & _
+            '        "inner join dbo.tblPlantationShutters on dbo.Orders.JobNumber = tblPlantationShutters.JobNumber " & _
+            '        "where Orders.Department = 17 and Orders.ManRecStatusID = 256"
+
+            Dim service As New AppService
+            'Dim dt As DataTable = service.runSQLHive(intSiteID, strSQL)
+            Dim dt As DataTable = service.runSQLScheduling(strSQL)
+
+            Dim col As DataColumn = New DataColumn
+            col.ColumnName = "BranchName"
+            col.DataType = System.Type.GetType("System.String")
+            dt.Columns.Add(col)
+            col = Nothing
+
+            For i As Integer = 0 To dt.Rows.Count - 1
+                dt.Rows(i)("BranchName") = Me.cboBranch.SelectedItem.Text
+            Next
+
+
+            Me.dgvScheduleList.DataSource = dt
+            Me.dgvScheduleList.DataBind()
+
+            service = Nothing
+
+
+        Else
+
+            Me.dgvScheduleList.DataSource = Nothing
+            Me.dgvScheduleList.DataBind()
+
+        End If
+
+
+
+    End Sub
+
+    Protected Sub cboStatus_SelectedIndexChanged(ByVal sender As Object, ByVal e As System.EventArgs)
+
+        Dim gvr As GridViewRow = DirectCast(DirectCast(sender, Control).NamingContainer, GridViewRow)
+        Dim ddl As DropDownList = DirectCast(sender, DropDownList)
+
+        Dim intSiteID As Integer = CInt(dgvScheduleList.DataKeys(gvr.RowIndex).Values("SiteID"))
+        Dim intJobNumber As Integer = CInt(dgvScheduleList.DataKeys(gvr.RowIndex).Values("JobNumber"))
+        Dim intStatus As Integer = CInt(ddl.SelectedValue)
+
+        'update status
+        Dim service As New AppService
+        Dim bolOK As Boolean = service.executeSQLScheduling("update dbo.tblPlantationJobs set StatusID = " & intStatus.ToString & " where JobNumber = " & intJobNumber.ToString & " and SiteID = " & intSiteID.ToString)
+        service = Nothing
+
+
+    End Sub
+
+    Protected Sub txtScheduledDate_TextChanged(ByVal sender As Object, ByVal e As System.EventArgs)
+
+        Dim gvr As GridViewRow = DirectCast(DirectCast(sender, Control).NamingContainer, GridViewRow)
+        Dim txt As TextBox = DirectCast(sender, TextBox)
+
+        Dim intSiteID As Integer = CInt(dgvScheduleList.DataKeys(gvr.RowIndex).Values("SiteID"))
+        Dim intJobNumber As Integer = CInt(dgvScheduleList.DataKeys(gvr.RowIndex).Values("JobNumber"))
+        Dim dteScheduledDate As Date = CDate(txt.Text)
+
+        'update scheduled date
+        Dim service As New AppService
+        'Dim bolOK As Boolean = service.executeSQLScheduling("update dbo.tblPlantationJobs set ScheduledDate = #" & dteScheduledDate & "# where JobNumber = " & intJobNumber.ToString & " and SiteID = " & intSiteID.ToString)
+        Dim bolOK As Boolean = service.updateScheduledDate(intSiteID, intJobNumber, dteScheduledDate)
+        service = Nothing
+
+    End Sub
+
+    Protected Sub btnRefresh_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles btnRefresh.Click
+
+        refreshList()
+
+    End Sub
+End Class

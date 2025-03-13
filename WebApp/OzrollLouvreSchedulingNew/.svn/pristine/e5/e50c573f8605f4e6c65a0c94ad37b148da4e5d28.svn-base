@@ -1,0 +1,171 @@
+﻿Imports Microsoft.VisualBasic
+
+Public Class PlantationGRAObj
+
+    Private _PlantationGRAID As Integer
+    Private _DateEntered As DateTime
+    Private _DateReceived As DateTime
+    Private _ReferenceNumber As String
+    Private _ReferenceName As String
+    Private _CustomerID As Integer
+    Private _PlantationScheduleID As Integer
+    Private _JobNumber As Integer
+    Private _ShutterNo As Integer
+    Private _PanelNo As Integer
+    Private _ReasonID As Integer
+    Private _IssueDescription As String
+    Private _StatusID As Integer
+    Private _LiablePartyID As Integer
+
+
+    Public Property ID() As Integer
+        Get
+            Return _PlantationGRAID
+        End Get
+        Set(ByVal value As Integer)
+            _PlantationGRAID = value
+        End Set
+    End Property
+
+    Public Property DateEntered() As DateTime
+        Get
+            Return _DateEntered
+        End Get
+        Set(ByVal value As DateTime)
+            _DateEntered = value
+        End Set
+    End Property
+
+    Public Property DateReceived() As DateTime
+        Get
+            Return _DateReceived
+        End Get
+        Set(ByVal value As DateTime)
+            _DateReceived = value
+        End Set
+    End Property
+
+    Public Property ReferenceNumber() As String
+        Get
+            Return _ReferenceNumber
+        End Get
+        Set(ByVal value As String)
+            _ReferenceNumber = value
+        End Set
+    End Property
+
+    Public Property ReferenceName() As String
+        Get
+            Return _ReferenceName
+        End Get
+        Set(ByVal value As String)
+            _ReferenceName = value
+        End Set
+    End Property
+
+    Public Property CustomerID() As Integer
+        Get
+            Return _CustomerID
+        End Get
+        Set(ByVal value As Integer)
+            _CustomerID = value
+        End Set
+    End Property
+
+    Public Property PlantationScheduleID() As Integer
+        Get
+            Return _PlantationScheduleID
+        End Get
+        Set(ByVal value As Integer)
+            _PlantationScheduleID = value
+        End Set
+    End Property
+
+    Public Property JobNumber() As Integer
+        Get
+            Return _JobNumber
+        End Get
+        Set(ByVal value As Integer)
+            _JobNumber = value
+        End Set
+    End Property
+
+    Public Property ShutterNo() As Integer
+        Get
+            Return _ShutterNo
+        End Get
+        Set(ByVal value As Integer)
+            _ShutterNo = value
+        End Set
+    End Property
+
+    Public Property PanelNo() As Integer
+        Get
+            Return _PanelNo
+        End Get
+        Set(ByVal value As Integer)
+            _PanelNo = value
+        End Set
+    End Property
+
+
+    Public Property ReasonID() As Integer
+        Get
+            Return _ReasonID
+        End Get
+        Set(ByVal value As Integer)
+            _ReasonID = value
+        End Set
+    End Property
+
+    Public Property IssueDescription() As String
+        Get
+            Return _IssueDescription
+        End Get
+        Set(ByVal value As String)
+            _IssueDescription = value
+        End Set
+    End Property
+
+
+    Public Property StatusID() As Integer
+        Get
+            Return _StatusID
+        End Get
+        Set(ByVal value As Integer)
+            _StatusID = value
+        End Set
+    End Property
+
+
+    Public Property LiablePartyID() As Integer
+        Get
+            Return _LiablePartyID
+        End Get
+        Set(ByVal value As Integer)
+            _LiablePartyID = value
+        End Set
+    End Property
+
+    Public Sub New()
+        _PlantationGRAID = Constants.DEFAULT_INTEGER_VALUE
+        _DateEntered = Constants.DEFAULT_DATE_VALUE
+        _DateReceived = Constants.DEFAULT_DATE_VALUE
+        _ReferenceNumber = String.Empty
+        _ReferenceName = String.Empty
+        _CustomerID = Constants.DEFAULT_INTEGER_VALUE
+        _PlantationScheduleID = Constants.DEFAULT_INTEGER_VALUE
+        _JobNumber = Constants.DEFAULT_INTEGER_VALUE
+        _ShutterNo = Constants.DEFAULT_INTEGER_VALUE
+        _PanelNo = Constants.DEFAULT_INTEGER_VALUE
+        _ReasonID = Constants.DEFAULT_INTEGER_VALUE
+        _IssueDescription = String.Empty
+        _StatusID = Constants.DEFAULT_INTEGER_VALUE
+        _LiablePartyID = Constants.DEFAULT_INTEGER_VALUE
+
+    End Sub
+
+
+End Class
+
+

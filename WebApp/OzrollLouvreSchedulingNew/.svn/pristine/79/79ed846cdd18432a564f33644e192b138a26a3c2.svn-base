@@ -1,0 +1,18 @@
+﻿Imports Microsoft.VisualBasic
+
+Public Class SharedEnums
+
+    Enum AddressType
+        ALL = 0
+        Postal = 1
+        Physical = 2
+        Delivery = 3
+    End Enum
+
+    Enum JobType
+        NONE = 0
+        Retail = 1
+        Wholesale = 2
+        Commercial = 3
+    End Enum
+End Class

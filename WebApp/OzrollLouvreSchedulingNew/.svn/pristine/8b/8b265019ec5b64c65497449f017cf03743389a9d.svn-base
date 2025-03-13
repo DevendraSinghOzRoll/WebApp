@@ -1,0 +1,85 @@
+﻿Imports Microsoft.VisualBasic
+
+Public Class DeliveryInstruction
+    Implements ICloneable
+
+    Private _ID As Integer
+    Private _AddressID As Integer
+    Private _InstructionText As String
+    Private _CreationDateTime As Date
+    Private _UserID As Integer
+
+    Public Property ID() As Integer
+        Get
+            Return _ID
+        End Get
+        Set(ByVal value As Integer)
+            _ID = value
+        End Set
+    End Property
+
+    Public Property AddressID() As Integer
+        Get
+            Return _AddressID
+        End Get
+        Set(ByVal value As Integer)
+            _AddressID = value
+        End Set
+    End Property
+
+    Public Property InstructionText() As String
+        Get
+            Return _InstructionText
+        End Get
+        Set(ByVal value As String)
+            _InstructionText = value
+        End Set
+    End Property
+
+    Public Property CreationDateTime() As Date
+        Get
+            Return _CreationDateTime
+        End Get
+        Set(ByVal value As Date)
+            _CreationDateTime = value
+        End Set
+    End Property
+
+    Public Property UserID() As Integer
+        Get
+            Return _UserID
+        End Get
+        Set(ByVal value As Integer)
+            _UserID = value
+        End Set
+    End Property
+
+    Sub New()
+        _ID = Constants.DEFAULT_INTEGER_VALUE
+        _AddressID = Constants.DEFAULT_INTEGER_VALUE
+        _InstructionText = String.Empty
+        _CreationDateTime = Constants.DEFAULT_DATE_VALUE
+        _UserID = Constants.DEFAULT_INTEGER_VALUE
+    End Sub
+
+    Sub New(
+            intID As Integer,
+            intAddressID As Integer,
+            strInstructionText As String,
+            dteCreationDateTime As Date,
+            intUserID As Integer
+        )
+
+        _ID = intID
+        _AddressID = intAddressID
+        _InstructionText = strInstructionText
+        _CreationDateTime = dteCreationDateTime
+        _UserID = intUserID
+    End Sub
+
+    Public Function Clone() As Object Implements System.ICloneable.Clone
+
+        Return MyBase.MemberwiseClone
+
+    End Function
+End Class

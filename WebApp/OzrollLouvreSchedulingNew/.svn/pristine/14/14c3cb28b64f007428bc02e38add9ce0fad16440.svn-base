@@ -1,0 +1,1507 @@
+﻿<%@ Page Language="VB" AutoEventWireup="false" CodeFile="ProductionScheduleDetailsNew.aspx.vb" Inherits="ProductionScheduleDetailsNew" Theme="SknGridView"  %>
+
+<%@ Register Assembly="AjaxControlToolkit" Namespace="AjaxControlToolkit" TagPrefix="ajaxcontroltoolkit" %>
+<%@ Register Assembly="System.Web.Extensions, Version=1.0.61025.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" Namespace="System.Web.UI" TagPrefix="asp" %>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head id="Head1">
+    <title>OzRoll Production Schedule Details</title>
+        
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <meta http-equiv="expires" content="0" />
+    <meta http-equiv="pragma" content="no-cache" />
+    <meta http-equiv="cache-control" content="no-cache" />
+    <meta name="format-detection" content="telephone=no" />
+    
+    <link href="stylesheets/reset.css" rel="stylesheet" type="text/css" media="screen" />
+    <!--[if IE]><link href="stylesheets/explorer.css" rel="stylesheet" type="text/css" media="screen" /><![endif]-->
+    <link href="stylesheets/style.css?version=<%= Now.Year() & Now.Month & Now.Day() %>" rel="stylesheet" type="text/css" media="screen" />
+
+
+    <link href="stylesheets/jquery.fancybox.css" rel="stylesheet" type="text/css" />
+    <link href="stylesheets/smoothness/jquery-ui-1.10.2.custom.min.css" rel="stylesheet" type="text/css" />
+
+    <!--[if lt IE 8]><script src="javascript/IE-fix.js" type="text/javascript"></script><![endif]-->
+
+    <script src="javascript/jquery-1.9.1.js" type="text/javascript"></script>
+
+    <script src="javascript/jquery-ui-1.10.2.custom.min.js" type="text/javascript"></script>
+   
+    <link href="favicon.ico" rel="shortcut icon" type="image/x-icon" />
+    
+        <script language="javascript" type="text/javascript">
+
+            (function (document, navigator, standalone) {
+                if ((standalone in navigator) && navigator[standalone]) {
+                    var curnode, location = document.location, stop = /^(a|html)$/i;
+                    document.addEventListener('click', function (e) {
+                        curnode = e.target;
+                        while (!(stop).test(curnode.nodeName))
+                            curnode = curnode.parentNode;
+                        if ('href' in curnode) {
+                            e.preventDefault();
+                            location.href = curnode.href;
+                        }
+                    }, false);
+                }
+            })(document, window.navigator, 'standalone');
+
+            $(function () {
+                $("#dialog-alert").dialog({
+                    modal: true,
+                    autoOpen: false,
+                    draggable: false,
+                    buttons: {
+                        "Ok": function () {
+                            $(this).dialog("close");
+                            return true;
+                        }
+                    }
+                });
+
+                $("#dialog-confirm").dialog({
+                    modal: true,
+                    autoOpen: false,
+                    draggable: false,
+                    buttons: {
+                        "Yes": function () {
+                            $(this).dialog("close");
+                            __doPostBack('<%=btnLogout.ClientID %>', '');
+                            return true;
+                        },
+                        "No": function () {
+                            $(this).dialog("close");
+                            return false;
+                        }
+                    }
+                });
+                $("#dialog-confirm-cancel").dialog({
+                    modal: true,
+                    autoOpen: false,
+                    draggable: false,
+                    buttons: {
+                        "Yes": function () {
+                            $(this).dialog("close");
+                            __doPostBack('<%=btnCancel.ClientID%>', '');
+                            return true;
+                        },
+                        "No": function () {
+                            $(this).dialog("close");
+                            document.getElementById("<%=btnCancel.ClientID%>").disabled = false;
+                            document.getElementById("<%=btnCancel.ClientID%>").className = "form-button";
+                            document.getElementById("<%=btnCancel.ClientID%>").value = "Cancel";
+                            document.getElementById("<%=btnSave.ClientID%>").disabled = false;
+                            document.getElementById("<%=btnSave.ClientID%>").className = "form-button";
+                            document.getElementById("<%=btnSave.ClientID%>").value = "Save";
+                            document.getElementById("imgLoading2").style.visibility = "hidden";
+                            return false;
+                        }
+                    }
+                });
+            });
+
+            $("#dialog-confirm-delete").dialog({
+                     modal: true,
+                     autoOpen: false,
+                     draggable: false,
+                     buttons: {
+                      "Yes": function () {
+                             $(this).dialog("close");
+                             if (document.getElementById("<%=lblAttachments.ClientID%>") instanceof Object) {          
+                                document.getElementById("<%=lblAttachments.ClientID%>").value = "";
+                              }
+                               __doPostBack('<%=UploadButton2.ClientID %>', '');
+                               __doPostBack('<%=UploadButton3.ClientID %>', '');
+                               return true;
+                            },
+                      "No": function () {
+                           $(this).dialog("close");
+                           return false;
+                            }
+                       }
+               });
+            });
+
+            $("[id$=txtActualShippingDate]").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'dd M yy', gotoCurrent: true, showAnim: 'slideDown', minDate: '-1d', maxDate: '+5w' });
+            $("[id$=txtInvoicedDate]").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'dd M yy', gotoCurrent: true, showAnim: 'slideDown', minDate: '-4d', maxDate: '+1w' });
+            $("[id$=txtCollectedDate]").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'dd M yy', gotoCurrent: true, showAnim: 'slideDown', minDate: '-4d', maxDate: '+1w' });
+            $("[id$=txtPlannedShippingDate]").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'dd M yy', gotoCurrent: true, showAnim: 'slideDown', minDate: '-1d', maxDate: '+5w' });
+            $("[id$=txtOrderDate]").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'dd M yy', gotoCurrent: true, showAnim: 'slideDown', minDate: '-1d', maxDate: '+1w' });
+            $("[id$=txtReceived]").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'dd M yy', gotoCurrent: true, showAnim: 'slideDown', minDate: '-1d', maxDate: '+2w' });
+            $("[id$=txtShutterProEnteredDate]").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'dd M yy', gotoCurrent: true, showAnim: 'slideDown', minDate: '-4d', maxDate: '+1w' });
+            $("[id$=txtScheduledDate]").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'dd M yy', gotoCurrent: true, showAnim: 'slideDown', minDate: '-1d', maxDate: '+2w' });
+            $("[id$=txtCuttingDate]").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'dd M yy', gotoCurrent: true, showAnim: 'slideDown', minDate: '-1d', maxDate: '+2w' });
+            $("[id$=txtPrepDate]").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'dd M yy', gotoCurrent: true, showAnim: 'slideDown', minDate: '-1d', maxDate: '+2w' });
+            $("[id$=txtAssemblyDate]").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'dd M yy', gotoCurrent: true, showAnim: 'slideDown', minDate: '-1d', maxDate: '+2w' });
+            $("[id$=txtFramingDate]").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'dd M yy', gotoCurrent: true, showAnim: 'slideDown', minDate: '-1d', maxDate: '+2w' });
+            $("[id$=txtQCDate]").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'dd M yy', gotoCurrent: true, showAnim: 'slideDown', minDate: '-1d', maxDate: '+2w' });
+            $("[id$=txtWrappingDate]").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'dd M yy', gotoCurrent: true, showAnim: 'slideDown', minDate: '-1d', maxDate: '+2w' });
+            $("[id$=txtPostProduction1]").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'dd M yy', gotoCurrent: true, showAnim: 'slideDown', minDate: '-1d', maxDate: '+2w' });
+            $("[id$=txtPostProduction2]").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'dd M yy', gotoCurrent: true, showAnim: 'slideDown', minDate: '-1d', maxDate: '+2w' });
+
+            if (window.history.forward(1) != null)
+                window.history.forward(1);
+
+            function ConfirmLeave() {
+                document.getElementById("dialog-confirm-message").innerHTML = "Are you sure you want to logout?";
+                $("#dialog-confirm").dialog("open");
+                return false;
+            }
+
+
+            function validfloat() {
+                var bolValid = 1;
+                var strMessage = "";
+                document.getElementById("<%=txtCostPrice.ClientID%>").value = document.getElementById("<%=txtCostPrice.ClientID%>").value.trim();
+                if (document.getElementById("<%=txtCostPrice.ClientID%>").value != "") {
+                    document.getElementById("<%=txtCostPrice.ClientID%>").value = document.getElementById("<%=txtCostPrice.ClientID%>").value.replace('$', '');
+                    document.getElementById("<%=txtCostPrice.ClientID%>").value = document.getElementById("<%=txtCostPrice.ClientID%>").value.replace(',', '');
+                    document.getElementById("<%=txtCostPrice.ClientID%>").value = document.getElementById("<%=txtCostPrice.ClientID%>").value.trim();
+                    if (isNaN(parseFloat(document.getElementById("<%=txtCostPrice.ClientID%>").value))) {
+                        strMessage = "The Sales Price must be numeric.";
+                        bolValid = 0;
+                    } else {
+                        if (parseFloat(document.getElementById("<%=txtCostPrice.ClientID%>").value) != document.getElementById("<%=txtCostPrice.ClientID%>").value) {
+                            strMessage = "The Sales Price must be numeric.";
+                            bolValid = 0;
+                        }
+                    }
+                    if (bolValid == 0){
+                        document.getElementById("<%=txtCostPrice.ClientID%>").value = "";
+                    }
+                }
+                if (bolValid == 1) {
+                    if (document.getElementById("<%=txtTotalSQM.ClientID%>").value != "") {
+                        if (isNaN(parseFloat(document.getElementById("<%=txtTotalSQM.ClientID%>").value))) {
+                            strMessage = "The Total SQM. must be numeric.";
+                            bolValid = 0;
+                        } else {
+                            if (parseFloat(document.getElementById("<%=txtTotalSQM.ClientID%>").value) != document.getElementById("<%=txtTotalSQM.ClientID%>").value) {
+                                strMessage = "The Total SQM. must be numeric.";
+                                bolValid = 0;
+                            }
+                        }
+                        if (bolValid == 0) {
+                            document.getElementById("<%=txtTotalSQM.ClientID%>").value = "";
+                        }
+                    }
+                }
+                if (strMessage != "" && bolValid == 0) {
+                    document.getElementById("dialog-alert-message").innerHTML = strMessage;
+                    $("#dialog-alert").dialog("open");
+                }
+                return false;
+            }
+
+            function cancelchanges() {
+                var strMessage = "Are you sure you want to discard changes?";
+                document.getElementById("<%=lblStatus.ClientID %>").innerHTML = "";
+                document.getElementById("<%=btnCancel.ClientID%>").disabled = true;
+                document.getElementById("<%=btnCancel.ClientID%>").className = "form-button-disabled";
+                document.getElementById("<%=btnCancel.ClientID%>").value = "Submitting";
+                document.getElementById("<%=btnSave.ClientID%>").disabled = true;
+                document.getElementById("<%=btnSave.ClientID%>").className = "form-button-disabled";
+                document.getElementById("<%=btnSave.ClientID%>").value = "Save";
+                document.getElementById("imgLoading2").style.visibility = "visible";
+                document.getElementById("dialog-confirm-cancel-message").innerHTML = strMessage;
+                $("#dialog-confirm-cancel").dialog("open");
+                return false;
+            }
+
+            function onloadctls() {
+                if (document.getElementById("<%=txtViewType.ClientID %>").value == 1) {
+                    document.getElementById("<%=cboCustomer.ClientID%>").className = "form-field-disable";
+
+                    document.getElementById("<%=cboCustomer.ClientID%>").disabled = true;
+                    document.getElementById("<%=cboCustomer.ClientID%>").className = "form-select-disable";
+                    document.getElementById("<%=txtState.ClientID%>").disabled = true;
+                    document.getElementById("<%=txtState.ClientID%>").className = "form-select-disable";
+                    document.getElementById("<%=cboOrderType.ClientID%>").disabled = true;
+                    document.getElementById("<%=cboOrderType.ClientID%>").className = "form-select-disable";
+                } else {
+                    document.getElementById("<%=cboCustomer.ClientID%>").className = "form-field";
+                    document.getElementById("<%=txtContractNumber.ClientID %>").disabled = false;
+                    document.getElementById("<%=txtContractNumber.ClientID %>").className = "form-select";
+                    document.getElementById("<%=cboCustomer.ClientID%>").disabled = false;
+                    document.getElementById("<%=cboCustomer.ClientID%>").className = "form-select";
+                    document.getElementById("<%=cboOrderType.ClientID%>").disabled = false;
+                    document.getElementById("<%=cboOrderType.ClientID%>").className = "form-select";
+                }
+            }
+
+            function ValidateAll() {
+                var bolValid = 1;
+                var strMessage = "";
+                document.getElementById("<%=lblStatus.ClientID %>").innerHTML = "";
+                if (document.getElementById("<%=txtOrderDate.ClientID%>").value.replace(/^\s+|\s+$/g, '') == "") {
+                    strMessage = "Please enter the Order date.";
+                    bolValid = 0;
+                } else {
+                    if (isNaN(Date.parse(document.getElementById("<%=txtOrderDate.ClientID%>").value)) == true) {
+                        strMessage = "Please enter a valid Order date.";
+                        bolValid = 0;
+                    }
+                }
+
+                if (bolValid == 1) {
+                    if (document.getElementById("<%=txtContractNumber.ClientID%>").value == "") {
+                        strMessage = "Please enter the Contract Number.";
+                        bolValid = 0;
+                    }
+                }
+                if (bolValid == 1) {
+                    if ((document.getElementById("<%=cboCustomer.ClientID%>").value == "0")) {
+                        strMessage = "Please select a Customer from the list.";
+                        bolValid = 0;
+                    }
+                }
+                if (bolValid == 1) {
+                    if (document.getElementById("<%=txtCustomerName.ClientID%>").value == "") {
+                        strMessage = "Please enter the Customer Name.";
+                        bolValid = 0;
+                    }
+                }
+//                if (bolValid == 1) {
+//                    if ((document.getElementById("<%=cboOrderStatus.ClientID%>").value == "0")) {
+//                        strMessage = "Please enter the Order Status.";
+//                        bolValid = 0;
+//                    }
+//                }
+                if (bolValid == 1) {
+                    if ((document.getElementById("<%=cboOrderType.ClientID%>").value == "0")) {
+                        strMessage = "Please enter the Order Type.";
+                        bolValid = 0;
+                    }
+                }
+//                if (bolValid == 1) {
+//                    if (document.getElementById("<%=txtTotalSQM.ClientID%>").value != "") {
+//                        if (isNaN(parseInt(document.getElementById("<%=txtTotalSQM.ClientID%>").value))) {
+//                            strMessage = "The Total SQM. must be numeric.";
+//                            bolValid = 0;
+//                        }
+//                    }
+//                }
+//                if (bolValid == 1) {
+//                    if (document.getElementById("<%=txtCostPrice.ClientID%>").value != "") {
+//                        if (isNaN(parseInt(document.getElementById("<%=txtCostPrice.ClientID%>").value))) {
+//                            strMessage = "The CostPrice must be numeric.";
+//                            bolValid = 0;
+//                        }
+//                    }
+//                }
+//                if (bolValid == 1) {
+//                    if (document.getElementById("<%=txtTotalPanels.ClientID%>").value != "") {
+//                        if (isNaN(parseInt(document.getElementById("<%=txtTotalPanels.ClientID%>").value))) {
+//                            strMessage = "The Total Panels must be numeric.";
+//                            bolValid = 0;
+//                        }
+//                    }
+//                }
+//                if (bolValid == 1) {
+//                    if (document.getElementById("<%=txtPanelsLess700.ClientID%>").value != "") {
+//                        if (isNaN(parseInt(document.getElementById("<%=txtPanelsLess700.ClientID%>").value))) {
+//                            strMessage = "The Panels < 700 must be numeric.";
+//                            bolValid = 0;
+//                        }
+//                    }
+//                }
+//                if (bolValid == 1) {
+//                    if (document.getElementById("<%=txtPanelsMore700.ClientID%>").value != "") {
+//                        if (isNaN(parseInt(document.getElementById("<%=txtPanelsMore700.ClientID%>").value))) {
+//                            strMessage = "The Panels > 700 must be numeric.";
+//                            bolValid = 0;
+//                        }
+//                    }
+//                }
+//                if (bolValid == 1) {
+//                    if (document.getElementById("<%=txtQtyHinges.ClientID%>").value != "") {
+//                        if (isNaN(parseInt(document.getElementById("<%=txtQtyHinges.ClientID%>").value))) {
+//                            strMessage = "The Qty. Hinges must be numeric.";
+//                            bolValid = 0;
+//                        }
+//                    }
+//                }
+//                if (bolValid == 1) {
+//                    if (document.getElementById("<%=txtQtySliding.ClientID%>").value != "") {
+//                        if (isNaN(parseInt(document.getElementById("<%=txtQtySliding.ClientID%>").value))) {
+//                            strMessage = "The Qty. Sliding must be numeric.";
+//                            bolValid = 0;
+//                        }
+//                    }
+//                }
+//                if (bolValid == 1) {
+//                    if (document.getElementById("<%=txtQtyBifold.ClientID%>").value != "") {
+//                        if (isNaN(parseInt(document.getElementById("<%=txtQtyBifold.ClientID%>").value))) {
+//                            strMessage = "The Qty. Bifold must be numeric.";
+//                            bolValid = 0;
+//                        }
+//                    }
+//                }
+//                if (bolValid == 1) {
+//                    if (document.getElementById("<%=txtQtyFixed.ClientID%>").value != "") {
+//                        if (isNaN(parseInt(document.getElementById("<%=txtQtyFixed.ClientID%>").value))) {
+//                            strMessage = "The Qty. Fixed must be numeric.";
+//                            bolValid = 0;
+//                        }
+//                    }
+//                }
+//                if (bolValid == 1) {
+//                    if (document.getElementById("<%=txtQtyZFrame.ClientID%>").value != "") {
+//                        if (isNaN(parseInt(document.getElementById("<%=txtQtyZFrame.ClientID%>").value))) {
+//                            strMessage = "The Qty. ZFrame must be numeric.";
+//                            bolValid = 0;
+//                        }
+//                    }
+//                }
+//                if (bolValid == 1) {
+//                    if (document.getElementById("<%=txtQtyLFrame.ClientID%>").value != "") {
+//                        if (isNaN(parseInt(document.getElementById("<%=txtQtyLFrame.ClientID%>").value))) {
+//                            strMessage = "The Qty. LFrame must be numeric.";
+//                            bolValid = 0;
+//                        }
+//                    }
+//                }
+
+                
+                //don't allow invoice date without sales price entered
+                if (bolValid == 1) {
+                    if (document.getElementById("<%=lblPostProduction1.ClientID%>").innerText == "Invoice Date") {
+                        if (document.getElementById("<%=txtPostProduction1.ClientID%>").value !== "") {
+                            if (document.getElementById("<%=txtCostPrice.ClientID%>").value == "") {
+                                strMessage = "The Sales Price needs to be entered before Invoicing.";
+                                bolValid = 0;
+                            }
+                        }
+                    }
+                }
+
+                if (bolValid == 1) {
+                    if (document.getElementById("<%=lblPostProduction2.ClientID%>").innerText == "Invoice Date") {
+                        if (document.getElementById("<%=txtPostProduction2.ClientID%>").value !== "") {
+                            if (document.getElementById("<%=txtCostPrice.ClientID%>").value == "") {
+                                strMessage = "The Sales Price needs to be entered before Invoicing.";
+                                bolValid = 0;
+                            }
+                        }
+                    }
+                }
+
+                if (bolValid == 1) {
+                    document.getElementById("<%=btnCancel.ClientID%>").disabled = true;
+                    document.getElementById("<%=btnCancel.ClientID%>").className = "form-button-disabled";
+                    document.getElementById("<%=btnCancel.ClientID%>").value = "Submitting";
+                    document.getElementById("<%=btnSave.ClientID%>").disabled = true;
+                    document.getElementById("<%=btnSave.ClientID%>").className = "form-button-disabled";
+                    document.getElementById("<%=btnSave.ClientID%>").value = "Submitting";
+                    document.getElementById("imgLoading1").style.visibility = "visible";
+                    __doPostBack('<%=btnSave.ClientID%>', '');
+                    return true;
+                }
+                else {
+                    if (strMessage != "") {
+                        document.getElementById("dialog-alert-message").innerHTML = strMessage;
+                        $("#dialog-alert").dialog("open");
+                    }
+                    return false;
+                }
+            }
+
+            function checkDates(datetextbox1, datetextbox2) {
+                var date1 = new date(datetime.parse(datetextbox1.value));
+                var date2 = new date(datetime.parse(datetextbox2.value));
+
+                var intDays = dayDiff(date1, date2);
+
+                if (intDays < 0) {
+                    datetextbox2.value == '';
+                    return false;
+                }
+                else {
+                    return true;
+                }              
+            }
+
+            function dayDiff(startdate, enddate) {
+                var dayCount = 0;
+
+                while (enddate >= startdate) {
+                    dayCount++;
+                    startdate.setDate(startdate.getDate() + 1);
+                }
+
+                return dayCount;
+            }
+
+        function PostDelete(obj) {       
+             var strMessage = "Are you sure you want to delete?";
+             document.getElementById("dialog-confirm-delete-message").innerHTML = strMessage;                         
+            if (document.getElementById("<%=lblAttachments.ClientID%>") instanceof Object) {          
+                      document.getElementById("<%=lblAttachments.ClientID%>").value = "";
+             }
+            if (document.getElementById("<%=txtbuttonName.ClientID%>") instanceof Object) {          
+                    document.getElementById("<%=txtbuttonName.ClientID%>").value = obj;
+             }
+             $("#dialog-confirm-delete").dialog("open");
+             <%-- __doPostBack('<%=UploadButton2.ClientID%>', '');--%>
+           return false;
+         }
+
+    </script>
+
+</head>
+<body>
+    <form runat="server" id="form1" method="post">
+
+    <asp:ScriptManager ID="ScriptManager1" runat="server" EnablePartialRendering="true">
+    <Scripts>
+    <asp:ScriptReference Path="javascript/fixfocus.js" />
+    </Scripts>
+    </asp:ScriptManager>
+    <div id="middle-container-diallerview" >
+
+        <div id="logo" style="height: 100px; text-align: center;" ></div>
+        <div style="height: 50px; text-align: center;">
+            <asp:Button ID="btnLogout" runat="server" CssClass="form-button" Visible="true" Text="Logout" OnClientClick="javascript:return ConfirmLeave();" UseSubmitBehavior="false" />
+	    </div>
+    
+        <h1>OzRoll Production Schedule Details</h1>
+
+        <div class="form" style="text-align: center;">
+
+        <asp:UpdatePanel ID="pnlDetails" runat="server" UpdateMode="Conditional">
+        <ContentTemplate>
+        
+            <div style="text-align: center;">
+
+            <div class="container_24">
+                <div class="grid_25">
+                    <div class="grid_26 alpha"><!--left hand side information for the order-->
+                        <table class="form-table" style="width: 100%; text-align: center;" cellspacing="0" summary="">
+                            <tr>
+                                <td class="form-label-td" style="width: 15%; text-align: right;">Order Type&nbsp;:&nbsp;</td>
+                                <td class="form-label-td" style="width: 35%; text-align: left;">
+                                    <asp:DropDownList ID="cboOrderType" runat="server" UseSubmitBehavior="false" CssClass="form-select" Width ="200px" Height="28px" AutoPostBack="true" /><asp:Label ID="lblOrderCharge" runat="server" Text=""></asp:Label>
+                                </td> 
+                            </tr>
+                            <tr>
+                                <td class="form-label-td" style="width: 15%; text-align: right;">Customer&nbsp;:&nbsp;</td>
+                                <td class="form-label-td" style="width: 35%; text-align: left;">
+                                   <asp:DropDownList ID="cboCustomer" runat="server" UseSubmitBehavior="false" CssClass="form-select" Width="200px" Height="28px" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="form-label-td" style="width: 15%; text-align: right;">Contract No&nbsp;:&nbsp;</td>
+                                <td class="form-label-td" style="width: 35%; text-align: left;">
+                                    <asp:TextBox ID="txtContractNumber" runat="server" CssClass="form-field" Width="200px" />
+                                </td>                            
+                            </tr>
+                            <tr>
+                                <td class="form-label-td" style="width: 15%; text-align: right;">Customer Name&nbsp;:&nbsp;</td>
+                                <td class="form-label-td" style="width: 35%; text-align: left;">
+                                    <asp:TextBox ID="txtCustomerName" runat="server" CssClass="form-field" Text="" Width="200px" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="form-label-td" style="width: 15%; text-align: right;">State&nbsp;:&nbsp;</td>
+                                <td class="form-label-td" style="width: 35%; text-align: left;">
+                                    <asp:TextBox ID="txtState" runat="server" CssClass="form-field" Text="" Width="80px" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="form-label-td" style="width: 15%; text-align: right;">Priority&nbsp;:&nbsp;</td>
+                                <td class="form-label-td" style="width: 35%; text-align: left;">
+                                    <asp:DropDownList ID="cboPriority" runat="server" UseSubmitBehavior="false" CssClass="form-select" Width ="200px" Height="28px" />
+                                </td>
+                            </tr>
+                            <asp:Panel ID="pnlOriginalOrder" runat="server" Visible="false">
+                                <tr>
+                                    <td class="form-label-td" style="width: 15%; text-align: right;">Original Order No&nbsp;:&nbsp;</td>
+                                    <td class="form-label-td" style="width: 35%; text-align: left;">
+                                        <asp:TextBox ID="txtOriginalOrder" runat="server" CssClass="form-field" Text="" Width="200px" />
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="form-label-td" style="width: 15%; text-align: right;">&nbsp;&nbsp;</td>
+                                    <td class="form-label-td" style="width: 35%; text-align: left;">
+                                        <asp:Label ID="lblOriginalOrderDetails" runat="server" Text=""></asp:Label>
+                                    </td> 
+                                </tr>
+                            </asp:Panel>
+
+                            <tr>
+                                <td class="form-label-td" style="width: 15%; text-align: right;">Sales Price&nbsp;:&nbsp;</td>
+                                <td class="form-label-td" style="width: 35%; text-align: left;">
+                                    <asp:TextBox ID="txtCostPrice" runat="server" CssClass="form-field" OnChange="javascript:validfloat();" Text="" Width="100px" />
+                                </td>                            
+                            </tr>
+                            <tr>
+                                <td class="form-label-td" style="width: 15%; text-align: right;">Freight Amount&nbsp;:&nbsp;</td>
+                                <td class="form-label-td" style="width: 35%; text-align: left;">
+                                    <asp:TextBox ID="txtFreightAmount" runat="server" CssClass="form-field" OnChange="javascript:validfloat();" Text="" Width="100px" />
+                                </td>                            
+                            </tr>
+                            <tr>
+                                <td class="form-label-td" style="width: 15%; text-align: right;">Total Sq.M.&nbsp;:&nbsp;</td>
+                                <td class="form-label-td" style="width: 35%; text-align: left;">
+                                    <asp:TextBox ID="txtTotalSQM" runat="server" CssClass="form-field" OnChange="javascript:validfloat();" Text="" Width="80px" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="form-label-td" style="width: 15%; text-align: right;">Total Panels&nbsp;:&nbsp;</td>
+                                <td class="form-label-td" style="width: 35%; text-align: left;">
+                                    <asp:TextBox ID="txtTotalPanels" runat="server" CssClass="form-field" Text="" Width="80px" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="form-label-td" style="width: 15%; text-align: right;">Panels &lt; 500&nbsp;:&nbsp;</td>
+                                <td class="form-label-td" style="width: 35%; text-align: left;">
+                                    <asp:TextBox ID="txtPanelsLess700" runat="server" CssClass="form-field" Text="" Width="80px" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="form-label-td" style="width: 15%; text-align: right;">Panels &gt; 500&nbsp;:&nbsp;</td>
+                                <td class="form-label-td" style="width: 35%; text-align: left;">
+                                    <asp:TextBox ID="txtPanelsMore700" runat="server" CssClass="form-field" Text="" Width="80px" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="form-label-td" style="width: 15%; text-align: right;">Qty. Sliding&nbsp;:&nbsp;</td>
+                                <td class="form-label-td" style="width: 35%; text-align: left;">
+                                     <asp:TextBox ID="txtQtySliding" runat="server" CssClass="form-field" Text="" Width="80px" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="form-label-td" style="width: 15%; text-align: right;">Qty. Fixed&nbsp;:&nbsp;</td>
+                                <td class="form-label-td" style="width: 35%; text-align: left;">
+                                    <asp:TextBox ID="txtQtyFixed" runat="server" CssClass="form-field" Text="" Width="80px" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="form-label-td" style="width: 15%; text-align: right;">Qty. Hinges&nbsp;:&nbsp;</td>
+                                <td class="form-label-td" style="width: 35%; text-align: left;">
+                                    <asp:TextBox ID="txtQtyHinges" runat="server" CssClass="form-field" Text="" Width="80px" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="form-label-td" style="width: 15%; text-align: right;">Qty. Bi-fold&nbsp;:&nbsp;</td>
+                                <td class="form-label-td" style="width: 35%; text-align: left;">
+                                   <asp:TextBox ID="txtQtyBifold" runat="server" CssClass="form-field" Text="" Width="80px" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="form-label-td" style="width: 15%; text-align: right;">Qty. LFrame&nbsp;:&nbsp;</td>
+                                <td class="form-label-td" style="width: 35%; text-align: left;">
+                                    <asp:TextBox ID="txtQtyLFrame" runat="server" CssClass="form-field" Text="" Width="80px" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="form-label-td" style="width: 15%; text-align: right;">Qty. ZFrame&nbsp;:&nbsp;</td>
+                                <td class="form-label-td" style="width: 35%; text-align: left;">
+                                    <asp:TextBox ID="txtQtyZFrame" runat="server" CssClass="form-field" Text="" Width="80px" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="form-label-td" style="width: 15%; text-align: right;">Off White&nbsp;:&nbsp;</td>
+                                <td class="form-label-td" style="width: 35%; text-align: left;">
+                                    <asp:DropDownList ID="cboOffWhite" runat="server" UseSubmitBehavior="false" CssClass="form-select" Width="80px" Height="28px" >
+                                        <asp:ListItem Value="-1" Text=""></asp:ListItem> 
+                                        <asp:ListItem Value="0" Text="No"></asp:ListItem>                
+                                        <asp:ListItem Value="1" Text="Yes"></asp:ListItem>
+                                    </asp:DropDownList>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="form-label-td" style="width: 15%; text-align: right;">Bright White&nbsp;:&nbsp;</td>
+                                <td class="form-label-td" style="width: 35%; text-align: left;">
+                                    <asp:DropDownList ID="cboBrightWhite" runat="server" UseSubmitBehavior="false" CssClass="form-select" Width="80px" Height="28px" >
+                                        <asp:ListItem Value="-1" Text=""></asp:ListItem> 
+                                        <asp:ListItem Value="0" Text="No"></asp:ListItem>                
+                                        <asp:ListItem Value="1" Text="Yes"></asp:ListItem>
+                                    </asp:DropDownList>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="grid_27 omega"><!--right hand side information for the order and statuses-->
+                        <div><!--current status and hold-->
+                            <table class="form-table" style="width: 100%; text-align: center;" cellspacing="0" summary="">
+                                <tr>
+                                    <td class="form-label-td" style="width: 15%; text-align: right;">Current Status&nbsp;:&nbsp;</td>
+                                    <td class="form-label-td" style="width: 35%; text-align: left;">
+                                        <asp:Label ID="lblCurrentStatus" runat="server"></asp:Label>
+                                    </td>
+                                </tr>                            
+                                <tr>
+                                    <td class="form-label-td" style="width: 15%; text-align: right;">On Hold&nbsp;:&nbsp;</td>
+                                    <td class="form-label-td" style="width: 35%; text-align: left;">
+                                        <asp:CheckBox ID="chkHoldJob" runat="server" />
+                                    </td>
+                                </tr>                            
+                            </table>                            
+                        </div>
+                        <div class="column"><!--start status area-->
+                            <table class="form-table" style="width: 100%; text-align: center;" cellspacing="0" summary="">
+                                <tr>
+                                    <td class="form-label-td" style="width: 15%; text-align: right;">Ordered&nbsp;:&nbsp;</td>
+                                    <td class="form-label-td" style="width: 35%; text-align: left;">
+                                        <asp:TextBox ID="txtOrderDate" runat="server" CssClass="form-field" Text="" Width="120px" />
+                                    </td>
+                                </tr>                            
+                                <tr>
+                                    <td class="form-label-td" style="width: 15%; text-align: right;">Received&nbsp;:&nbsp;</td>
+                                    <td class="form-label-td" style="width: 35%; text-align: left;">
+                                        <asp:TextBox ID="txtReceived" runat="server" CssClass="form-field" Text="" Width="120px" AutoPostBack="true" ></asp:TextBox>
+                                        &nbsp;&nbsp;
+                                        <asp:Button ID="btnClearReceived" runat="server" CssClass="form-button" Visible="false" Text="Clear" />
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="form-label-td" style="width: 15%; text-align: right;">Shutter Pro Entered Date&nbsp;:&nbsp;</td>
+                                    <td class="form-label-td" style="width: 35%; text-align: left;">
+                                        <asp:TextBox ID="txtShutterProEnteredDate" runat="server" CssClass="form-field" Text="" Width="120px" AutoPostBack="true" />
+                                        &nbsp;&nbsp;
+                                        <asp:Button ID="btnClearShutterPro" runat="server" CssClass="form-button" Visible="false" Text="Clear" />&nbsp;&nbsp;&nbsp;&nbsp;
+                                        <asp:Label ID="lblShutterProNumber" runat="server" Text=""></asp:Label>
+                                    </td>                                
+                                </tr>
+                                <tr>
+                                    <td class="form-label-td" style="width: 15%; text-align: right;">In Production&nbsp;:&nbsp;</td>
+                                    <td class="form-label-td" style="width: 35%; text-align: left;">
+                                        <asp:TextBox ID="txtScheduledDate" runat="server" CssClass="form-field" Text="" Width="120px" AutoPostBack="true" />
+                                        &nbsp;&nbsp;
+                                        <asp:Button ID="btnClearScheduled" runat="server" CssClass="form-button" Visible="false" Text="Clear" />
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td class="form-label-td" style="width: 35%; text-align: right;">Cutting&nbsp;:&nbsp;</td>
+                                    <td class="form-label-td" style="width: 65%; text-align: left;">
+                                        <asp:TextBox ID="txtCuttingDate" runat="server" CssClass="form-field" Text="" Width="120px" AutoPostBack="true" />
+                                        &nbsp;&nbsp;
+                                        <asp:Button ID="btnClearCutting" runat="server" CssClass="form-button" Visible="false" Text="Clear" />
+                                    </td>                                
+                                </tr>
+                                <tr>
+                                    <td class="form-label-td" style="width: 35%; text-align: right;">Prep&nbsp;:&nbsp;</td>
+                                    <td class="form-label-td" style="width: 65%; text-align: left;">
+                                        <asp:TextBox ID="txtPrepDate" runat="server" CssClass="form-field" Text="" Width="120px" AutoPostBack="true" />
+                                        &nbsp;&nbsp;
+                                        <asp:Button ID="btnClearPrep" runat="server" CssClass="form-button" Visible="false" Text="Clear" />
+                                    </td>                                
+                                </tr>
+                                <tr>
+                                    <td class="form-label-td" style="width: 35%; text-align: right;">Assembly&nbsp;:&nbsp;</td>
+                                    <td class="form-label-td" style="width: 65%; text-align: left;">
+                                        <asp:TextBox ID="txtAssemblyDate" runat="server" CssClass="form-field" Text="" Width="120px" AutoPostBack="true" />
+                                        &nbsp;&nbsp;
+                                        <asp:Button ID="btnClearAssembly" runat="server" CssClass="form-button" Visible="false" Text="Clear" />
+                                    </td>                                
+                                </tr>
+                                <tr>
+                                    <td class="form-label-td" style="width: 35%; text-align: right;">Framing&nbsp;:&nbsp;</td>
+                                    <td class="form-label-td" style="width: 65%; text-align: left;">
+                                        <asp:TextBox ID="txtFramingDate" runat="server" CssClass="form-field" Text="" Width="120px" AutoPostBack="true" />
+                                        &nbsp;&nbsp;
+                                        <asp:Button ID="btnClearFraming" runat="server" CssClass="form-button" Visible="false" Text="Clear" />
+                                    </td>                                
+                                </tr>
+                                <tr>
+                                    <td class="form-label-td" style="width: 35%; text-align: right;">QC&nbsp;:&nbsp;</td>
+                                    <td class="form-label-td" style="width: 65%; text-align: left;">
+                                        <asp:TextBox ID="txtQCDate" runat="server" CssClass="form-field" Text="" Width="120px" AutoPostBack="true" />
+                                        &nbsp;&nbsp;
+                                        <asp:Button ID="btnClearQC" runat="server" CssClass="form-button" Visible="false" Text="Clear" />
+                                    </td>                                
+                                </tr>
+                                <tr>
+                                    <td class="form-label-td" style="width: 35%; text-align: right;">Wrapping&nbsp;:&nbsp;</td>
+                                    <td class="form-label-td" style="width: 65%; text-align: left;">
+                                        <asp:TextBox ID="txtWrappingDate" runat="server" CssClass="form-field" Text="" Width="120px" AutoPostBack="true" />
+                                        &nbsp;&nbsp;
+                                        <asp:Button ID="btnClearWrapping" runat="server" CssClass="form-button" Visible="false" Text="Clear" />
+                                    </td>                                
+                                </tr>
+
+                                <tr>
+                                    <td class="form-label-td" style="width: 15%; text-align: right;"><asp:Label ID="lblPostProduction1" runat="server"></asp:Label>&nbsp;:&nbsp;</td>
+                                    <td class="form-label-td" style="width: 35%; text-align: left;">
+                                        <asp:TextBox ID="txtPostProduction1" runat="server" CssClass="form-field" Text="" Width="120px" AutoPostBack="true" />
+                                        &nbsp;&nbsp;
+                                        <asp:Button ID="btnClearPostProduction1" runat="server" CssClass="form-button" Visible="false" Text="Clear" />
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="form-label-td" style="width: 15%; text-align: right;"><asp:Label ID="lblPostProduction2" runat="server"></asp:Label>&nbsp;:&nbsp;</td>
+                                    <td class="form-label-td" style="width: 35%; text-align: left;">
+                                        <asp:TextBox ID="txtPostProduction2" runat="server" CssClass="form-field" Text="" Width="120px" AutoPostBack="true" />
+                                        &nbsp;&nbsp;
+                                        <asp:Button ID="btnClearPostProduction2" runat="server" CssClass="form-button" Visible="false" Text="Clear" />
+                                    </td>
+                                </tr>
+                            </table>                                                        
+                        </div>
+                        <div><!--other info remaining under status areas-->
+                            <table class="form-table" style="width: 100%; text-align: center;" cellspacing="0" summary="">
+                                <tr>
+                                    <td class="form-label-td" style="width: 40%; text-align: right;">Planned Shipping Date&nbsp;:&nbsp;</td>
+                                    <td class="form-label-td" style="width: 60%; text-align: left;">
+                                        <asp:TextBox ID="txtPlannedShippingDate" runat="server" CssClass="form-field" Text="" Width="120px" />
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="form-label-td" style="width: 40%; text-align: right;">Actual Shipping Date&nbsp;:&nbsp;</td>
+                                    <td class="form-label-td" style="width: 60%; text-align: left;">
+                                        <asp:TextBox ID="txtActualShippingDate" runat="server" CssClass="form-field" Text="" Width="120px" />
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2">
+                                        &nbsp;
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2">
+                                        <asp:Panel ID="pnlOrderForms" runat="server" Visible="false">
+                                            <div style="text-align: center;">
+                                                <asp:Label ID="lblOrderForm" runat="server"></asp:Label>
+                                            </div>
+                                        </asp:Panel>
+                                        <asp:Panel ID="pnlOrderForm" runat="server" Visible="false">
+                                            <div style="text-align: center;">
+                                                <asp:Button ID="btnOrderForm" runat="server" CssClass="form-button" Text="Order Form" />
+                                            </div>
+                                        </asp:Panel>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2">
+                                        &nbsp;
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="form-label-td" style="width: 40%; text-align: right;">UpLoad Files&nbsp;:&nbsp;</td>
+                                    <td class="form-label-td" style="width: 60%; text-align: left;">
+                                          <asp:UpdatePanel ID="UpdatePanel6" runat="server" UpdateMode="Conditional">
+                                             <ContentTemplate>
+                                                <asp:FileUpload ID="FileUploads" runat="server" Height="23px" Multiple="Multiple" Width="329px" />
+                                                 <br />
+                                              </ContentTemplate>
+                                                 <triggers>
+                                                     <asp:PostBackTrigger ControlID="UploadButton" />
+                                                </triggers>
+                                          </asp:UpdatePanel>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="form-label-td" style="width: 40%; text-align: right;">&nbsp;&nbsp;</td>
+                                    <td class="form-label-td" style="width: 60%; text-align: center;">
+                                         <asp:Button ID="UploadButton" runat="server" CssClass="form-button" Text="UpLoad" />
+                                         <asp:Button ID="UploadButton2" runat="server" style="display:none;" Text="" AutoPostBack="True"  />
+                                         <asp:Button ID="UploadButton3" runat="server" style="display:none;" Text="" AutoPostBack="True"  />
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="form-label-td" style="width: 40%; text-align: right;">
+                                        <asp:Panel ID="pnlButtons" runat="server"></asp:Panel>   
+                                    </td>
+                                    <td class="form-label-td" style="width: 60%; text-align: left;">
+                                          <asp:Label ID="lblAttachments" runat="server" Text=""></asp:Label>                                        
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2">
+                                        <div style="text-align: center;">
+                                            <asp:Button ID="btnViewNotes" runat="server" CssClass="form-button" Visible="true" Text="Notes" />
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2">
+                                        &nbsp;
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2">
+                                        <asp:Panel ID="pnlCancellation" runat="server" Visible="true">
+                                            <div style="text-align: center;">
+                                                <asp:Button ID="btnCancellation" runat="server" CssClass="form-button" Visible="true" Text="Cancel Job" />
+                                            </div>
+                                        </asp:Panel>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <asp:Panel ID="pnlHiddenStuff1" runat="server" Visible="false">
+                <table class="form-table" style="width: 100%; text-align: center;" cellspacing="0" summary="">
+                    <tr>
+                        <td class="form-label-td" style="width: 15%; text-align: right;">Order Status&nbsp;:&nbsp;</td>
+                        <td class="form-label-td" style="width: 35%; text-align: left;">
+                            <asp:DropDownList ID="cboOrderStatus" runat="server" UseSubmitBehavior="false" CssClass="form-select" Width ="200px" Height="28px" />
+                        </td>
+                        <td class="form-label-td" style="width: 15%; text-align: right;">Order Status&nbsp;:&nbsp;</td>
+                            <asp:TextBox ID="txtInvoicedDate" runat="server" CssClass="form-field" Text="" Width="120px" />
+                            <asp:TextBox ID="txtCollectedDate" runat="server" CssClass="form-field" Text="" Width="120px" />
+                        <td class="form-label-td" style="width: 35%; text-align: left;">                        
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="form-label-td" style="width: 15%; text-align: right;">GRA Remakes&nbsp;:&nbsp;</td>
+                        <td class="form-label-td" style="width: 35%; text-align: left;">
+                            <asp:TextBox ID="txtGRARemakes" runat="server" CssClass="form-field" Text="" Width="80px" />
+                        </td>
+                        <td class="form-label-td" style="width: 15%; text-align: right;">BOM Costed&nbsp;:&nbsp;</td>
+                        <td class="form-label-td" style="width: 35%; text-align: left;">
+                            <asp:TextBox ID="txtBOMCosted" runat="server" CssClass="form-field" Text="" Width="80px" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="form-label-td" style="width: 15%; text-align: right;">Shutter Pro Job No&nbsp;:&nbsp;</td>
+                        <td class="form-label-td" style="width: 35%; text-align: left;">
+                            <asp:TextBox ID="txtShutterPro" runat="server" CssClass="form-field" Text="" Width="80px" />
+                        </td>
+                        <td class="form-label-td" style="width: 15%; text-align: right;">Shipping Details&nbsp;:&nbsp;</td>
+                        <td class="form-label-td" style="width: 35%; text-align: left;"><asp:TextBox ID="txtShippingDetails" runat="server" CssClass="form-field" Text="" Width="500px" /></td>
+                    </tr>
+                </table>
+            </asp:Panel>
+            
+            
+            <table class="form-table" style="width: 100%; text-align: center;" cellspacing="0" summary="">
+
+                <asp:Panel ID="pnlRemakeDescription" runat="server" Visible="false">
+                    <tr>
+                        <td class="form-label-td" style="width: 40%; text-align: right;">Remake Description&nbsp;:&nbsp;</td>
+                        <td class="form-label-td" style="width: 60%; text-align: left;">
+                            <asp:TextBox ID="txtRemakeDescription" runat="server" CssClass="form-field" Text="" TextMode="MultiLine"  Width="90%" Height="200px" />
+                        </td>
+                    </tr>                
+                </asp:Panel>
+
+                <tr>
+                    <td class="form-label-td" style="width: 40%; text-align: right;">Updates Text&nbsp;:&nbsp;</td>
+                    <td class="form-label-td" style="width: 60%; text-align: left;">
+                        <asp:label ID="txtUpdatesText" runat="server" Width="90%" />                    
+                    </td>
+                </tr>
+                <asp:Panel runat="server" ID="pnlOldNotes" Visible="false">
+                    <tr>
+                        <td class="form-label-td" style="width: 40%; text-align: right;">New Note&nbsp;:&nbsp;</td>
+                        <td class="form-label-td" style="width: 60%; text-align: left;">
+                            <asp:TextBox ID="txtNotes" runat="server" CssClass="form-field" Text="" TextMode="MultiLine"  Width="90%" Height="200px" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="form-label-td" style="width: 40%; text-align: right;">Note Visible To Customer&nbsp;:&nbsp;</td>
+                        <td class="form-label-td" style="width: 60%; text-align: left;">
+                            <asp:CheckBox runat="server" ID="chkNoteVisibleCustomer" />
+                        </td>
+                    </tr>
+                </asp:Panel>
+            </table>
+
+            <br />
+            <br />
+
+            <asp:Panel ID="pnlOpeningDetails" runat="server" >
+                <div style="text-align: center;">
+                    <asp:Button ID="btnAddDetails" runat="server" Text="Add Detail" CssClass="form-button" />
+
+                    <br />
+                    <br />
+
+                    <asp:GridView ID="dgvDetails" runat="server" DataKeyNames="PSDetailID" AutoGenerateColumns="false" CellPadding="4" ForeColor="#333333" >
+                        <RowStyle BackColor="#F7F6F3" ForeColor="#333333" />
+                        <FooterStyle BackColor="#0059A9" Font-Bold="True" ForeColor="White" />
+                        <PagerStyle BackColor="#284775" ForeColor="White" HorizontalAlign="Center" />
+                        <SelectedRowStyle BackColor="#E2DED6" Font-Bold="True" ForeColor="#333333" />
+                        <HeaderStyle BackColor="#0059A9" Font-Bold="True" ForeColor="White" />
+                        <EditRowStyle BackColor="#999999" />
+                        <AlternatingRowStyle BackColor="White" ForeColor="#284775" />
+                        <Columns>
+                            <asp:TemplateField>
+                                <ItemTemplate>
+                                    <asp:Button ID="btnViewDetail" runat="server" Text="Details" CommandName="PlantationDetail"  CommandArgument="<%# CType(Container, GridViewRow).RowIndex %>" CssClass="form-button" Width="100px" Height="28px" />
+                                </ItemTemplate>
+                            </asp:TemplateField>
+                            <asp:BoundField DataField="PSDetailID" Visible="false" /> 
+                            <asp:BoundField DataField="PlantationScheduleID" Visible="false" /> 
+                            <asp:BoundField DataField="ShutterID" SortExpression="ShutterID" HeaderText="Opening #" /> 
+                            <asp:BoundField DataField="Width" SortExpression="Width" HeaderText="Width" />
+                            <asp:BoundField DataField="Height" SortExpression="Height" HeaderText="Height" />
+                            <asp:BoundField DataField="PanelQtyID" SortExpression="PanelQtyID" HeaderText="# Panels" />
+                            <asp:BoundField DataField="Colour" SortExpression="Colour" HeaderText="Colour" />                        
+                        </Columns>
+                    </asp:GridView>                       
+                    
+                </div>
+            </asp:Panel>
+
+            <table class="form-table" style="width: 100%; text-align: center;" cellspacing="0" summary="">
+                <tr>
+                    <td class="form-submit-td"  style="width: 50%; text-align: right;"><img id="imgLoading2" src="images/indicator.gif" width="16px" height="16px" alt="loading" style="visibility: hidden; vertical-align: middle;" />&nbsp;&nbsp;&nbsp;&nbsp;
+                        <asp:Button ID="btnCancel" runat="server" CssClass="form-button" Text="Cancel" OnClientClick="return cancelchanges();" UseSubmitBehavior="false" />
+                    </td>
+                    <td class="form-submit-td"  style="width: 50%; text-align: left;"><img id="imgLoading1" src="images/indicator.gif" width="16px" height="16px" alt="loading" style="visibility: hidden; vertical-align: middle;" />&nbsp;&nbsp;&nbsp;&nbsp;
+                        <asp:Button ID="btnSave" runat="server" CssClass="form-button" Text="Save" OnClientClick="return ValidateAll();" UseSubmitBehavior="false" />
+                    </td>
+                </tr>
+                <tr>
+                    <td class="form-submit-td" colspan="2" style="text-align: left;"><asp:Label ID="lblStatus" runat="server" Text="" ForeColor="Red" /></td>
+                </tr>
+            </table>
+            </div>
+
+
+            <ajaxcontroltoolkit:ModalPopupExtender ID="ModalPopupExtender" runat="server" BehaviorID="modal1" TargetControlID="btnAddDetails" PopupControlID="pnlRemakeDetails" BackgroundCssClass="modalBackground">
+            </ajaxcontroltoolkit:ModalPopupExtender>
+
+            <asp:Panel ID="pnlRemakeDetails" runat="server" CssClass="modalPopup" Style="display: none;">
+                <asp:UpdatePanel ID="UpdatePanel2" runat="server" UpdateMode="Conditional">
+                    <ContentTemplate>
+                        <asp:TextBox ID="txtHiddenPSDetailID" runat="server" Visible="false" Text="0"></asp:TextBox>
+                        <table class="form-table" cellspacing="0" summary="">
+                            <asp:Panel ID="pnlRemakeType" runat="server" Visible="false">
+                                <tr>
+                                    <td class="form-label-td-p2" style="width: 11%; text-align: right;">
+                                        Remake Type:
+                                    </td>
+                                    <td class="form-field-td-p2" style="width: 22%;">
+                                        <asp:DropDownList ID="cboRemakeType" runat="server" CssClass="form-select" Width="150px" >
+                                            <asp:ListItem Value="0" Text="" Selected="True"></asp:ListItem>
+                                            <asp:ListItem Value="1" Text="Whole Opening"></asp:ListItem>
+                                            <asp:ListItem Value="2" Text="Single Panel"></asp:ListItem>
+                                        </asp:DropDownList>
+                                    </td>
+                                    <td class="form-field-td-p2" style="width: 11%; text-align: right;">                                    
+                                    </td>
+                                    <td class="form-field-td-p2"  style="width: 22%;" >                                    
+                                    </td>
+                                    <td class="form-field-td-p2" style="width: 11%; text-align: right;">                                    
+                                    </td>
+                                    <td class="form-field-td-p2"  style="width: 22%;" >                                    
+                                    </td>
+                                </tr>
+                            </asp:Panel>
+                            <tr>
+                                <td class="form-label-td-p2" style="width: 11%; text-align: right;">
+                                    Installation Area:
+                                </td>
+                                <td class="form-field-td-p2" style="width: 22%;">
+                                    <asp:DropDownList ID="cboInstallationArea" runat="server" CssClass="form-select" Width="150px" AutoPostBack="true" >
+                                    </asp:DropDownList>
+                                </td>
+                                <td class="form-field-td-p2" style="width: 11%; text-align: right;">                                    
+                                </td>
+                                <td class="form-field-td-p2"  style="width: 22%;" >                                    
+                                </td>
+                                <td class="form-field-td-p2" style="width: 11%; text-align: right;">                                    
+                                </td>
+                                <td class="form-field-td-p2"  style="width: 22%;" >                                    
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="form-label-td-p2" style="width: 11%; text-align: right;">
+                                    Room Location:
+                                </td>
+                                <td colspan ="5" class="form-field-td-p2" >
+                                    <table>
+                                        <tr>
+                                            <td class="form-field-td-ip2" style="width: 50%;">
+                                                <asp:DropDownList ID="cboRoomLocation" runat="server" CssClass="form-select" Width="150px"
+                                                    AutoPostBack="true" >
+                                                </asp:DropDownList>
+                                            </td>
+                                            <asp:Panel ID="pnlRoomLocation" runat="server">
+                                                <td class="form-label-td-ip2" style="width: 30%; text-align: right;">
+                                                    <asp:Label ID="lblOtherdesc" runat="server" Text="Other Description:" ></asp:Label>
+                                                </td>
+                                                <td class="form-field-td-ip2" style="width: 20%;">
+                                                    <asp:TextBox ID="txtRLOther" runat="server" CssClass="form-field" Width="150px" MaxLength="100"> </asp:TextBox>
+                                                </td>
+                                            </asp:Panel> 
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                                <tr>
+                                <td class="form-field-td-p2" style="width: 11%; text-align: right;">
+                                    Width :
+                                </td>
+                                <td class="form-field-td-p2" style="width: 22%;">
+                                    <asp:TextBox ID="txtWidth" runat="server" CssClass="form-field" Width="100px" MaxLength="4" onkeypress="return isNumberKey(event);"></asp:TextBox>&nbsp;&nbsp;(mm)
+                                </td>
+                                <td class="form-field-td-p2" style="width: 11%; text-align: right;">
+                                    Height :
+                                </td>
+                                <td class="form-field-td-p2" style="width: 22%;">
+                                    <asp:TextBox ID="txtHeight" runat="server" CssClass="form-field" Width="100px" MaxLength="4" onkeypress="return isNumberKey(event);"></asp:TextBox>&nbsp;&nbsp;(mm)
+                                </td>
+                                <td class="form-label-td-p2" style="width: 11%; text-align: right;">
+                                    Panel Quantity:
+                                </td>
+                                <td class="form-field-td-p2" style="width: 22%;">
+                                    <asp:DropDownList ID="cboPanelQty" runat="server" CssClass="form-select" Width="150px">
+                                    </asp:DropDownList>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="form-label-td-p2" style="width: 11%; text-align: right;">
+                                    Mount Config :
+                                </td>
+                                <td class="form-field-td-p2" style="width: 22%;">
+                                    <asp:DropDownList ID="cboMountConfig" runat="server" CssClass="form-select" Width="150px">
+                                    </asp:DropDownList>
+                                </td>
+                                    <td class="form-label-td-p2" style="width: 11%; text-align: right;">
+                                        Mount Style:
+                                </td>
+                                <td class="form-field-td-p2" style="width: 22%;">
+                                    <asp:DropDownList ID="cboMountStyle" runat="server" CssClass="form-select" Width="150px">
+                                    </asp:DropDownList>
+                                </td>
+                                <td class="form-label-td-p2" style="width: 11%; text-align: right;">
+                                        Material:
+                                </td>
+                                <td class="form-field-td-p2" style="width: 22%;">
+                                    <asp:DropDownList ID="cboMaterial" runat="server" CssClass="form-select" Width="150px">
+                                        <asp:ListItem Value="0" Text=""></asp:ListItem>
+                                        <asp:ListItem Value="1" Text="Insulite"></asp:ListItem>
+                                    </asp:DropDownList>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="form-label-td-p2" style="width: 11%; text-align: right;">
+                                    Blade Size:
+                                </td>
+                                <td class="form-field-td-p2" style="width: 22%;">
+                                    <asp:DropDownList ID="cboBladeSize" runat="server" CssClass="form-select" Width="150px">
+                                    </asp:DropDownList>
+                                </td>
+                                    <td class="form-label-td-p2" style="width: 11%; text-align: right;">
+                                        Colour:
+                                </td>
+                                <td class="form-field-td-p2" style="width: 22%;">
+                                    <asp:DropDownList ID="cboColour" runat="server" CssClass="form-select" Width="150px" AutoPostBack="true" >
+                                    </asp:DropDownList>
+                                </td>
+                                <td class="form-label-td-p2" style="width: 11%; text-align: right;">
+                                        Mount Method:
+                                </td>
+                                <td class="form-field-td-p2" style="width: 22%;">
+                                    <asp:DropDownList ID="cboMountMethod" runat="server" CssClass="form-select" Width="150px" AutoPostBack="true" >
+                                    </asp:DropDownList>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="form-label-td-p2"  colspan="6">
+                                    <asp:Panel ID="pnlMidRail" runat="server" Visible="false" >
+                                        <table style="width:100%">
+                                            <tr>
+                                                <td class="form-label-td-p2" style="width: 40%; text-align: right; border-top: 0px;">
+                                                    Mid Rail Height:
+                                                </td>
+                                                <td class="form-field-td-p2" style="width: 60%;border-top: 0px;">
+                                                    <asp:TextBox ID="txtMidRailHeight" runat="server" CssClass="form-field" Width="100px" AutoPostBack="true" MaxLength="4" onkeypress="return isNumberKey(event);"></asp:TextBox>&nbsp;&nbsp;(mm)
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </asp:Panel> 
+                                </td>
+                            </tr>
+                                <asp:Panel ID="pnlboards" runat="server" Visible="false" >
+                                    <tr>
+                                    <td class="form-label-td-p2"  colspan="3">
+                                        <table style="width:100%">
+                                            <tr>
+                                                <td class="form-label-td-p2" style="width: 40%; text-align: right; border-top: 0px;">
+                                                    Sideboards:
+                                                </td>
+                                                <td class="form-field-td-p2" style="width: 60%;border-top: 0px;">
+                                                    <asp:DropDownList ID="cboSideboards" runat="server" Width="150px" CssClass="form-select" >
+                                                        <asp:ListItem Value="0" Text=""></asp:ListItem>
+                                                        <asp:ListItem Value="1">Yes</asp:ListItem>
+                                                        <asp:ListItem Value="2">No</asp:ListItem>
+                                                    </asp:DropDownList>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                        <td class="form-label-td-p2"  colspan="3">
+                                        <table style="width:100%">
+                                            <tr>
+                                                <td class="form-label-td-p2" style="width: 40%; text-align: right; border-top: 0px;">
+                                                    Bottomboards:
+                                                </td>
+                                                <td class="form-field-td-p2" style="width: 60%;border-top: 0px;">
+                                                    <asp:DropDownList ID="cboBottomboards" runat="server" Width="150px" CssClass="form-select" >
+                                                        <asp:ListItem Value="0" Text=""></asp:ListItem>
+                                                        <asp:ListItem Value="1">Yes</asp:ListItem>
+                                                        <asp:ListItem Value="2">No</asp:ListItem>
+                                                    </asp:DropDownList>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>                                
+                            </asp:Panel>                                                                 
+                            <tr>
+                                <td class="form-label-td-p2" style="width: 11%; text-align: right;">
+                                    Layout Code:
+                                </td>
+                                <td  class="form-field-td-p2" style="width: 22%;">
+                                    <asp:DropDownList ID="cboLayout" runat="server" CssClass="form-select" Width="150px" AutoPostBack="true" >
+                                    </asp:DropDownList>
+                                </td>             
+                                <td colspan="2" class="form-field-td-p2"  >
+                                    <asp:Panel ID="pnlLayoutOther" runat="server" Visible="false" >
+                                        <asp:TextBox ID="txtLayoutOther" runat="server" CssClass="form-field" Width="110px" AutoPostBack="true" MaxLength="100"></asp:TextBox>
+                                    </asp:Panel>        
+                                </td>
+                                <td class="form-label-td-p2" style="width: 11%; text-align: right;">
+                                    Hinge Colour:
+                                </td>
+                                <td class="form-field-td-p2" style="width: 22%;">
+                                    <asp:DropDownList ID="cboHingeColour" runat="server" CssClass="form-select" Width="150px">
+                                    </asp:DropDownList>
+                                </td>
+                            </tr>
+                            <asp:Panel ID="pnlSliding" runat="server">
+                                <tr >
+                                    <td class="form-label-td-p2" style="width: 11%; text-align: right;">
+                                        Bottom Guide:
+                                    </td>
+                                    <td  class="form-field-td-p2" style="width: 22%;">
+                                        <asp:DropDownList ID="cboBottomGuide" runat="server" CssClass="form-select" Width="150px">
+                                        </asp:DropDownList>
+                                    </td> 
+                                    <td class="form-label-td-p2" style="width: 11%; text-align: right;">
+                                        Sliding:
+                                    </td>
+                                    <td  class="form-field-td-p2" style="width: 22%;">
+                                        <asp:DropDownList ID="cboSliding" runat="server" CssClass="form-select" Width="150px">
+                                        </asp:DropDownList>
+                                    </td> 
+                                    <td class="form-label-td-p2" style="width: 11%; text-align: right;">
+                                    </td>
+                                    <td class="form-label-td-p2" style="width: 22%; text-align: right;">
+                                    </td>
+                                </tr>
+                            </asp:Panel>
+                            <tr>
+                                <td class="form-label-td-p2" style="width: 11%; text-align: right;">
+                                    Frame Type:
+                                </td>   
+                                <td class="form-field-td-p2" style="width: 22%;">
+                                    <asp:DropDownList ID="cboFrameType" runat="server" CssClass="form-select" Width="150px" AutoPostBack="true" >
+                                    </asp:DropDownList>
+                                </td>   
+                                <td class="form-label-td-p2" style="width: 11%; text-align: right;">
+                                    Sides:
+                                </td>
+                                <td class="form-field-td-p2" style="width: 22%;">
+                                    <asp:DropDownList ID="cboSides" runat="server" CssClass="form-select" Width="150px">
+                                    </asp:DropDownList>
+                                </td>
+                                <td class="form-label-td-p2" style="width: 11%; text-align: right;">
+                                    Control Type:
+                                </td>
+                                <td class="form-field-td-p2" style="width: 22%;">
+                                    <asp:DropDownList ID="cboControlType" runat="server" CssClass="form-select" Width="150px">
+                                    </asp:DropDownList>
+                                </td>
+                            </tr> 
+                            <tr> 
+                                <td class="form-label-td-p2" style="width: 11%; text-align: right;">
+                                    Track:
+                                </td>
+                                <td class="form-field-td-p2" style="width: 22%;">
+                                    <asp:DropDownList ID="cboTrack" runat="server" Width="150px" CssClass="form-select" AutoPostBack="true" >
+                                        <asp:ListItem Value="0" Text=""></asp:ListItem>
+                                        <asp:ListItem Value="1">Yes</asp:ListItem>
+                                        <asp:ListItem Value="2">No</asp:ListItem>
+                                    </asp:DropDownList>
+                                </td> 
+                                <td class="form-label-td-p2" style="width: 11%; text-align: right;">
+                                    T Post Qty:
+                                </td>
+                                <td class="form-field-td-p2" style="width: 22%;">
+                                    <asp:DropDownList ID="cboTPostQty" runat="server" CssClass="form-select" Width="150px">
+                                    </asp:DropDownList>
+                                </td> 
+                                <td class="form-label-td-p2" style="width: 11%; text-align: right;">
+                                </td>
+                                <td class="form-label-td-p2" style="width: 22%; text-align: right;">
+                                </td>
+                            </tr> 
+                            <asp:Panel ID="pnlSplitBlade" runat="server">
+                                <tr>  
+                                    <td class="form-label-td-p2" style="width: 11%; text-align: right;">
+                                        Split Blade:
+                                    </td>
+                                        <td colspan ="5" class="form-field-td-p2" >
+                                        <table>
+                                            <tr>
+                                                <td class="form-field-td-ip2" style="width: 50%;">
+                                                    <asp:DropDownList ID="cboSplitBlade" runat="server" CssClass="form-select" Width="150px"  AutoPostBack="true">
+                                                    </asp:DropDownList>
+                                                </td> 
+                                                <asp:Panel ID="pnlSplitBladeHeight" runat="server">
+                                                <td class="form-label-td-ip2" style="width: 20%; text-align: right;">
+                                                    Height of Split Blade:
+                                                </td>
+                                                <td class="form-field-td-ip2" style="width: 30%;">
+                                                    <asp:TextBox ID="txtHeightSplitBlade" runat="server" CssClass="form-field" Width="100px" MaxLength="4" onkeypress="return isNumberKey(event);"></asp:TextBox>&nbsp;&nbsp;(mm)
+                                                </td>
+                                                </asp:Panel> 
+                                            </tr>
+                                        </table> 
+                                    </td> 
+                                </tr>   
+                            </asp:Panel> 
+                            <tr> 
+                                <td class="form-label-td-p2" style="width: 11%; text-align: right;">
+                                        Hang Strip:
+                                </td>
+                                <td class="form-field-td-p2" style="width: 22%;">
+                                    <asp:DropDownList ID="cboHangStrip" runat="server" CssClass="form-select" Width="150px">
+                                    </asp:DropDownList>
+                                </td> 
+                                <td class="form-label-td-p2" colspan="2">
+                                    <asp:Panel ID="pnlLightBlock" runat="server" Visible="true" >
+                                        <table  style="width:100%">
+                                            <tr>
+                                                <td style="width: 40%; text-align: right; border-top: 0px;padding: 2px 10px 2px 8px;">
+                                                    Light Block:
+                                                </td>
+                                                <td  style="width: 60%;padding: 2px 10px 2px 8px;">
+                                                    <asp:DropDownList ID="cboLightBlock" runat="server" CssClass="form-select" Width="150px">
+                                                    </asp:DropDownList>
+                                                </td>
+                                            </tr>
+                                        </table> 
+                                    </asp:Panel>
+                                </td> 
+                                <td class="form-label-td-p2" style="width: 11%; text-align: right;">
+                                    Angle Bay:
+                                </td>
+                                <td class="form-field-td-p2" style="width: 22%;">
+                                    <asp:DropDownList ID="cboAngleBay" runat="server" CssClass="form-select" Width="150px">
+                                    </asp:DropDownList>
+                                </td> 
+                            </tr> 
+                            <tr>
+                                <td class="form-label-td-p2" style="width: 11%; text-align: right;">
+                                    Fixed Blades:
+                                </td>
+                                <td class="form-field-td-p2" style="width: 22%;">
+                                    <asp:DropDownList ID="cboFixedBlades" runat="server" Width="150px" CssClass="form-select" AutoPostBack="true" >
+                                        <asp:ListItem Value="0" Text=""></asp:ListItem>
+                                        <asp:ListItem Value="1">Yes</asp:ListItem>
+                                        <asp:ListItem Value="2">No</asp:ListItem>
+                                    </asp:DropDownList>
+                                </td> 
+                                <asp:Panel ID="pnlStainlessSteelWheels" runat="server">
+                                    <td class="form-label-td-ip2" style="width: 11%; text-align: right;">
+                                        Stainless Steel Wheels:
+                                    </td>
+                                    <td colspan="3" class="form-field-td-p2" style="width: 22%;">
+                                        <asp:DropDownList ID="cboStainlessSteelWheels" runat="server" Width="150px" CssClass="form-select" AutoPostBack="true" >
+                                            <asp:ListItem Value="0" Text=""></asp:ListItem>
+                                            <asp:ListItem Value="1">Yes</asp:ListItem>
+                                            <asp:ListItem Value="2">No</asp:ListItem>
+                                        </asp:DropDownList>
+                                    </td>
+                                </asp:Panel>
+                            </tr>  
+                            <tr>
+                                <td class="form-label-td-p2" style="width: 20%; text-align: right;">
+                                    Special Requirements:
+                                </td>
+                                <td colspan="5" class="form-field-td-p2" style="width: 80%">
+                                    <asp:TextBox ID="txtSpecialRequirements" runat="server" CssClass="form-field" TextMode="MultiLine"></asp:TextBox>
+                                </td>
+                            </tr>
+                           
+                            <tr>
+                                <td class="form-submit-td" >
+                                    <div style="float: left;">
+                                        <asp:Button runat="server" ID="btnSaveDetails" text="Save" CssClass="form-button" />
+                                    </div>
+                                </td>
+                                <td class="form-submit-td" >
+                                    <div style="float: right;">
+                                        <asp:Button runat="server" ID="btnCancelDetails" Text="Cancel" CssClass="form-button" />
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="form-submit-td" colspan="2">
+                                    <asp:Label ID="lblShutterStatus" runat="server" Text="" ForeColor="Red"></asp:Label>
+                                </td>
+                            </tr>                        
+                        </table>                                               
+                    </ContentTemplate>
+
+                    <Triggers>
+                        <asp:PostBackTrigger ControlID="btnSaveDetails" />
+                        <asp:PostBackTrigger ControlID="btnCancelDetails" />
+                    </Triggers>
+
+                </asp:UpdatePanel>
+            </asp:Panel>
+
+            <ajaxcontroltoolkit:ModalPopupExtender ID="ModalPopupExtender2" runat="server" BehaviorID="modal1" TargetControlID="btnViewNotes" PopupControlID="pnlNotesDetails" BackgroundCssClass="modalBackground">
+            </ajaxcontroltoolkit:ModalPopupExtender>
+
+            <asp:Panel ID="pnlNotesDetails" runat="server" CssClass="modalPopup" Style="display: none;">
+                <asp:UpdatePanel ID="UpdatePanel3" runat="server" UpdateMode="Conditional">
+                    <ContentTemplate>
+                        <h2>Job Notes</h2>
+                        <ajaxcontroltoolkit:Accordion ID="acc1" runat="server" FadeTransitions="true"  HeaderCssClass="accordionHeader" HeaderSelectedCssClass="accordionHeaderSelected" ContentCssClass="accordionContent">
+                            <HeaderTemplate>
+                                <%#DataBinder.Eval(Container.DataItem, "DisplayHeaderText")%>
+                            </HeaderTemplate>
+                            <ContentTemplate>
+                                Note Text: <%#DataBinder.Eval(Container.DataItem, "NoteDetails")%>
+                            </ContentTemplate>
+                        </ajaxcontroltoolkit:Accordion>
+
+                        <br />
+
+                        <div style="text-align: center;">
+                            <asp:Button ID="btnAddNewNote" runat="server" Text="Add New Note" CssClass="form-button" />
+                        </div>
+
+                        <br />
+                        <asp:Panel ID="pnlAddNote" runat="server" Visible="false">
+                            <table class="form-table" cellspacing="0" summary="">
+                                <tr>
+                                    <td class="form-field-td-p2" style="text-align: right;">
+                                        Note:&nbsp;&nbsp; 
+                                    </td>
+                                    <td class="form-field-td-p2">
+                                        <asp:TextBox ID="txtNewNoteText" runat="server" CssClass="form-field" TextMode="MultiLine"></asp:TextBox>
+                                    </td>                                    
+                                </tr>
+                                <tr>
+                                    <td colspan="2" class="form-field-td-p2">
+                                        <div style="text-align: center;">
+                                            <asp:CheckBox runat="server" ID="chkNoteVisible" Text="Visible To Customer" />
+                                        </div>
+                                    </td>                                    
+                                </tr>
+                                <tr>
+                                    <td class="form-field-td-p2">
+                                        <div style="float: right;">
+                                            <asp:Button runat="server" ID="btnCancelNote" Text="Cancel Note" CssClass="form-button" />
+                                        </div>
+                                    </td>
+                                    <td class="form-field-td-p2">
+                                        <div style="float: left;">
+                                            <asp:Button runat="server" ID="btnSaveNote" Text="Save Note" CssClass="form-button" />
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+
+                        </asp:Panel>
+
+                        <br />
+                        <br />
+                        <div style="text-align: center;">
+                            <asp:Button runat="server" ID="btnCloseNotes" Text="Close" CssClass="form-button" />
+                        </div>
+
+                    </contentTemplate>
+
+                    <Triggers>
+                        <asp:PostBackTrigger ControlID="btnCloseNotes" />
+                    </Triggers>
+                </asp:UpdatePanel>
+            </asp:Panel>
+
+
+        </ContentTemplate>
+        </asp:UpdatePanel>
+
+        </div>
+
+    </div>
+
+    <div id="dialog-alert" title="Insufficient Information">
+        <p id="dialog-alert-message" style="text-align: left;"></p>
+    </div>
+    <div id="dialog-confirm" title="Please Confirm" >
+        <p id="dialog-confirm-message" style="text-align: left;"></p>
+    </div>
+        
+    <div id="dialog-confirm-cancel" title="Please Confirm" >
+        <p id="dialog-confirm-cancel-message" style="text-align: left;"></p>
+    </div>
+
+    <div id="dialog-confirm-delete" title="Please Confirm" >
+        <p id="dialog-confirm-delete-message" style="text-align: left;"></p>
+    </div>
+
+    <div runat="server" id="DivCur1" style="display:none;">
+        Jobnumber:<asp:TextBox ID="txtJobnumber" runat="server" TabIndex="-1" Text="0" />
+        <br />
+        ID:<asp:TextBox ID="txtId" runat="server" TabIndex="-1" Text="0" />
+        <br />
+        CustomerId:<asp:TextBox ID="txtCustomerId" runat="server" TabIndex="-1" Text="0" />
+        <br />
+        EnteredDatetime:<asp:TextBox ID="txtEnteredDatetime" runat="server" TabIndex="-1" Text="0" />
+        <br />
+        ViewType:<asp:TextBox ID="txtViewType" runat="server" TabIndex="-1" Text="0" />
+        <br />
+        InitialStatus:<asp:TextBox ID="txtInitialStatus" runat="server" TabIndex="-1" Text="" />
+        <br />
+        PSDetailID:<asp:TextBox ID="txtPSDetailID" runat="server" TabIndex="-1" Text="0" />
+        <br />
+        PSDetailGUID:<asp:TextBox ID="txtPSDetailGUID" runat="server" TabIndex="-1" Text="" />
+        <br />
+        ProductTypeID<asp:TextBox id="txtProductTypeID" runat="server" TabIndex="-1" Text="0"></asp:TextBox>
+        <br />
+        ScheduleID:<asp:TextBox ID="txtIntScheduleID" runat="server" TabIndex="-1" Text="" />
+        <br />
+        TempFolder:<asp:TextBox ID="txtTempFolder" runat="server" TabIndex="-1" Text="" />
+        <br />  
+	    TempButton:<asp:TextBox ID="txtbuttonName" runat="server" TabIndex="-1" Text="" />
+        <br />  
+    </div>
+
+    <script type="text/javascript">
+
+        function pageLoad() {
+            $(function () {
+                $("input#txtActualShippingDate").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'dd M yy', gotoCurrent: true, showAnim: 'slideDown', minDate: '-1d', maxDate: '+5w' });
+                $("input#txtInvoicedDate").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'dd M yy', gotoCurrent: true, showAnim: 'slideDown', minDate: '-4d', maxDate: '+1w' });
+                $("input#txtCollectedDate").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'dd M yy', gotoCurrent: true, showAnim: 'slideDown', minDate: '-4d', maxDate: '+1w' });
+                $("input#txtPlannedShippingDate").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'dd M yy', gotoCurrent: true, showAnim: 'slideDown', minDate: '-1d', maxDate: '+5w' });                
+                $("input#txtOrderDate").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'dd M yy', gotoCurrent: true, showAnim: 'slideDown', minDate: '-1d', maxDate: '+1w' });
+                $("input#txtReceived").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'dd M yy', gotoCurrent: true, showAnim: 'slideDown', minDate: '-1d', maxDate: '+1w' });
+                $("input#txtShutterProEnteredDate").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'dd M yy', gotoCurrent: true, showAnim: 'slideDown', minDate: '-4d', maxDate: '+1w' });
+                $("input#txtScheduledDate").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'dd M yy', gotoCurrent: true, showAnim: 'slideDown', minDate: '-1d', maxDate: '+2w' });
+                $("input#txtCuttingDate").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'dd M yy', gotoCurrent: true, showAnim: 'slideDown', minDate: '-1d', maxDate: '+2w' });
+                $("input#txtPrepDate").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'dd M yy', gotoCurrent: true, showAnim: 'slideDown', minDate: '-1d', maxDate: '+2w' });
+                $("input#txtAssemblyDate").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'dd M yy', gotoCurrent: true, showAnim: 'slideDown', minDate: '-1d', maxDate: '+2w' });
+                $("input#txtFramingDate").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'dd M yy', gotoCurrent: true, showAnim: 'slideDown', minDate: '-1d', maxDate: '+2w' });
+                $("input#txtQCDate").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'dd M yy', gotoCurrent: true, showAnim: 'slideDown', minDate: '-1d', maxDate: '+2w' });
+                $("input#txtWrappingDate").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'dd M yy', gotoCurrent: true, showAnim: 'slideDown', minDate: '-1d', maxDate: '+2w' });
+                $("input#txtPostProduction1").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'dd M yy', gotoCurrent: true, showAnim: 'slideDown', minDate: '-1d', maxDate: '+2w' });
+                $("input#txtPostProduction2").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'dd M yy', gotoCurrent: true, showAnim: 'slideDown', minDate: '-1d', maxDate: '+2w' });
+            });
+        }
+        
+    </script>
+
+    </form>
+</body>
+</html>

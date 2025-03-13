@@ -1,0 +1,177 @@
+﻿Imports Microsoft.VisualBasic
+Imports System.Data.SqlClient
+
+Public Class PlantationGRAPhotosDAO
+
+    Function getPlantationGRAPhotosDetailsByID(ByVal intPlantGRAID As Integer) As DataTable
+
+        Dim strSQL As String = "SELECT tblPlantationGRA.PlantationGRAID, tblPlantationGRA.DateEntered, tblPlantationGRA.DateReceived, tblPlantationGRA.ReferenceNumber, " & _
+                                    "tblPlantationGRA.ReferenceName, tblPlantationGRA.CustomerID, tblPlantationGRA.PlantationScheduleID, tblPlantationGRA.JobNumber, " & _
+                                    "tblPlantationGRAPhotos.ID, tblPlantationGRAPhotos.Description, tblPlantationGRAPhotos.PhotoFileName, tblPlantationGRAPhotos.UploadedDateTime, " & _
+                                    "tblPlantationGRAPhotos.Deleted, tblPlantationGRAPhotos.DeletedDateTime " & _
+                                    "FROM tblPlantationGRA LEFT OUTER JOIN " & _
+                                    "tblPlantationGRAPhotos ON tblPlantationGRA.PlantationGRAID = tblPlantationGRAPhotos.PlantationGRAID " & _
+                                    "Where tblPlantationGRAPhotos.Deleted Is Null And tblPlantationGRA.PlantationGRAID=" & intPlantGRAID
+
+        Dim dbConn As New DBConnection
+        Dim cmd As New SqlCommand
+        Dim da As New SqlDataAdapter
+        Dim dt As New DataTable
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = strSQL
+            cmd.CommandType = CommandType.Text
+            da.SelectCommand = cmd
+            da.Fill(dt)
+
+        Catch ex As Exception
+            If cnn.State = ConnectionState.Open Then
+                cnn.Close()
+            End If
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+        Finally
+            da.Dispose()
+            da = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn = Nothing
+        End Try
+        dbConn = Nothing
+        Return dt
+
+    End Function
+
+    Function addPlatationGRAPhotosRecord(ByVal cPlantationGRAPhotos As PlantationGRAPhotos, ByVal cnn As SqlConnection, ByRef trans As SqlTransaction) As Integer
+
+        Dim bolAddOK As Boolean = True
+        Dim intPlantGRAPhotosId As Integer = Constants.DEFAULT_INTEGER_VALUE
+        Dim cmd As New SqlCommand
+        Try
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_addPlantationGRAPhotos"
+            cmd.CommandType = CommandType.StoredProcedure
+            cmd.Transaction = trans
+
+            SqlCommandBuilder.DeriveParameters(cmd)
+            cmd.Parameters("@ID").Direction = ParameterDirection.Output
+            setupCommandParameters(cPlantationGRAPhotos, cmd)
+            cmd.ExecuteNonQuery()
+            intPlantGRAPhotosId = CInt(cmd.Parameters("@ID").Value)
+
+        Catch ex As Exception
+            bolAddOK = False
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+        End Try
+        Return bolAddOK
+
+    End Function
+
+    Function updatePlatationGRAPhotosRecord(ByVal cPlantationGRAPhotos As PlantationGRAPhotos, ByVal cnn As SqlConnection, ByRef trans As SqlTransaction) As Boolean
+
+        Dim bolUpdateOK As Boolean = True
+        Dim cmd As New SqlCommand
+        Try
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_updatePlantationGRAPhotos"
+            cmd.CommandType = CommandType.StoredProcedure
+            cmd.Transaction = trans
+
+            SqlCommandBuilder.DeriveParameters(cmd)
+            cmd.Parameters("@ID").Value = cPlantationGRAPhotos.ID
+            setupCommandParameters(cPlantationGRAPhotos, cmd)
+            cmd.ExecuteNonQuery()
+
+        Catch ex As Exception
+            bolUpdateOK = False
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+        End Try
+        Return bolUpdateOK
+
+    End Function
+
+    Protected Sub setupCommandParameters(ByVal cPlantationGRAPhotos As PlantationGRAPhotos, ByRef cmd As SqlCommand)
+
+
+        If cPlantationGRAPhotos.PlantationGRAID <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@PlantationGRAID").Value = cPlantationGRAPhotos.PlantationGRAID
+        Else
+            cmd.Parameters("@PlantationGRAID").Value = DBNull.Value
+        End If
+
+        If cPlantationGRAPhotos.PhotoFileName <> String.Empty Then
+            cmd.Parameters("@PhotoFileName").Value = cPlantationGRAPhotos.PhotoFileName
+        Else
+            cmd.Parameters("@PhotoFileName").Value = DBNull.Value
+        End If
+
+        If cPlantationGRAPhotos.Description <> String.Empty Then
+            cmd.Parameters("@Description").Value = cPlantationGRAPhotos.Description
+        Else
+            cmd.Parameters("@Description").Value = DBNull.Value
+        End If
+
+        If cPlantationGRAPhotos.UploadedDateTime <> Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@UploadedDateTime").Value = cPlantationGRAPhotos.UploadedDateTime
+        Else
+            cmd.Parameters("@UploadedDateTime").Value = DBNull.Value
+        End If
+
+        If cPlantationGRAPhotos.Deleted <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@Deleted").Value = cPlantationGRAPhotos.Deleted
+        Else
+            cmd.Parameters("@Deleted").Value = DBNull.Value
+        End If
+
+        If cPlantationGRAPhotos.DeletedDateTime <> Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@DeletedDateTime").Value = cPlantationGRAPhotos.DeletedDateTime
+        Else
+            cmd.Parameters("@DeletedDateTime").Value = DBNull.Value
+        End If
+
+    End Sub
+
+    Function deletePlantationGRAPhotoByID(ByVal intID As Integer) As Boolean
+
+        Dim bolDeleteOK As Boolean = True
+        Dim dbConn As New DBConnection
+        Dim cmd As New SqlCommand
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_deletePlantationGRAPhotos"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            cmd.Parameters.Add("@ID", SqlDbType.Int)
+            cmd.Parameters("@ID").Value = intID
+            cmd.Parameters.Add("@Deleted", SqlDbType.Int)
+            cmd.Parameters("@Deleted").Value = 1
+            cmd.Parameters.Add("@DeletedDateTime", SqlDbType.DateTime)
+            cmd.Parameters("@DeletedDateTime").Value = Now()
+            cmd.ExecuteNonQuery()
+
+        Catch ex As Exception
+            If cnn.State = ConnectionState.Open Then
+                cnn.Close()
+            End If
+            bolDeleteOK = False
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+            cnn = Nothing
+        End Try
+        dbConn = Nothing
+        Return bolDeleteOK
+
+    End Function
+
+End Class

@@ -1,0 +1,431 @@
+﻿Imports System.IO
+Imports SharedEnums
+
+Public Class SharedFunctions
+
+    Public Const _INT_LOUVRE_SQ_UNIT_SIZE = 1000
+    Public Const _INT_QUOTE_EXPIRY_DAYS = 30
+    Public Const _INT_GST_PERCENT = 0.1
+
+    Public Shared Function stripLinebreaks(ByVal strString As String) As String
+
+        Dim strChar As String = String.Empty
+        Dim intPos As Integer = 0
+        Dim strTempString As String = String.Empty
+
+        For intPos = 1 To Len(strString)
+            strChar = Mid(strString, intPos, 1)
+            If strChar <> vbCr And strChar <> vbLf Then
+                strTempString &= strChar
+            End If
+        Next
+
+        Return strTempString
+
+    End Function
+
+    Shared Function bolValidPhoneNumber(ByVal str As String) As Boolean
+
+        Dim i As Integer
+        For i = 0 To str.Length - 1
+            If Not Char.IsNumber(str, i) Then
+                Return False
+            End If
+        Next
+        If Len(str) <> 10 Then
+            Return False
+        Else
+            If bolValidAreaCode(str) = False Then
+                Return False
+            End If
+        End If
+
+        Return True
+
+    End Function
+
+    Shared Function intGetSuburbID(ByVal intSiteID As Integer, ByVal strAddress As String) As Integer
+
+        'Dim service As New AppService
+        'Dim strState As String
+        'Dim strPC As String
+        'Dim strSuburb As String
+        'Dim intStateID As Integer
+        Dim intID As Integer
+
+        'strState = Trim(Right(strAddress, 3))
+        'strPC = Trim(Right(Mid(strAddress, 1, Len(strAddress) - Len(Trim(Right(strAddress, 3)))), 5))
+        'strSuburb = Trim(Mid(strAddress, 1, Len(strAddress) - Len(strPC) - Len(strState) - 2))
+        'intStateID = strGetStateID(strAddress)
+
+        'intID = service.getSuburbIDByLocationDetails(intSiteID, strSuburb, intStateID, CInt(strPC))
+        Return intID
+
+    End Function
+
+    Shared Function bolValidAreaCode(ByVal str As String) As Boolean
+
+        Dim i As Integer = CInt(str.Substring(1, 1))
+        Dim j As Integer = CInt(str.Substring(0, 1))
+        Dim bolOK As Boolean = False
+
+        If j = 0 Then
+            bolOK = True
+        Else
+            bolOK = False
+        End If
+
+        If bolOK = True Then
+            If i = 2 Or i = 3 Or i = 4 Or i = 7 Or i = 8 Then
+                Return True
+            Else
+                Return False
+            End If
+        Else
+            Return False
+        End If
+
+    End Function
+
+    Shared Function bolValidEmail(ByVal strEmail As String) As Boolean
+        Dim strCharacterSet As String = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.@_-"
+        Dim intCounter As Integer
+        Dim intEmailLen As Integer = Len(strEmail)
+        Dim bolBadMail As Boolean = False
+
+        For intCounter = 1 To intEmailLen
+            If InStr(strCharacterSet, Mid(strEmail, intCounter, 1)) = 0 Then
+                bolBadMail = True
+            End If
+        Next
+
+        If bolBadMail = False Then
+            For intCounter = 1 To intEmailLen
+                If Mid(strEmail, intCounter, 2) = ".@" Then
+                    bolBadMail = True
+                ElseIf Mid(strEmail, intCounter, 2) = "@." Then
+                    bolBadMail = True
+                ElseIf Mid(strEmail, intCounter, 2) = ".." Then
+                    bolBadMail = True
+                ElseIf Mid(strEmail, intCounter, 2) = "@@" Then
+                    bolBadMail = True
+                End If
+            Next
+        Else
+            Return False
+        End If
+
+        If bolBadMail = False Then
+            If strEmail.IndexOf("@") = -1 Then
+                Return False
+            ElseIf strEmail.IndexOf(".") = -1 Then
+                Return False
+            ElseIf strEmail.IndexOf(" ") >= 0 Then
+                Return False
+            ElseIf Mid(strEmail, 1, 1) = "." Then
+                Return False
+            ElseIf Mid(strEmail, 1, 1) = "@" Then
+                Return False
+            ElseIf Mid(strEmail, intEmailLen, 1) = "." Then
+                Return False
+            ElseIf Mid(strEmail, intEmailLen, 1) = "@" Then
+                Return False
+            ElseIf strEmail.Length < 7 Then
+                Return False
+            Else
+                Return True
+            End If
+        Else
+            Return False
+        End If
+    End Function
+
+    Shared Function strGetSuburbName(ByVal strAddress As String) As String
+        Dim strState As String
+        Dim strPC As String
+
+        strState = Trim(Right(strAddress, 3))
+        strPC = Trim(Right(Mid(strAddress, 1, Len(strAddress) - Len(Trim(Right(strAddress, 3)))), 5))
+
+        Return Trim(Mid(strAddress, 1, Len(strAddress) - Len(strPC) - Len(strState) - 2))
+    End Function
+
+    Shared Function strGetPostcode(ByVal strAddress As String) As String
+
+        Return Trim(Right(Mid(strAddress, 1, Len(strAddress) - Len(Trim(Right(strAddress, 3)))), 5))
+
+    End Function
+
+    Shared Function strGetStateName(ByVal strAddress As String) As String
+
+        Return Trim(Right(strAddress, 3))
+
+    End Function
+
+    Shared Function strGetStateID(ByVal strAddress As String) As Integer
+        Dim strStateName As String
+        Dim intID As String
+
+        strStateName = Trim(Right(strAddress, 3))
+
+        If strStateName = "NSW" Then
+            intID = 1
+        Else
+            If strStateName = "QLD" Then
+                intID = 2
+            Else
+                If strStateName = "VIC" Then
+                    intID = 3
+                Else
+                    If strStateName = "TAS" Then
+                        intID = 4
+                    Else
+                        If strStateName = "WA" Then
+                            intID = 5
+                        Else
+                            If strStateName = "SA" Then
+                                intID = 6
+                            Else
+                                If strStateName = "NT" Then
+                                    intID = 7
+                                Else
+                                    If strStateName = "ACT" Then
+                                        intID = 8
+                                    Else
+                                        intID = 0
+                                    End If
+                                End If
+                            End If
+                        End If
+                    End If
+                End If
+            End If
+        End If
+
+        Return intID
+    End Function
+
+    Public Shared Function nz(ByVal varInitialValue As Object, Optional ByVal varValueIfNull As Object = "") As Object
+        ' This null-to-zero function is extracted from DBFunctions.vb of USA hive
+        If IsDBNull(varInitialValue) Then
+            If IsDBNull(varValueIfNull) Then
+                Return 0
+            Else
+                Return varValueIfNull
+            End If
+        Else
+            Return varInitialValue
+        End If
+    End Function
+
+    Public Shared Function performDatatableSelectSum(ByVal dtOrig As DataTable, ByVal strSumField As String, ByVal strCriteria As String) As Decimal
+        Dim decSumValue As Decimal = 0
+
+        Dim bolFieldFound As Boolean = False
+        For Each col As DataColumn In dtOrig.Columns
+            If col.ColumnName = strSumField Then
+                bolFieldFound = True
+                Exit For
+            End If
+        Next
+
+        If bolFieldFound = True Then
+            Dim drows() As DataRow = dtOrig.Select(strCriteria)
+            For intCounter As Integer = 0 To (drows.Length - 1)
+                decSumValue = decSumValue + CDec(nz(drows(intCounter)(strSumField), 0))
+            Next
+            drows = Nothing
+        End If
+
+        Return decSumValue
+    End Function
+
+    Public Shared Function performDatatableSelect(ByVal dtOrig As DataTable, ByVal strWhereCaluse As String, Optional ByVal strSort As String = "") As DataTable
+        Dim dtTemp As DataTable = dtOrig.Copy
+        dtTemp.Rows.Clear()
+
+        Try
+
+            If dtOrig.Columns.Count > 0 Then
+                Dim drows() As DataRow = dtOrig.Select(strWhereCaluse, strSort)
+                For intCounter As Integer = 0 To drows.Length - 1
+                    Dim drow As DataRow = dtTemp.NewRow
+                    For Each col As DataColumn In dtTemp.Columns
+                        drow(col.ColumnName) = drows(intCounter)(col.ColumnName)
+                    Next
+                    dtTemp.Rows.Add(drow)
+                    drow = Nothing
+                Next
+                drows = Nothing
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+        End Try
+
+        Return dtTemp
+    End Function
+
+    Public Shared Function performDatatableFilterSortField(ByVal dtOrig As DataTable, ByVal strFilterField As String, ByVal strSortField As String) As DataTable
+        Dim dtNew As DataTable = dtOrig.Copy
+        dtNew.Rows.Clear()
+
+        Try
+
+            Dim drows() As DataRow = dtOrig.Select(strFilterField, strSortField)
+            If drows.Length > 0 Then
+                For intCounter As Integer = 0 To (drows.Length - 1)
+                    Dim drow As DataRow = dtNew.NewRow()
+                    For intColCount As Integer = 0 To (dtOrig.Columns.Count - 1)
+                        drow(intColCount) = drows(intCounter)(intColCount)
+                    Next
+                    dtNew.Rows.Add(drow)
+                    drow = Nothing
+                Next
+            End If
+            drows = Nothing
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+        End Try
+
+        Return dtNew
+    End Function
+
+    Shared Sub fillDropDownList(ByVal dtData As DataTable, ByVal strValMember As String, ByVal strDispMember As String, ByRef cboDropDown As DropDownList, ByVal bolEmptyFirstRow As Boolean, Optional ByVal bolSelectIndexOne As Boolean = True)
+        Try
+
+            cboDropDown.Items.Clear()
+            cboDropDown.SelectedIndex = -1
+
+            cboDropDown.DataSource = dtData
+            cboDropDown.DataValueField = strValMember
+            cboDropDown.DataTextField = strDispMember
+            cboDropDown.DataBind()
+
+            If bolEmptyFirstRow Or cboDropDown.Items.Count = 0 Then
+                cboDropDown.Items.Insert(0, New ListItem(String.Empty, "0"))
+            End If
+
+            If cboDropDown.Items.Count = 2 Then
+                If bolSelectIndexOne Then
+                    cboDropDown.SelectedIndex = 1
+                Else
+                    cboDropDown.SelectedIndex = 0
+                End If
+            Else
+                cboDropDown.SelectedIndex = 0
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+        End Try
+    End Sub
+
+    Shared Function UploadFiles(ByVal FilesControl As FileUpload, ByVal ReferAr As String()) As String()
+        ReferAr(2) = "Upload status: The file could not be uploaded. The following error occured: "
+        '   ReferAr(0) = "Z:\"
+        If Not Directory.Exists(ReferAr(0)) Then
+            Directory.CreateDirectory(ReferAr(0))
+        End If
+
+        If Not Directory.Exists(ReferAr(6)) Then
+            Directory.CreateDirectory(ReferAr(6))
+        End If
+
+        Try    '  If (FileUploadControl.PostedFile.ContentType <> "image/jpeg") Then
+            If (FilesControl.PostedFile.ContentLength < 102400) Then
+                'FileUploadControl.SaveAs(Server.MapPath("~/") + filename)
+                FilesControl.SaveAs(ReferAr(6) + ReferAr(1))
+                ReferAr(2) = "Upload status: File uploaded!"
+            Else
+                ReferAr(2) = "Upload status: File Size is too big!!Please select another."
+            End If
+            Return ReferAr
+        Catch ex As Exception
+            ReferAr(2) += ex.Message
+            Return ReferAr
+        End Try
+
+    End Function
+
+
+    ''' <summary>
+    ''' Populates the given drop down list control with states.
+    ''' </summary>
+    ''' <param name="ddl">The <see cref="DropDownList"/> control to populate.</param>
+    Shared Sub PopulateStateDDL(ByVal ddl As DropDownList)
+        ddl.Items.Clear()
+        ddl.Items.Add(New ListItem("", 0))
+        ddl.Items.Add(New ListItem("NSW", "NSW"))
+        ddl.Items.Add(New ListItem("QLD", "QLD"))
+        ddl.Items.Add(New ListItem("VIC", "VIC"))
+        ddl.Items.Add(New ListItem("TAS", "TAS"))
+        ddl.Items.Add(New ListItem("WA", "WA"))
+        ddl.Items.Add(New ListItem("SA", "SA"))
+        ddl.Items.Add(New ListItem("NT", "NT"))
+        ddl.Items.Add(New ListItem("ACT", "ACT"))
+    End Sub
+
+    Public Function GetCoatingTypeName(coatingType As SharedEnums.CoatingType) As String
+        Select Case coatingType
+            Case SharedEnums.CoatingType.StandardPowderCoat
+                Return "Standard Powder Coat"
+            Case SharedEnums.CoatingType.PremiumPowderCoat
+                Return "Premium Powder Coat"
+            Case SharedEnums.CoatingType.PrestigePowderCoat
+                Return "Prestige Powder Coat"
+            Case SharedEnums.CoatingType.Knotwood
+                Return "Knotwood"
+        End Select
+
+        Return String.Empty
+    End Function
+
+    Shared Function GetMaximumPanelWithForShutterType(enumLouvreType As LouvreTypes) As Integer
+        Select Case enumLouvreType
+            Case LouvreTypes.BiFold
+
+                Return 900
+
+            Case LouvreTypes.Sliding1Track,
+                LouvreTypes.Sliding2Track,
+                LouvreTypes.Sliding3Track,
+                LouvreTypes.Sliding4Track,
+                LouvreTypes.Fixed,
+                LouvreTypes.FixedBladeFixedPanel,
+                LouvreTypes.FixedBladesInAngle,
+                LouvreTypes.Stacker
+
+                Return 1100
+
+            Case LouvreTypes.HingedPanelLeft,
+                LouvreTypes.HingedPanelRight,
+                LouvreTypes.Hinged2Panels
+
+                Return 500
+        End Select
+
+        Return 0
+    End Function
+
+    Public Shared Function RemoveSqlChars(strToRemoveFrom As String) As String
+        Dim strResult As String = String.Empty
+        Dim strSpace As String = " "
+
+        strResult = strToRemoveFrom.Replace("'", strSpace)
+        strResult = strResult.Replace(",", strSpace)
+        strResult = strResult.Replace("%", strSpace)
+        strResult = strResult.Replace("""", strSpace)
+        strResult = strResult.Replace("^", strSpace)
+        strResult = strResult.Replace("[", strSpace)
+        strResult = strResult.Replace("]", strSpace)
+        strResult = strResult.Replace("<", strSpace)
+        strResult = strResult.Replace(">", strSpace)
+        strResult = strResult.Replace("&", strSpace)
+        strResult = strResult.Replace("|", strSpace)
+
+        Return strResult
+    End Function
+
+End Class

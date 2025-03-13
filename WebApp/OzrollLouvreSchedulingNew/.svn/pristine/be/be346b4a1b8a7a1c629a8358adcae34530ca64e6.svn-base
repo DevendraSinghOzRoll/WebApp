@@ -1,0 +1,2000 @@
+﻿Imports Microsoft.VisualBasic
+
+Public Class LouvreSpecDesign
+
+    Implements ICloneable
+
+    Private _LouvreDetailsID As Integer
+    Private _OpeningHeight As Integer
+    Private _OpeningWidth As Integer
+    Private _PanelHeight As Integer
+    Private _PanelWidth As Integer
+    Private _NoOfPanels As Integer
+    Private _WeightPersSQM As Decimal
+    Private _TopTrackHeight As Integer
+    Private _TopGapHeight As Integer
+    Private _BottomTrackHeight As Integer
+    Private _BottomGapHeight As Integer
+    Private _LeftSideGap As Integer
+    Private _RightSideGap As Integer
+    Private _PanelGap As Integer
+    Private _PanelGapOverlap As Integer
+    Private _NoOfClips As Integer
+    Private _NoOfTransom As Integer
+    Private _GivenTransomHeight As Integer
+    Private _PanelTransomHeight As Integer
+    Private _TransomSize As Integer
+    Private _TransomWidthSubtraction As Integer
+    Private _TransomWidth As Integer
+    Private _GivenTransom2Height As Integer
+    Private _PanelTransom2Height As Integer
+    Private _Transom2Size As Integer
+    Private _Transom2WidthSubtraction As Integer
+    Private _Transom2Width As Integer
+    Private _MiddlePanelSectionHeight As Integer
+    Private _BottomPanelSectionHeight As Integer
+    Private _CornerPlugHeight As Integer
+    Private _NoOfCornerPlugs As Integer
+    Private _NoOfHoleCaps As Integer
+    Private _PileQuantity As Integer
+    Private _PileColour As Integer
+    Private _BladeLockQuantity As Integer
+    Private _TopFlushBoltsType As Integer
+    Private _TopFlushBoltsHeight As Integer
+    Private _TopFlushBoltsQuantity As Integer
+    Private _BottomFlushBoltsType As Integer
+    Private _BottomFlushBoltsHeight As Integer
+    Private _BottomFlushBoltsQuantity As Integer
+    Private _HingesType As Integer
+    Private _HingesQuantity As Integer
+    Private _FeltTop As Integer
+    Private _FeltSizeTop As Integer
+    Private _FeltBottom As Integer
+    Private _FeltSizeBottom As Integer
+    Private _FeltLeft As Integer
+    Private _FeltSizeLeft As Integer
+    Private _FeltRight As Integer
+    Private _FeltSizeRight As Integer
+    Private _FeltInBetweenPanels As Integer
+    Private _FeltSizeInBetweenPanels As Integer
+    Private _TopPivotsQuantity As Integer
+    Private _TopPivotsType As Integer
+    Private _TopPivotsPerPanel As Integer
+    Private _BottomPivotsQuantity As Integer
+    Private _BottomPivotsType As Integer
+    Private _BottomPivotsPerPanel As Integer
+    Private _StileLength As Integer
+    Private _StileQuantity As Integer
+    Private _StileHeightSubtraction As Integer
+    Private _TopRailsLength As Integer
+    Private _TopRailsQuantity As Integer
+    Private _TopRailsWidthSubtraction As Integer
+    Private _BottomRailsLength As Integer
+    Private _BottomRailsQuantity As Integer
+    Private _BottomRailsWidthSubtraction As Integer
+    Private _FingerGripsLength As Integer
+    Private _FingerGripQuantity As Integer
+    Private _NoOfProfileSlats As Integer
+    Private _ProfileSize As Integer
+    Private _ProfileCutLength As Integer
+    Private _ProfileCutWidthSubtraction As Integer
+    Private _ProfileNumberHeightSubtraction As Integer
+    Private _TopFirstBladeHoleStartPoint As Integer
+    Private _TopBladeDrillHoleSpaces As Integer
+    Private _MiddleFirstBladeHoleStartPoint As Integer
+    Private _MiddleBladeDrillHoleSpaces As Integer
+    Private _BottomFirstBladeHoleStartPoint As Integer
+    Private _BottomBladeDrillHoleSpaces As Integer
+    Private _InfillWidthSubtraction As Integer
+    Private _TopInfillTopType As Integer
+    Private _TopInfillTopLength As Integer
+    Private _TopInfillTopQuantity As Integer
+    Private _TopInfillTopSize As Integer
+    Private _TopInfillBottomLength As Integer
+    Private _TopInfillBottomQuantity As Integer
+    Private _TopInfillBottomSize As Integer
+    Private _MiddleInfillTopLength As Integer
+    Private _MiddleInfillTopQuantity As Integer
+    Private _MiddleInfillTopSize As Integer
+    Private _MiddleInfillBottomLength As Integer
+    Private _MiddleInfillBottomQuantity As Integer
+    Private _MiddleInfillBottomSize As Integer
+    Private _BottomInfillTopLength As Integer
+    Private _BottomInfillTopQuantity As Integer
+    Private _BottomInfillTopSize As Integer
+    Private _BottomInfillBottomLength As Integer
+    Private _BottomInfillBottomQuantity As Integer
+    Private _BottomInfillBottomSize As Integer
+    Private _DummyBladeTopWidth As Integer
+    Private _DummyBladeTopWidthSubtraction As Integer
+    Private _DummyBladeBottomWidth As Integer
+    Private _DummyBladeBottomWidthSubtraction As Integer
+    Private _MullionLength As Integer
+    Private _MullionQuantity As Integer
+    Private _MullionWidth As Integer
+    Private _MullionHeightSubtraction As Integer
+    Private _TopTrackType As Integer
+    Private _TopTrackSize As Integer
+    Private _TopTrackLength As Integer
+    Private _TopTrackQuantity As Integer
+    Private _BottomTrackType As Integer
+    Private _BottomTrackSize As Integer
+    Private _BottomTrackLength As Integer
+    Private _BottomTrackQuantity As Integer
+    Private _TopGlassHeight As Integer
+    Private _TopGlassWidth As Integer
+    Private _TopGlassType As Integer
+    Private _TopGlassHeightSubtraction As Integer
+    Private _TopGlassHeightAddition As Integer
+    Private _TopGlassWidthSubtraction As Integer
+    Private _TopGlassWidthAddition As Integer
+    Private _MiddleGlassHeight As Integer
+    Private _MiddleGlassWidth As Integer
+    Private _MiddleGlassType As Integer
+    Private _MiddleGlassHeightSubtraction As Integer
+    Private _MiddleGlassHeightAddition As Integer
+    Private _MiddleGlassWidthSubtraction As Integer
+    Private _MiddleGlassWidthAddition As Integer
+    Private _BottomGlassHeight As Integer
+    Private _BottomGlassWidth As Integer
+    Private _BottomGlassType As Integer
+    Private _BottomGlassHeightSubtraction As Integer
+    Private _BottomGlassHeightAddition As Integer
+    Private _BottomGlassWidthSubtraction As Integer
+    Private _BottomGlassWidthAddition As Integer
+    Private _TopVerticalBladesHeightAddition As Integer
+    Private _TopVerticalBladesSubtraction As Integer
+    Private _TopVerticalBladesCutLength As Integer
+    Private _TopVerticalBladesQuantity As Integer
+    Private _MiddleVerticalBladesHeightAddition As Integer
+    Private _MiddleVerticalBladesSubtraction As Integer
+    Private _MiddleVerticalBladesCutLength As Integer
+    Private _MiddleVerticalBladesQuantity As Integer
+    Private _BottomVerticalBladesHeightAddition As Integer
+    Private _BottomVerticalBladesSubtraction As Integer
+    Private _BottomVerticalBladesCutLength As Integer
+    Private _BottomVerticalBladesQuantity As Integer
+    Private _KeyLocksetType As Integer
+    Private _KeyLocksetQuantity As Integer
+    Private _KeyLockType As Integer
+    Private _KeyLockQuantity As Integer
+    Private _KeyLockPinCylinder As Integer
+    Private _KeyLockPinCylinderQuantity As Integer
+    Private _TopChannelType As Integer
+    Private _TopChannelLength As Integer
+    Private _TopChannelQuantity As Integer
+    Private _BottomChannelType As Integer
+    Private _BottomChannelLength As Integer
+    Private _BottomChannelQuantity As Integer
+    Private _SideAngleType1 As Integer
+    Private _SideAngleLength1 As Integer
+    Private _SideAngleQuantity1 As Integer
+    Private _SideAngleType2 As Integer
+    Private _SideAngleLength2 As Integer
+    Private _SideAngleQuantity2 As Integer
+    Private _HSectionLength As Integer
+    Private _HSectionQuantity As Integer
+    Private _PackupLengthAdditionHeight As Integer
+    Private _PackupLengthAdditionWidth As Integer
+
+    Private _BladeInfillTopSize As Integer
+    Private _BladeInfillTopQuantity As Integer
+    Private _BladeInfillMiddleSize As Integer
+    Private _BladeInfillMiddleQuantity As Integer
+    Private _BladeInfillBottomSize As Integer
+    Private _BladeInfillBottomQuantity As Integer
+
+    Private _ReadyToGenerate As Date
+    Private _GenerationComplete As Date
+
+    Public Property LouvreDetailsID() As Integer
+        Get
+            Return _LouvreDetailsID
+        End Get
+        Set(value As Integer)
+            _LouvreDetailsID = value
+        End Set
+    End Property
+    Public Property OpeningHeight() As Integer
+        Get
+            Return _OpeningHeight
+        End Get
+        Set(value As Integer)
+            _OpeningHeight = value
+        End Set
+    End Property
+    Public Property OpeningWidth() As Integer
+        Get
+            Return _OpeningWidth
+        End Get
+        Set(value As Integer)
+            _OpeningWidth = value
+        End Set
+    End Property
+
+    Public Property PanelHeight() As Integer
+        Get
+            Return _PanelHeight
+        End Get
+        Set(value As Integer)
+            _PanelHeight = value
+        End Set
+    End Property
+
+    Public Property PanelWidth() As Integer
+        Get
+            Return _PanelWidth
+        End Get
+        Set(value As Integer)
+            _PanelWidth = value
+        End Set
+    End Property
+
+    Public Property NoOfPanels() As Integer
+        Get
+            Return _NoOfPanels
+        End Get
+        Set(value As Integer)
+            _NoOfPanels = value
+        End Set
+    End Property
+
+    Public Property WeightPersSQM() As Decimal
+        Get
+            Return _WeightPersSQM
+        End Get
+        Set(value As Decimal)
+            _WeightPersSQM = value
+        End Set
+    End Property
+
+    Public Property TopTrackHeight() As Integer
+        Get
+            Return _TopTrackHeight
+        End Get
+        Set(value As Integer)
+            _TopTrackHeight = value
+        End Set
+    End Property
+
+    Public Property TopGapHeight() As Integer
+        Get
+            Return _TopGapHeight
+        End Get
+        Set(value As Integer)
+            _TopGapHeight = value
+        End Set
+    End Property
+
+    Public Property BottomTrackHeight() As Integer
+        Get
+            Return _BottomTrackHeight
+        End Get
+        Set(value As Integer)
+            _BottomTrackHeight = value
+        End Set
+    End Property
+
+    Public Property BottomGapHeight() As Integer
+        Get
+            Return _BottomGapHeight
+        End Get
+        Set(value As Integer)
+            _BottomGapHeight = value
+        End Set
+    End Property
+
+    Public Property LeftSideGap() As Integer
+        Get
+            Return _LeftSideGap
+        End Get
+        Set(value As Integer)
+            _LeftSideGap = value
+        End Set
+    End Property
+
+    Public Property RightSideGap() As Integer
+        Get
+            Return _RightSideGap
+        End Get
+        Set(value As Integer)
+            _RightSideGap = value
+        End Set
+    End Property
+
+    Public Property PanelGap() As Integer
+        Get
+            Return _PanelGap
+        End Get
+        Set(value As Integer)
+            _PanelGap = value
+        End Set
+    End Property
+
+    Public Property PanelGapOverlap() As Integer
+        Get
+            Return _PanelGapOverlap
+        End Get
+        Set(value As Integer)
+            _PanelGapOverlap = value
+        End Set
+    End Property
+
+    Public Property NoOfClips() As Integer
+        Get
+            Return _NoOfClips
+        End Get
+        Set(value As Integer)
+            _NoOfClips = value
+        End Set
+    End Property
+
+    Public Property NoOfTransom() As Integer
+        Get
+            Return _NoOfTransom
+        End Get
+        Set(value As Integer)
+            _NoOfTransom = value
+        End Set
+    End Property
+
+    Public Property GivenTransomHeight() As Integer
+        Get
+            Return _GivenTransomHeight
+        End Get
+        Set(value As Integer)
+            _GivenTransomHeight = value
+        End Set
+    End Property
+
+    Public Property PanelTransomHeight() As Integer
+        Get
+            Return _PanelTransomHeight
+        End Get
+        Set(value As Integer)
+            _PanelTransomHeight = value
+        End Set
+    End Property
+
+    Public Property TransomSize() As Integer
+        Get
+            Return _TransomSize
+        End Get
+        Set(value As Integer)
+            _TransomSize = value
+        End Set
+    End Property
+
+    Public Property TransomWidthSubtraction() As Integer
+        Get
+            Return _TransomWidthSubtraction
+        End Get
+        Set(value As Integer)
+            _TransomWidthSubtraction = value
+        End Set
+    End Property
+
+    Public Property TransomWidth() As Integer
+        Get
+            Return _TransomWidth
+        End Get
+        Set(value As Integer)
+            _TransomWidth = value
+        End Set
+    End Property
+
+    Public Property GivenTransom2Height() As Integer
+        Get
+            Return _GivenTransom2Height
+        End Get
+        Set(value As Integer)
+            _GivenTransom2Height = value
+        End Set
+    End Property
+
+    Public Property PanelTransom2Height() As Integer
+        Get
+            Return _PanelTransom2Height
+        End Get
+        Set(value As Integer)
+            _PanelTransom2Height = value
+        End Set
+    End Property
+
+    Public Property Transom2Size() As Integer
+        Get
+            Return _Transom2Size
+        End Get
+        Set(value As Integer)
+            _Transom2Size = value
+        End Set
+    End Property
+
+    Public Property Transom2WidthSubtraction() As Integer
+        Get
+            Return _Transom2WidthSubtraction
+        End Get
+        Set(value As Integer)
+            _Transom2WidthSubtraction = value
+        End Set
+    End Property
+
+    Public Property Transom2Width() As Integer
+        Get
+            Return _Transom2Width
+        End Get
+        Set(value As Integer)
+            _Transom2Width = value
+        End Set
+    End Property
+
+    Public Property MiddlePanelSectionHeight() As Integer
+        Get
+            Return _MiddlePanelSectionHeight
+        End Get
+        Set(value As Integer)
+            _MiddlePanelSectionHeight = value
+        End Set
+    End Property
+
+    Public Property BottomPanelSectionHeight() As Integer
+        Get
+            Return _BottomPanelSectionHeight
+        End Get
+        Set(value As Integer)
+            _BottomPanelSectionHeight = value
+        End Set
+    End Property
+
+    Public Property CornerPlugHeight() As Integer
+        Get
+            Return _CornerPlugHeight
+        End Get
+        Set(value As Integer)
+            _CornerPlugHeight = value
+        End Set
+    End Property
+
+    Public Property NoOfCornerPlugs() As Integer
+        Get
+            Return _NoOfCornerPlugs
+        End Get
+        Set(value As Integer)
+            _NoOfCornerPlugs = value
+        End Set
+    End Property
+
+    Public Property NoOfHoleCaps() As Integer
+        Get
+            Return _NoOfHoleCaps
+        End Get
+        Set(value As Integer)
+            _NoOfHoleCaps = value
+        End Set
+    End Property
+
+    Public Property PileQuantity() As Integer
+        Get
+            Return _PileQuantity
+        End Get
+        Set(value As Integer)
+            _PileQuantity = value
+        End Set
+    End Property
+
+    Public Property PileColour() As Integer
+        Get
+            Return _PileColour
+        End Get
+        Set(value As Integer)
+            _PileColour = value
+        End Set
+    End Property
+
+    Public Property BladeLockQuantity() As Integer
+        Get
+            Return _BladeLockQuantity
+        End Get
+        Set(value As Integer)
+            _BladeLockQuantity = value
+        End Set
+    End Property
+
+    Public Property TopFlushBoltsType() As Integer
+        Get
+            Return _TopFlushBoltsType
+        End Get
+        Set(value As Integer)
+            _TopFlushBoltsType = value
+        End Set
+    End Property
+
+    Public Property TopFlushBoltsHeight() As Integer
+        Get
+            Return _TopFlushBoltsHeight
+        End Get
+        Set(value As Integer)
+            _TopFlushBoltsHeight = value
+        End Set
+    End Property
+
+    Public Property TopFlushBoltsQuantity() As Integer
+        Get
+            Return _TopFlushBoltsQuantity
+        End Get
+        Set(value As Integer)
+            _TopFlushBoltsQuantity = value
+        End Set
+    End Property
+
+    Public Property BottomFlushBoltsType() As Integer
+        Get
+            Return _BottomFlushBoltsType
+        End Get
+        Set(value As Integer)
+            _BottomFlushBoltsType = value
+        End Set
+    End Property
+
+    Public Property BottomFlushBoltsHeight() As Integer
+        Get
+            Return _BottomFlushBoltsHeight
+        End Get
+        Set(value As Integer)
+            _BottomFlushBoltsHeight = value
+        End Set
+    End Property
+
+    Public Property BottomFlushBoltsQuantity() As Integer
+        Get
+            Return _BottomFlushBoltsQuantity
+        End Get
+        Set(value As Integer)
+            _BottomFlushBoltsQuantity = value
+        End Set
+    End Property
+
+    Public Property HingesType() As Integer
+        Get
+            Return _HingesType
+        End Get
+        Set(value As Integer)
+            _HingesType = value
+        End Set
+    End Property
+
+    Public Property HingesQuantity() As Integer
+        Get
+            Return _HingesQuantity
+        End Get
+        Set(value As Integer)
+            _HingesQuantity = value
+        End Set
+    End Property
+
+    Public Property FeltTop() As Integer
+        Get
+            Return _FeltTop
+        End Get
+        Set(value As Integer)
+            _FeltTop = value
+        End Set
+    End Property
+
+    Public Property FeltSizeTop() As Integer
+        Get
+            Return _FeltSizeTop
+        End Get
+        Set(value As Integer)
+            _FeltSizeTop = value
+        End Set
+    End Property
+
+    Public Property FeltBottom() As Integer
+        Get
+            Return _FeltBottom
+        End Get
+        Set(value As Integer)
+            _FeltBottom = value
+        End Set
+    End Property
+
+    Public Property FeltSizeBottom() As Integer
+        Get
+            Return _FeltSizeBottom
+        End Get
+        Set(value As Integer)
+            _FeltSizeBottom = value
+        End Set
+    End Property
+
+    Public Property FeltLeft() As Integer
+        Get
+            Return _FeltLeft
+        End Get
+        Set(value As Integer)
+            _FeltLeft = value
+        End Set
+    End Property
+
+    Public Property FeltSizeLeft() As Integer
+        Get
+            Return _FeltSizeLeft
+        End Get
+        Set(value As Integer)
+            _FeltSizeLeft = value
+        End Set
+    End Property
+
+    Public Property FeltRight() As Integer
+        Get
+            Return _FeltRight
+        End Get
+        Set(value As Integer)
+            _FeltRight = value
+        End Set
+    End Property
+
+    Public Property FeltSizeRight() As Integer
+        Get
+            Return _FeltSizeRight
+        End Get
+        Set(value As Integer)
+            _FeltSizeRight = value
+        End Set
+    End Property
+
+    Public Property FeltInBetweenPanels() As Integer
+        Get
+            Return _FeltInBetweenPanels
+        End Get
+        Set(value As Integer)
+            _FeltInBetweenPanels = value
+        End Set
+    End Property
+
+    Public Property FeltSizeInBetweenPanels() As Integer
+        Get
+            Return _FeltSizeInBetweenPanels
+        End Get
+        Set(value As Integer)
+            _FeltSizeInBetweenPanels = value
+        End Set
+    End Property
+
+    Public Property TopPivotsQuantity() As Integer
+        Get
+            Return _TopPivotsQuantity
+        End Get
+        Set(value As Integer)
+            _TopPivotsQuantity = value
+        End Set
+    End Property
+
+    Public Property TopPivotsType() As Integer
+        Get
+            Return _TopPivotsType
+        End Get
+        Set(value As Integer)
+            _TopPivotsType = value
+        End Set
+    End Property
+
+    Public Property TopPivotsPerPanel() As Integer
+        Get
+            Return _TopPivotsPerPanel
+        End Get
+        Set(value As Integer)
+            _TopPivotsPerPanel = value
+        End Set
+    End Property
+
+    Public Property BottomPivotsQuantity() As Integer
+        Get
+            Return _BottomPivotsQuantity
+        End Get
+        Set(value As Integer)
+            _BottomPivotsQuantity = value
+        End Set
+    End Property
+
+    Public Property BottomPivotsType() As Integer
+        Get
+            Return _BottomPivotsType
+        End Get
+        Set(value As Integer)
+            _BottomPivotsType = value
+        End Set
+    End Property
+
+    Public Property BottomPivotsPerPanel() As Integer
+        Get
+            Return _BottomPivotsPerPanel
+        End Get
+        Set(value As Integer)
+            _BottomPivotsPerPanel = value
+        End Set
+    End Property
+
+    Public Property StileLength() As Integer
+        Get
+            Return _StileLength
+        End Get
+        Set(value As Integer)
+            _StileLength = value
+        End Set
+    End Property
+
+    Public Property StileQuantity() As Integer
+        Get
+            Return _StileQuantity
+        End Get
+        Set(value As Integer)
+            _StileQuantity = value
+        End Set
+    End Property
+
+    Public Property StileHeightSubtraction() As Integer
+        Get
+            Return _StileHeightSubtraction
+        End Get
+        Set(value As Integer)
+            _StileHeightSubtraction = value
+        End Set
+    End Property
+
+    Public Property TopRailsLength() As Integer
+        Get
+            Return _TopRailsLength
+        End Get
+        Set(value As Integer)
+            _TopRailsLength = value
+        End Set
+    End Property
+
+    Public Property TopRailsQuantity() As Integer
+        Get
+            Return _TopRailsQuantity
+        End Get
+        Set(value As Integer)
+            _TopRailsQuantity = value
+        End Set
+    End Property
+
+    Public Property TopRailsWidthSubtraction() As Integer
+        Get
+            Return _TopRailsWidthSubtraction
+        End Get
+        Set(value As Integer)
+            _TopRailsWidthSubtraction = value
+        End Set
+    End Property
+
+    Public Property BottomRailsLength() As Integer
+        Get
+            Return _BottomRailsLength
+        End Get
+        Set(value As Integer)
+            _BottomRailsLength = value
+        End Set
+    End Property
+    Public Property BottomRailsQuantity() As Integer
+        Get
+            Return _BottomRailsQuantity
+        End Get
+        Set(value As Integer)
+            _BottomRailsQuantity = value
+        End Set
+    End Property
+
+    Public Property BottomRailsWidthSubtraction() As Integer
+        Get
+            Return _BottomRailsWidthSubtraction
+        End Get
+        Set(value As Integer)
+            _BottomRailsWidthSubtraction = value
+        End Set
+    End Property
+
+    Public Property FingerGripsLength() As Integer
+        Get
+            Return _FingerGripsLength
+        End Get
+        Set(value As Integer)
+            _FingerGripsLength = value
+        End Set
+    End Property
+
+    Public Property FingerGripQuantity() As Integer
+        Get
+            Return _FingerGripQuantity
+        End Get
+        Set(value As Integer)
+            _FingerGripQuantity = value
+        End Set
+    End Property
+
+    Public Property NoOfProfileSlats() As Integer
+        Get
+            Return _NoOfProfileSlats
+        End Get
+        Set(value As Integer)
+            _NoOfProfileSlats = value
+        End Set
+    End Property
+
+    Public Property ProfileSize() As Integer
+        Get
+            Return _ProfileSize
+        End Get
+        Set(value As Integer)
+            _ProfileSize = value
+        End Set
+    End Property
+
+    Public Property ProfileCutLength() As Integer
+        Get
+            Return _ProfileCutLength
+        End Get
+        Set(value As Integer)
+            _ProfileCutLength = value
+        End Set
+    End Property
+
+    Public Property ProfileCutWidthSubtraction() As Integer
+        Get
+            Return _ProfileCutWidthSubtraction
+        End Get
+        Set(value As Integer)
+            _ProfileCutWidthSubtraction = value
+        End Set
+    End Property
+
+    Public Property ProfileNumberHeightSubtraction() As Integer
+        Get
+            Return _ProfileNumberHeightSubtraction
+        End Get
+        Set(value As Integer)
+            _ProfileNumberHeightSubtraction = value
+        End Set
+    End Property
+
+    Public Property TopFirstBladeHoleStartPoint() As Integer
+        Get
+            Return _TopFirstBladeHoleStartPoint
+        End Get
+        Set(value As Integer)
+            _TopFirstBladeHoleStartPoint = value
+        End Set
+    End Property
+
+    Public Property TopBladeDrillHoleSpaces() As Integer
+        Get
+            Return _TopBladeDrillHoleSpaces
+        End Get
+        Set(value As Integer)
+            _TopBladeDrillHoleSpaces = value
+        End Set
+    End Property
+
+    Public Property MiddleFirstBladeHoleStartPoint() As Integer
+        Get
+            Return _MiddleFirstBladeHoleStartPoint
+        End Get
+        Set(value As Integer)
+            _MiddleFirstBladeHoleStartPoint = value
+        End Set
+    End Property
+
+    Public Property MiddleBladeDrillHoleSpaces() As Integer
+        Get
+            Return _MiddleBladeDrillHoleSpaces
+        End Get
+        Set(value As Integer)
+            _MiddleBladeDrillHoleSpaces = value
+        End Set
+    End Property
+
+    Public Property BottomFirstBladeHoleStartPoint() As Integer
+        Get
+            Return _BottomFirstBladeHoleStartPoint
+        End Get
+        Set(value As Integer)
+            _BottomFirstBladeHoleStartPoint = value
+        End Set
+    End Property
+
+    Public Property BottomBladeDrillHoleSpaces() As Integer
+        Get
+            Return _BottomBladeDrillHoleSpaces
+        End Get
+        Set(value As Integer)
+            _BottomBladeDrillHoleSpaces = value
+        End Set
+    End Property
+
+    Public Property InfillWidthSubtraction() As Integer
+        Get
+            Return _InfillWidthSubtraction
+        End Get
+        Set(value As Integer)
+            _InfillWidthSubtraction = value
+        End Set
+    End Property
+
+    Public Property TopInfillTopType() As Integer
+        Get
+            Return _TopInfillTopType
+        End Get
+        Set(value As Integer)
+            _TopInfillTopType = value
+        End Set
+    End Property
+
+    Public Property TopInfillTopLength() As Integer
+        Get
+            Return _TopInfillTopLength
+        End Get
+        Set(value As Integer)
+            _TopInfillTopLength = value
+        End Set
+    End Property
+
+    Public Property TopInfillTopQuantity() As Integer
+        Get
+            Return _TopInfillTopQuantity
+        End Get
+        Set(value As Integer)
+            _TopInfillTopQuantity = value
+        End Set
+    End Property
+
+    Public Property TopInfillTopSize() As Integer
+        Get
+            Return _TopInfillTopSize
+        End Get
+        Set(value As Integer)
+            _TopInfillTopSize = value
+        End Set
+    End Property
+
+    Public Property TopInfillBottomLength() As Integer
+        Get
+            Return _TopInfillBottomLength
+        End Get
+        Set(value As Integer)
+            _TopInfillBottomLength = value
+        End Set
+    End Property
+
+    Public Property TopInfillBottomQuantity() As Integer
+        Get
+            Return _TopInfillBottomQuantity
+        End Get
+        Set(value As Integer)
+            _TopInfillBottomQuantity = value
+        End Set
+    End Property
+
+    Public Property TopInfillBottomSize() As Integer
+        Get
+            Return _TopInfillBottomSize
+        End Get
+        Set(value As Integer)
+            _TopInfillBottomSize = value
+        End Set
+    End Property
+
+    Public Property MiddleInfillTopLength() As Integer
+        Get
+            Return _MiddleInfillTopLength
+        End Get
+        Set(value As Integer)
+            _MiddleInfillTopLength = value
+        End Set
+    End Property
+
+    Public Property MiddleInfillTopQuantity() As Integer
+        Get
+            Return _MiddleInfillTopQuantity
+        End Get
+        Set(value As Integer)
+            _MiddleInfillTopQuantity = value
+        End Set
+    End Property
+
+    Public Property MiddleInfillTopSize() As Integer
+        Get
+            Return _MiddleInfillTopSize
+        End Get
+        Set(value As Integer)
+            _MiddleInfillTopSize = value
+        End Set
+    End Property
+
+    Public Property MiddleInfillBottomLength() As Integer
+        Get
+            Return _MiddleInfillBottomLength
+        End Get
+        Set(value As Integer)
+            _MiddleInfillBottomLength = value
+        End Set
+    End Property
+
+    Public Property MiddleInfillBottomQuantity() As Integer
+        Get
+            Return _MiddleInfillBottomQuantity
+        End Get
+        Set(value As Integer)
+            _MiddleInfillBottomQuantity = value
+        End Set
+    End Property
+
+    Public Property MiddleInfillBottomSize() As Integer
+        Get
+            Return _MiddleInfillBottomSize
+        End Get
+        Set(value As Integer)
+            _MiddleInfillBottomSize = value
+        End Set
+    End Property
+
+    Public Property BottomInfillTopLength() As Integer
+        Get
+            Return _BottomInfillTopLength
+        End Get
+        Set(value As Integer)
+            _BottomInfillTopLength = value
+        End Set
+    End Property
+
+    Public Property BottomInfillTopQuantity() As Integer
+        Get
+            Return _BottomInfillTopQuantity
+        End Get
+        Set(value As Integer)
+            _BottomInfillTopQuantity = value
+        End Set
+    End Property
+
+    Public Property BottomInfillTopSize() As Integer
+        Get
+            Return _BottomInfillTopSize
+        End Get
+        Set(value As Integer)
+            _BottomInfillTopSize = value
+        End Set
+    End Property
+
+    Public Property BottomInfillBottomLength() As Integer
+        Get
+            Return _BottomInfillBottomLength
+        End Get
+        Set(value As Integer)
+            _BottomInfillBottomLength = value
+        End Set
+    End Property
+
+    Public Property BottomInfillBottomQuantity() As Integer
+        Get
+            Return _BottomInfillBottomQuantity
+        End Get
+        Set(value As Integer)
+            _BottomInfillBottomQuantity = value
+        End Set
+    End Property
+
+    Public Property BottomInfillBottomSize() As Integer
+        Get
+            Return _BottomInfillBottomSize
+        End Get
+        Set(value As Integer)
+            _BottomInfillBottomSize = value
+        End Set
+    End Property
+
+    Public Property DummyBladeTopWidth() As Integer
+        Get
+            Return _DummyBladeTopWidth
+        End Get
+        Set(value As Integer)
+            _DummyBladeTopWidth = value
+        End Set
+    End Property
+
+    Public Property DummyBladeTopWidthSubtraction() As Integer
+        Get
+            Return _DummyBladeTopWidthSubtraction
+        End Get
+        Set(value As Integer)
+            _DummyBladeTopWidthSubtraction = value
+        End Set
+    End Property
+
+    Public Property DummyBladeBottomWidth() As Integer
+        Get
+            Return _DummyBladeBottomWidth
+        End Get
+        Set(value As Integer)
+            _DummyBladeBottomWidth = value
+        End Set
+    End Property
+
+    Public Property DummyBladeBottomWidthSubtraction() As Integer
+        Get
+            Return _DummyBladeBottomWidthSubtraction
+        End Get
+        Set(value As Integer)
+            _DummyBladeBottomWidthSubtraction = value
+        End Set
+    End Property
+
+    Public Property MullionLength() As Integer
+        Get
+            Return _MullionLength
+        End Get
+        Set(value As Integer)
+            _MullionLength = value
+        End Set
+    End Property
+
+    Public Property MullionQuantity() As Integer
+        Get
+            Return _MullionQuantity
+        End Get
+        Set(value As Integer)
+            _MullionQuantity = value
+        End Set
+    End Property
+
+    Public Property MullionWidth() As Integer
+        Get
+            Return _MullionWidth
+        End Get
+        Set(value As Integer)
+            _MullionWidth = value
+        End Set
+    End Property
+
+    Public Property MullionHeightSubtraction() As Integer
+        Get
+            Return _MullionHeightSubtraction
+        End Get
+        Set(value As Integer)
+            _MullionHeightSubtraction = value
+        End Set
+    End Property
+
+    Public Property TopTrackType() As Integer
+        Get
+            Return _TopTrackType
+        End Get
+        Set(value As Integer)
+            _TopTrackType = value
+        End Set
+    End Property
+
+    Public Property TopTrackSize() As Integer
+        Get
+            Return _TopTrackSize
+        End Get
+        Set(value As Integer)
+            _TopTrackSize = value
+        End Set
+    End Property
+
+    Public Property TopTrackLength() As Integer
+        Get
+            Return _TopTrackLength
+        End Get
+        Set(value As Integer)
+            _TopTrackLength = value
+        End Set
+    End Property
+
+    Public Property TopTrackQuantity() As Integer
+        Get
+            Return _TopTrackQuantity
+        End Get
+        Set(value As Integer)
+            _TopTrackQuantity = value
+        End Set
+    End Property
+
+    Public Property BottomTrackType() As Integer
+        Get
+            Return _BottomTrackType
+        End Get
+        Set(value As Integer)
+            _BottomTrackType = value
+        End Set
+    End Property
+
+    Public Property BottomTrackSize() As Integer
+        Get
+            Return _BottomTrackSize
+        End Get
+        Set(value As Integer)
+            _BottomTrackSize = value
+        End Set
+    End Property
+
+    Public Property BottomTrackLength() As Integer
+        Get
+            Return _BottomTrackLength
+        End Get
+        Set(value As Integer)
+            _BottomTrackLength = value
+        End Set
+    End Property
+
+    Public Property BottomTrackQuantity() As Integer
+        Get
+            Return _BottomTrackQuantity
+        End Get
+        Set(value As Integer)
+            _BottomTrackQuantity = value
+        End Set
+    End Property
+
+    Public Property TopGlassHeight() As Integer
+        Get
+            Return _TopGlassHeight
+        End Get
+        Set(value As Integer)
+            _TopGlassHeight = value
+        End Set
+    End Property
+
+    Public Property TopGlassWidth() As Integer
+        Get
+            Return _TopGlassWidth
+        End Get
+        Set(value As Integer)
+            _TopGlassWidth = value
+        End Set
+    End Property
+
+    Public Property TopGlassType() As Integer
+        Get
+            Return _TopGlassType
+        End Get
+        Set(value As Integer)
+            _TopGlassType = value
+        End Set
+    End Property
+
+    Public Property TopGlassHeightSubtraction() As Integer
+        Get
+            Return _TopGlassHeightSubtraction
+        End Get
+        Set(value As Integer)
+            _TopGlassHeightSubtraction = value
+        End Set
+    End Property
+
+    Public Property TopGlassHeightAddition() As Integer
+        Get
+            Return _TopGlassHeightAddition
+        End Get
+        Set(value As Integer)
+            _TopGlassHeightAddition = value
+        End Set
+    End Property
+
+    Public Property TopGlassWidthSubtraction() As Integer
+        Get
+            Return _TopGlassWidthSubtraction
+        End Get
+        Set(value As Integer)
+            _TopGlassWidthSubtraction = value
+        End Set
+    End Property
+
+    Public Property TopGlassWidthAddition() As Integer
+        Get
+            Return _TopGlassWidthAddition
+        End Get
+        Set(value As Integer)
+            _TopGlassWidthAddition = value
+        End Set
+    End Property
+
+    Public Property MiddleGlassHeight() As Integer
+        Get
+            Return _MiddleGlassHeight
+        End Get
+        Set(value As Integer)
+            _MiddleGlassHeight = value
+        End Set
+    End Property
+
+    Public Property MiddleGlassWidth() As Integer
+        Get
+            Return _MiddleGlassWidth
+        End Get
+        Set(value As Integer)
+            _MiddleGlassWidth = value
+        End Set
+    End Property
+
+    Public Property MiddleGlassType() As Integer
+        Get
+            Return _MiddleGlassType
+        End Get
+        Set(value As Integer)
+            _MiddleGlassType = value
+        End Set
+    End Property
+
+    Public Property MiddleGlassHeightSubtraction() As Integer
+        Get
+            Return _MiddleGlassHeightSubtraction
+        End Get
+        Set(value As Integer)
+            _MiddleGlassHeightSubtraction = value
+        End Set
+    End Property
+
+    Public Property MiddleGlassHeightAddition() As Integer
+        Get
+            Return _MiddleGlassHeightAddition
+        End Get
+        Set(value As Integer)
+            _MiddleGlassHeightAddition = value
+        End Set
+    End Property
+
+    Public Property MiddleGlassWidthSubtraction() As Integer
+        Get
+            Return _MiddleGlassWidthSubtraction
+        End Get
+        Set(value As Integer)
+            _MiddleGlassWidthSubtraction = value
+        End Set
+    End Property
+
+    Public Property MiddleGlassWidthAddition() As Integer
+        Get
+            Return _MiddleGlassWidthAddition
+        End Get
+        Set(value As Integer)
+            _MiddleGlassWidthAddition = value
+        End Set
+    End Property
+
+    Public Property BottomGlassHeight() As Integer
+        Get
+            Return _BottomGlassHeight
+        End Get
+        Set(value As Integer)
+            _BottomGlassHeight = value
+        End Set
+    End Property
+
+    Public Property BottomGlassWidth() As Integer
+        Get
+            Return _BottomGlassWidth
+        End Get
+        Set(value As Integer)
+            _BottomGlassWidth = value
+        End Set
+    End Property
+
+    Public Property BottomGlassType() As Integer
+        Get
+            Return _BottomGlassType
+        End Get
+        Set(value As Integer)
+            _BottomGlassType = value
+        End Set
+    End Property
+
+    Public Property BottomGlassHeightSubtraction() As Integer
+        Get
+            Return _BottomGlassHeightSubtraction
+        End Get
+        Set(value As Integer)
+            _BottomGlassHeightSubtraction = value
+        End Set
+    End Property
+
+    Public Property BottomGlassHeightAddition() As Integer
+        Get
+            Return _BottomGlassHeightAddition
+        End Get
+        Set(value As Integer)
+            _BottomGlassHeightAddition = value
+        End Set
+    End Property
+
+    Public Property BottomGlassWidthSubtraction() As Integer
+        Get
+            Return _BottomGlassWidthSubtraction
+        End Get
+        Set(value As Integer)
+            _BottomGlassWidthSubtraction = value
+        End Set
+    End Property
+
+    Public Property BottomGlassWidthAddition() As Integer
+        Get
+            Return _BottomGlassWidthAddition
+        End Get
+        Set(value As Integer)
+            _BottomGlassWidthAddition = value
+        End Set
+    End Property
+
+    Public Property TopVerticalBladesHeightAddition() As Integer
+        Get
+            Return _TopVerticalBladesHeightAddition
+        End Get
+        Set(value As Integer)
+            _TopVerticalBladesHeightAddition = value
+        End Set
+    End Property
+
+    Public Property TopVerticalBladesSubtraction() As Integer
+        Get
+            Return _TopVerticalBladesSubtraction
+        End Get
+        Set(value As Integer)
+            _TopVerticalBladesSubtraction = value
+        End Set
+    End Property
+
+    Public Property TopVerticalBladesCutLength() As Integer
+        Get
+            Return _TopVerticalBladesCutLength
+        End Get
+        Set(value As Integer)
+            _TopVerticalBladesCutLength = value
+        End Set
+    End Property
+
+    Public Property TopVerticalBladesQuantity() As Integer
+        Get
+            Return _TopVerticalBladesQuantity
+        End Get
+        Set(value As Integer)
+            _TopVerticalBladesQuantity = value
+        End Set
+    End Property
+
+    Public Property MiddleVerticalBladesHeightAddition() As Integer
+        Get
+            Return _MiddleVerticalBladesHeightAddition
+        End Get
+        Set(value As Integer)
+            _MiddleVerticalBladesHeightAddition = value
+        End Set
+    End Property
+    Public Property MiddleVerticalBladesSubtraction() As Integer
+        Get
+            Return _MiddleVerticalBladesSubtraction
+        End Get
+        Set(value As Integer)
+            _MiddleVerticalBladesSubtraction = value
+        End Set
+    End Property
+
+    Public Property MiddleVerticalBladesCutLength() As Integer
+        Get
+            Return _MiddleVerticalBladesCutLength
+        End Get
+        Set(value As Integer)
+            _MiddleVerticalBladesCutLength = value
+        End Set
+    End Property
+
+    Public Property MiddleVerticalBladesQuantity() As Integer
+        Get
+            Return _MiddleVerticalBladesQuantity
+        End Get
+        Set(value As Integer)
+            _MiddleVerticalBladesQuantity = value
+        End Set
+    End Property
+
+    Public Property BottomVerticalBladesHeightAddition() As Integer
+        Get
+            Return _BottomVerticalBladesHeightAddition
+        End Get
+        Set(value As Integer)
+            _BottomVerticalBladesHeightAddition = value
+        End Set
+    End Property
+
+    Public Property BottomVerticalBladesSubtraction() As Integer
+        Get
+            Return _BottomVerticalBladesSubtraction
+        End Get
+        Set(value As Integer)
+            _BottomVerticalBladesSubtraction = value
+        End Set
+    End Property
+
+    Public Property BottomVerticalBladesCutLength() As Integer
+        Get
+            Return _BottomVerticalBladesCutLength
+        End Get
+        Set(value As Integer)
+            _BottomVerticalBladesCutLength = value
+        End Set
+    End Property
+
+    Public Property BottomVerticalBladesQuantity() As Integer
+        Get
+            Return _BottomVerticalBladesQuantity
+        End Get
+        Set(value As Integer)
+            _BottomVerticalBladesQuantity = value
+        End Set
+    End Property
+
+    Public Property KeyLocksetType() As Integer
+        Get
+            Return _KeyLocksetType
+        End Get
+        Set(value As Integer)
+            _KeyLocksetType = value
+        End Set
+    End Property
+
+    Public Property KeyLocksetQuantity() As Integer
+        Get
+            Return _KeyLocksetQuantity
+        End Get
+        Set(value As Integer)
+            _KeyLocksetQuantity = value
+        End Set
+    End Property
+
+    Public Property KeyLockType() As Integer
+        Get
+            Return _KeyLockType
+        End Get
+        Set(value As Integer)
+            _KeyLockType = value
+        End Set
+    End Property
+
+    Public Property KeyLockQuantity() As Integer
+        Get
+            Return _KeyLockQuantity
+        End Get
+        Set(value As Integer)
+            _KeyLockQuantity = value
+        End Set
+    End Property
+
+    Public Property KeyLockPinCylinder() As Integer
+        Get
+            Return _KeyLockPinCylinder
+        End Get
+        Set(value As Integer)
+            _KeyLockPinCylinder = value
+        End Set
+    End Property
+
+    Public Property KeyLockPinCylinderQuantity() As Integer
+        Get
+            Return _KeyLockPinCylinderQuantity
+        End Get
+        Set(value As Integer)
+            _KeyLockPinCylinderQuantity = value
+        End Set
+    End Property
+
+    Public Property TopChannelType() As Integer
+        Get
+            Return _TopChannelType
+        End Get
+        Set(value As Integer)
+            _TopChannelType = value
+        End Set
+    End Property
+
+    Public Property TopChannelLength() As Integer
+        Get
+            Return _TopChannelLength
+        End Get
+        Set(value As Integer)
+            _TopChannelLength = value
+        End Set
+    End Property
+
+    Public Property TopChannelQuantity() As Integer
+        Get
+            Return _TopChannelQuantity
+        End Get
+        Set(value As Integer)
+            _TopChannelQuantity = value
+        End Set
+    End Property
+
+    Public Property BottomChannelType() As Integer
+        Get
+            Return _BottomChannelType
+        End Get
+        Set(value As Integer)
+            _BottomChannelType = value
+        End Set
+    End Property
+
+    Public Property BottomChannelLength() As Integer
+        Get
+            Return _BottomChannelLength
+        End Get
+        Set(value As Integer)
+            _BottomChannelLength = value
+        End Set
+    End Property
+
+    Public Property BottomChannelQuantity() As Integer
+        Get
+            Return _BottomChannelQuantity
+        End Get
+        Set(value As Integer)
+            _BottomChannelQuantity = value
+        End Set
+    End Property
+
+    Public Property SideAngleType1() As Integer
+        Get
+            Return _SideAngleType1
+        End Get
+        Set(value As Integer)
+            _SideAngleType1 = value
+        End Set
+    End Property
+
+    Public Property SideAngleLength1() As Integer
+        Get
+            Return _SideAngleLength1
+        End Get
+        Set(value As Integer)
+            _SideAngleLength1 = value
+        End Set
+    End Property
+
+    Public Property SideAngleQuantity1() As Integer
+        Get
+            Return _SideAngleQuantity1
+        End Get
+        Set(value As Integer)
+            _SideAngleQuantity1 = value
+        End Set
+    End Property
+
+    Public Property SideAngleType2() As Integer
+        Get
+            Return _SideAngleType2
+        End Get
+        Set(value As Integer)
+            _SideAngleType2 = value
+        End Set
+    End Property
+
+    Public Property SideAngleLength2() As Integer
+        Get
+            Return _SideAngleLength2
+        End Get
+        Set(value As Integer)
+            _SideAngleLength2 = value
+        End Set
+    End Property
+
+    Public Property SideAngleQuantity2() As Integer
+        Get
+            Return _SideAngleQuantity2
+        End Get
+        Set(value As Integer)
+            _SideAngleQuantity2 = value
+        End Set
+    End Property
+
+    Public Property HSectionLength() As Integer
+        Get
+            Return _HSectionLength
+        End Get
+        Set(value As Integer)
+            _HSectionLength = value
+        End Set
+    End Property
+
+    Public Property HSectionQuantity() As Integer
+        Get
+            Return _HSectionQuantity
+        End Get
+        Set(value As Integer)
+            _HSectionQuantity = value
+        End Set
+    End Property
+
+    Public Property PackupLengthAdditionHeight() As Integer
+        Get
+            Return _PackupLengthAdditionHeight
+        End Get
+        Set(value As Integer)
+            _PackupLengthAdditionHeight = value
+        End Set
+    End Property
+
+    Public Property PackupLengthAdditionWidth() As Integer
+        Get
+            Return _PackupLengthAdditionWidth
+        End Get
+        Set(value As Integer)
+            _PackupLengthAdditionWidth = value
+        End Set
+    End Property
+
+    Public Property BladeInfillTopSize() As Integer
+        Get
+            Return _BladeInfillTopSize
+        End Get
+        Set(value As Integer)
+            _BladeInfillTopSize = value
+        End Set
+    End Property
+
+    Public Property BladeInfillTopQuantity() As Integer
+        Get
+            Return _BladeInfillTopQuantity
+        End Get
+        Set(value As Integer)
+            _BladeInfillTopQuantity = value
+        End Set
+    End Property
+
+    Public Property BladeInfillMiddleSize() As Integer
+        Get
+            Return _BladeInfillMiddleSize
+        End Get
+        Set(value As Integer)
+            _BladeInfillMiddleSize = value
+        End Set
+    End Property
+
+    Public Property BladeInfillMiddleQuantity() As Integer
+        Get
+            Return _BladeInfillMiddleQuantity
+        End Get
+        Set(value As Integer)
+            _BladeInfillMiddleQuantity = value
+        End Set
+    End Property
+
+    Public Property BladeInfillBottomSize() As Integer
+        Get
+            Return _BladeInfillBottomSize
+        End Get
+        Set(value As Integer)
+            _BladeInfillBottomSize = value
+        End Set
+    End Property
+
+    Public Property BladeInfillBottomQuantity() As Integer
+        Get
+            Return _BladeInfillBottomQuantity
+        End Get
+        Set(value As Integer)
+            _BladeInfillBottomQuantity = value
+        End Set
+    End Property
+
+
+    Public Property ReadyToGenerate() As Date
+        Get
+            Return _ReadyToGenerate
+        End Get
+        Set(value As Date)
+            _ReadyToGenerate = value
+        End Set
+    End Property
+
+    Public Property GenerationComplete() As Date
+        Get
+            Return _GenerationComplete
+        End Get
+        Set(value As Date)
+            _GenerationComplete = value
+        End Set
+    End Property
+
+
+    Public Sub New()
+        _LouvreDetailsID = Constants.DEFAULT_INTEGER_VALUE
+        _OpeningHeight = Constants.DEFAULT_INTEGER_VALUE
+        _OpeningWidth = Constants.DEFAULT_INTEGER_VALUE
+        _PanelHeight = Constants.DEFAULT_INTEGER_VALUE
+        _PanelWidth = Constants.DEFAULT_INTEGER_VALUE
+        _NoOfPanels = Constants.DEFAULT_INTEGER_VALUE
+        _WeightPersSQM = Constants.DEFAULT_DECIMAL_VALUE
+        _TopTrackHeight = Constants.DEFAULT_INTEGER_VALUE
+        _TopGapHeight = Constants.DEFAULT_INTEGER_VALUE
+        _BottomTrackHeight = Constants.DEFAULT_INTEGER_VALUE
+        _BottomGapHeight = Constants.DEFAULT_INTEGER_VALUE
+        _LeftSideGap = Constants.DEFAULT_INTEGER_VALUE
+        _RightSideGap = Constants.DEFAULT_INTEGER_VALUE
+        _PanelGap = Constants.DEFAULT_INTEGER_VALUE
+        _PanelGapOverlap = Constants.DEFAULT_INTEGER_VALUE
+        _NoOfClips = Constants.DEFAULT_INTEGER_VALUE
+        _NoOfTransom = Constants.DEFAULT_INTEGER_VALUE
+        _GivenTransomHeight = Constants.DEFAULT_INTEGER_VALUE
+        _PanelTransomHeight = Constants.DEFAULT_INTEGER_VALUE
+        _TransomSize = Constants.DEFAULT_INTEGER_VALUE
+        _TransomWidthSubtraction = Constants.DEFAULT_INTEGER_VALUE
+        _TransomWidth = Constants.DEFAULT_INTEGER_VALUE
+        _GivenTransom2Height = Constants.DEFAULT_INTEGER_VALUE
+        _PanelTransom2Height = Constants.DEFAULT_INTEGER_VALUE
+        _Transom2Size = Constants.DEFAULT_INTEGER_VALUE
+        _Transom2WidthSubtraction = Constants.DEFAULT_INTEGER_VALUE
+        _Transom2Width = Constants.DEFAULT_INTEGER_VALUE
+        _MiddlePanelSectionHeight = Constants.DEFAULT_INTEGER_VALUE
+        _BottomPanelSectionHeight = Constants.DEFAULT_INTEGER_VALUE
+        _CornerPlugHeight = Constants.DEFAULT_INTEGER_VALUE
+        _NoOfCornerPlugs = Constants.DEFAULT_INTEGER_VALUE
+        _NoOfHoleCaps = Constants.DEFAULT_INTEGER_VALUE
+        _PileQuantity = Constants.DEFAULT_INTEGER_VALUE
+        _PileColour = Constants.DEFAULT_INTEGER_VALUE
+        _BladeLockQuantity = Constants.DEFAULT_INTEGER_VALUE
+        _TopFlushBoltsType = Constants.DEFAULT_INTEGER_VALUE
+        _TopFlushBoltsHeight = Constants.DEFAULT_INTEGER_VALUE
+        _TopFlushBoltsQuantity = Constants.DEFAULT_INTEGER_VALUE
+        _BottomFlushBoltsType = Constants.DEFAULT_INTEGER_VALUE
+        _BottomFlushBoltsHeight = Constants.DEFAULT_INTEGER_VALUE
+        _BottomFlushBoltsQuantity = Constants.DEFAULT_INTEGER_VALUE
+        _HingesType = Constants.DEFAULT_INTEGER_VALUE
+        _HingesQuantity = Constants.DEFAULT_INTEGER_VALUE
+        _FeltTop = Constants.DEFAULT_INTEGER_VALUE
+        _FeltSizeTop = Constants.DEFAULT_INTEGER_VALUE
+        _FeltBottom = Constants.DEFAULT_INTEGER_VALUE
+        _FeltSizeBottom = Constants.DEFAULT_INTEGER_VALUE
+        _FeltLeft = Constants.DEFAULT_INTEGER_VALUE
+        _FeltSizeLeft = Constants.DEFAULT_INTEGER_VALUE
+        _FeltRight = Constants.DEFAULT_INTEGER_VALUE
+        _FeltSizeRight = Constants.DEFAULT_INTEGER_VALUE
+        _FeltInBetweenPanels = Constants.DEFAULT_INTEGER_VALUE
+        _FeltSizeInBetweenPanels = Constants.DEFAULT_INTEGER_VALUE
+        _TopPivotsQuantity = Constants.DEFAULT_INTEGER_VALUE
+        _TopPivotsType = Constants.DEFAULT_INTEGER_VALUE
+        _TopPivotsPerPanel = Constants.DEFAULT_INTEGER_VALUE
+        _BottomPivotsQuantity = Constants.DEFAULT_INTEGER_VALUE
+        _BottomPivotsType = Constants.DEFAULT_INTEGER_VALUE
+        _BottomPivotsPerPanel = Constants.DEFAULT_INTEGER_VALUE
+        _StileLength = Constants.DEFAULT_INTEGER_VALUE
+        _StileQuantity = Constants.DEFAULT_INTEGER_VALUE
+        _StileHeightSubtraction = Constants.DEFAULT_INTEGER_VALUE
+        _TopRailsLength = Constants.DEFAULT_INTEGER_VALUE
+        _TopRailsQuantity = Constants.DEFAULT_INTEGER_VALUE
+        _TopRailsWidthSubtraction = Constants.DEFAULT_INTEGER_VALUE
+        _BottomRailsLength = Constants.DEFAULT_INTEGER_VALUE
+        _BottomRailsQuantity = Constants.DEFAULT_INTEGER_VALUE
+        _BottomRailsWidthSubtraction = Constants.DEFAULT_INTEGER_VALUE
+        _FingerGripsLength = Constants.DEFAULT_INTEGER_VALUE
+        _FingerGripQuantity = Constants.DEFAULT_INTEGER_VALUE
+        _NoOfProfileSlats = Constants.DEFAULT_INTEGER_VALUE
+        _ProfileSize = Constants.DEFAULT_INTEGER_VALUE
+        _ProfileCutLength = Constants.DEFAULT_INTEGER_VALUE
+        _ProfileCutWidthSubtraction = Constants.DEFAULT_INTEGER_VALUE
+        _ProfileNumberHeightSubtraction = Constants.DEFAULT_INTEGER_VALUE
+        _TopFirstBladeHoleStartPoint = Constants.DEFAULT_INTEGER_VALUE
+        _TopBladeDrillHoleSpaces = Constants.DEFAULT_INTEGER_VALUE
+        _MiddleFirstBladeHoleStartPoint = Constants.DEFAULT_INTEGER_VALUE
+        _MiddleBladeDrillHoleSpaces = Constants.DEFAULT_INTEGER_VALUE
+        _BottomFirstBladeHoleStartPoint = Constants.DEFAULT_INTEGER_VALUE
+        _BottomBladeDrillHoleSpaces = Constants.DEFAULT_INTEGER_VALUE
+        _InfillWidthSubtraction = Constants.DEFAULT_INTEGER_VALUE
+        _TopInfillTopType = Constants.DEFAULT_INTEGER_VALUE
+        _TopInfillTopLength = Constants.DEFAULT_INTEGER_VALUE
+        _TopInfillTopQuantity = Constants.DEFAULT_INTEGER_VALUE
+        _TopInfillTopSize = Constants.DEFAULT_INTEGER_VALUE
+        _TopInfillBottomLength = Constants.DEFAULT_INTEGER_VALUE
+        _TopInfillBottomQuantity = Constants.DEFAULT_INTEGER_VALUE
+        _TopInfillBottomSize = Constants.DEFAULT_INTEGER_VALUE
+        _MiddleInfillTopLength = Constants.DEFAULT_INTEGER_VALUE
+        _MiddleInfillTopQuantity = Constants.DEFAULT_INTEGER_VALUE
+        _MiddleInfillTopSize = Constants.DEFAULT_INTEGER_VALUE
+        _MiddleInfillBottomLength = Constants.DEFAULT_INTEGER_VALUE
+        _MiddleInfillBottomQuantity = Constants.DEFAULT_INTEGER_VALUE
+        _MiddleInfillBottomSize = Constants.DEFAULT_INTEGER_VALUE
+        _BottomInfillTopLength = Constants.DEFAULT_INTEGER_VALUE
+        _BottomInfillTopQuantity = Constants.DEFAULT_INTEGER_VALUE
+        _BottomInfillTopSize = Constants.DEFAULT_INTEGER_VALUE
+        _BottomInfillBottomLength = Constants.DEFAULT_INTEGER_VALUE
+        _BottomInfillBottomQuantity = Constants.DEFAULT_INTEGER_VALUE
+        _BottomInfillBottomSize = Constants.DEFAULT_INTEGER_VALUE
+        _DummyBladeTopWidth = Constants.DEFAULT_INTEGER_VALUE
+        _DummyBladeTopWidthSubtraction = Constants.DEFAULT_INTEGER_VALUE
+        _DummyBladeBottomWidth = Constants.DEFAULT_INTEGER_VALUE
+        _DummyBladeBottomWidthSubtraction = Constants.DEFAULT_INTEGER_VALUE
+        _MullionLength = Constants.DEFAULT_INTEGER_VALUE
+        _MullionQuantity = Constants.DEFAULT_INTEGER_VALUE
+        _MullionWidth = Constants.DEFAULT_INTEGER_VALUE
+        _MullionHeightSubtraction = Constants.DEFAULT_INTEGER_VALUE
+        _TopTrackType = Constants.DEFAULT_INTEGER_VALUE
+        _TopTrackSize = Constants.DEFAULT_INTEGER_VALUE
+        _TopTrackLength = Constants.DEFAULT_INTEGER_VALUE
+        _TopTrackQuantity = Constants.DEFAULT_INTEGER_VALUE
+        _BottomTrackType = Constants.DEFAULT_INTEGER_VALUE
+        _BottomTrackSize = Constants.DEFAULT_INTEGER_VALUE
+        _BottomTrackLength = Constants.DEFAULT_INTEGER_VALUE
+        _BottomTrackQuantity = Constants.DEFAULT_INTEGER_VALUE
+        _TopGlassHeight = Constants.DEFAULT_INTEGER_VALUE
+        _TopGlassWidth = Constants.DEFAULT_INTEGER_VALUE
+        _TopGlassType = Constants.DEFAULT_INTEGER_VALUE
+        _TopGlassHeightSubtraction = Constants.DEFAULT_INTEGER_VALUE
+        _TopGlassHeightAddition = Constants.DEFAULT_INTEGER_VALUE
+        _TopGlassWidthSubtraction = Constants.DEFAULT_INTEGER_VALUE
+        _TopGlassWidthAddition = Constants.DEFAULT_INTEGER_VALUE
+        _MiddleGlassHeight = Constants.DEFAULT_INTEGER_VALUE
+        _MiddleGlassWidth = Constants.DEFAULT_INTEGER_VALUE
+        _MiddleGlassType = Constants.DEFAULT_INTEGER_VALUE
+        _MiddleGlassHeightSubtraction = Constants.DEFAULT_INTEGER_VALUE
+        _MiddleGlassHeightAddition = Constants.DEFAULT_INTEGER_VALUE
+        _MiddleGlassWidthSubtraction = Constants.DEFAULT_INTEGER_VALUE
+        _MiddleGlassWidthAddition = Constants.DEFAULT_INTEGER_VALUE
+        _BottomGlassHeight = Constants.DEFAULT_INTEGER_VALUE
+        _BottomGlassWidth = Constants.DEFAULT_INTEGER_VALUE
+        _BottomGlassType = Constants.DEFAULT_INTEGER_VALUE
+        _BottomGlassHeightSubtraction = Constants.DEFAULT_INTEGER_VALUE
+        _BottomGlassHeightAddition = Constants.DEFAULT_INTEGER_VALUE
+        _BottomGlassWidthSubtraction = Constants.DEFAULT_INTEGER_VALUE
+        _BottomGlassWidthAddition = Constants.DEFAULT_INTEGER_VALUE
+        _TopVerticalBladesHeightAddition = Constants.DEFAULT_INTEGER_VALUE
+        _TopVerticalBladesSubtraction = Constants.DEFAULT_INTEGER_VALUE
+        _TopVerticalBladesCutLength = Constants.DEFAULT_INTEGER_VALUE
+        _TopVerticalBladesQuantity = Constants.DEFAULT_INTEGER_VALUE
+        _MiddleVerticalBladesHeightAddition = Constants.DEFAULT_INTEGER_VALUE
+        _MiddleVerticalBladesSubtraction = Constants.DEFAULT_INTEGER_VALUE
+        _MiddleVerticalBladesCutLength = Constants.DEFAULT_INTEGER_VALUE
+        _MiddleVerticalBladesQuantity = Constants.DEFAULT_INTEGER_VALUE
+        _BottomVerticalBladesHeightAddition = Constants.DEFAULT_INTEGER_VALUE
+        _BottomVerticalBladesSubtraction = Constants.DEFAULT_INTEGER_VALUE
+        _BottomVerticalBladesCutLength = Constants.DEFAULT_INTEGER_VALUE
+        _BottomVerticalBladesQuantity = Constants.DEFAULT_INTEGER_VALUE
+        _KeyLocksetType = Constants.DEFAULT_INTEGER_VALUE
+        _KeyLocksetQuantity = Constants.DEFAULT_INTEGER_VALUE
+        _KeyLockType = Constants.DEFAULT_INTEGER_VALUE
+        _KeyLockQuantity = Constants.DEFAULT_INTEGER_VALUE
+        _KeyLockPinCylinder = Constants.DEFAULT_INTEGER_VALUE
+        _KeyLockPinCylinderQuantity = Constants.DEFAULT_INTEGER_VALUE
+        _TopChannelType = Constants.DEFAULT_INTEGER_VALUE
+        _TopChannelLength = Constants.DEFAULT_INTEGER_VALUE
+        _TopChannelQuantity = Constants.DEFAULT_INTEGER_VALUE
+        _BottomChannelType = Constants.DEFAULT_INTEGER_VALUE
+        _BottomChannelLength = Constants.DEFAULT_INTEGER_VALUE
+        _BottomChannelQuantity = Constants.DEFAULT_INTEGER_VALUE
+        _SideAngleType1 = Constants.DEFAULT_INTEGER_VALUE
+        _SideAngleLength1 = Constants.DEFAULT_INTEGER_VALUE
+        _SideAngleQuantity1 = Constants.DEFAULT_INTEGER_VALUE
+        _SideAngleType2 = Constants.DEFAULT_INTEGER_VALUE
+        _SideAngleLength2 = Constants.DEFAULT_INTEGER_VALUE
+        _SideAngleQuantity2 = Constants.DEFAULT_INTEGER_VALUE
+        _HSectionLength = Constants.DEFAULT_INTEGER_VALUE
+        _HSectionQuantity = Constants.DEFAULT_INTEGER_VALUE
+        _PackupLengthAdditionHeight = Constants.DEFAULT_INTEGER_VALUE
+        _PackupLengthAdditionWidth = Constants.DEFAULT_INTEGER_VALUE
+
+        _BladeInfillTopSize = Constants.DEFAULT_INTEGER_VALUE
+        _BladeInfillTopQuantity = Constants.DEFAULT_INTEGER_VALUE
+        _BladeInfillMiddleSize = Constants.DEFAULT_INTEGER_VALUE
+        _BladeInfillMiddleQuantity = Constants.DEFAULT_INTEGER_VALUE
+        _BladeInfillBottomSize = Constants.DEFAULT_INTEGER_VALUE
+        _BladeInfillBottomQuantity = Constants.DEFAULT_INTEGER_VALUE
+
+        _ReadyToGenerate = Constants.DEFAULT_DATE_VALUE
+        _GenerationComplete = Constants.DEFAULT_DATE_VALUE
+
+    End Sub
+
+    Public Function Clone() As Object Implements System.ICloneable.Clone
+
+        Return MyBase.MemberwiseClone
+
+    End Function
+
+End Class

@@ -1,0 +1,193 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml-stylesheet type="text/xsl" href="c:\program files (x86)\microsoft visual studio 12.0\team tools\static analysis tools\fxcop\Xml\CodeAnalysisReport.xsl"?>
+<FxCopReport Version="12.0">
+ <Targets>
+  <Target Name="c:\Temp\tmpC287.tmp.cadir\bin\App_Code.dll">
+   <Modules>
+    <Module Name="app_code.dll">
+     <Namespaces>
+      <Namespace Name="">
+       <Types>
+        <Type Name="DataDAO" Kind="Class" Accessibility="Public" ExternallyVisible="True">
+         <Members>
+          <Member Name="#executeSQLScheduling(System.String)" Kind="Method" Static="False" Accessibility="Public" ExternallyVisible="True">
+           <Messages>
+            <Message TypeName="Review SQL queries for security vulnerabilities" Category="Microsoft.Security" CheckId="CA2100" Status="Active" Created="2017-02-23 23:08:10Z" FixCategory="DependsOnFix">
+             <Issue Name="WithNonLiterals" Certainty="75" Level="Warning" Path="C:\pieliae\OzrollPlantationScheduling_old\OzrollPlantationScheduling\App_Code\dao" File="DataDAO.vb" Line="86">The query string passed to 'SqlCommand.CommandText.Set(String)' in 'DataDAO.executeSQLScheduling(String)' could contain the following variables 'strSQL'. If any of these variables could come from user input, consider using a stored procedure or a parameterized SQL query instead of building the query with string concatenations.</Issue>
+            </Message>
+           </Messages>
+          </Member>
+          <Member Name="#getPlantationOrderDetail(System.Int32,System.Int32)" Kind="Method" Static="False" Accessibility="Public" ExternallyVisible="True">
+           <Messages>
+            <Message TypeName="Do not dispose objects multiple times" Category="Microsoft.Usage" CheckId="CA2202" Status="Active" Created="2017-02-23 23:08:10Z" FixCategory="DependsOnFix">
+             <Issue Certainty="75" Level="Warning" Path="C:\pieliae\OzrollPlantationScheduling_old\OzrollPlantationScheduling\App_Code\dao" File="DataDAO.vb" Line="182">Object 'cnn' can be disposed more than once in method 'DataDAO.getPlantationOrderDetail(Integer, Integer)'. To avoid generating a System.ObjectDisposedException you should not call Dispose more than one time on an object.: Lines: 182</Issue>
+            </Message>
+            <Message TypeName="Review SQL queries for security vulnerabilities" Category="Microsoft.Security" CheckId="CA2100" Status="Active" Created="2017-02-23 23:08:10Z" FixCategory="DependsOnFix">
+             <Issue Name="WithNonLiterals" Certainty="75" Level="Warning" Path="C:\pieliae\OzrollPlantationScheduling_old\OzrollPlantationScheduling\App_Code\dao" File="DataDAO.vb" Line="159">The query string passed to 'SqlCommand.CommandText.Set(String)' in 'DataDAO.getPlantationOrderDetail(Integer, Integer)' could contain the following variables 'Conversions.ToString(intJobNumber)'. If any of these variables could come from user input, consider using a stored procedure or a parameterized SQL query instead of building the query with string concatenations.</Issue>
+            </Message>
+           </Messages>
+          </Member>
+          <Member Name="#getPlantationOrderExtras(System.Int32,System.Int32)" Kind="Method" Static="False" Accessibility="Public" ExternallyVisible="True">
+           <Messages>
+            <Message TypeName="Do not dispose objects multiple times" Category="Microsoft.Usage" CheckId="CA2202" Status="Active" Created="2017-02-23 23:08:10Z" FixCategory="DependsOnFix">
+             <Issue Certainty="75" Level="Warning" Path="C:\pieliae\OzrollPlantationScheduling_old\OzrollPlantationScheduling\App_Code\dao" File="DataDAO.vb" Line="221">Object 'cnn' can be disposed more than once in method 'DataDAO.getPlantationOrderExtras(Integer, Integer)'. To avoid generating a System.ObjectDisposedException you should not call Dispose more than one time on an object.: Lines: 221</Issue>
+            </Message>
+            <Message TypeName="Review SQL queries for security vulnerabilities" Category="Microsoft.Security" CheckId="CA2100" Status="Active" Created="2017-02-23 23:08:10Z" FixCategory="DependsOnFix">
+             <Issue Name="WithNonLiterals" Certainty="75" Level="Warning" Path="C:\pieliae\OzrollPlantationScheduling_old\OzrollPlantationScheduling\App_Code\dao" File="DataDAO.vb" Line="201">The query string passed to 'SqlCommand.CommandText.Set(String)' in 'DataDAO.getPlantationOrderExtras(Integer, Integer)' could contain the following variables 'Conversions.ToString(intJobNumber)'. If any of these variables could come from user input, consider using a stored procedure or a parameterized SQL query instead of building the query with string concatenations.</Issue>
+            </Message>
+           </Messages>
+          </Member>
+          <Member Name="#runSQLHive(System.Int32,System.String)" Kind="Method" Static="False" Accessibility="Public" ExternallyVisible="True">
+           <Messages>
+            <Message TypeName="Review SQL queries for security vulnerabilities" Category="Microsoft.Security" CheckId="CA2100" Status="Active" Created="2017-02-23 23:08:10Z" FixCategory="DependsOnFix">
+             <Issue Name="WithNonLiterals" Certainty="75" Level="Warning" Path="C:\pieliae\OzrollPlantationScheduling_old\OzrollPlantationScheduling\App_Code\dao" File="DataDAO.vb" Line="16">The query string passed to 'SqlCommand.CommandText.Set(String)' in 'DataDAO.runSQLHive(Integer, String)' could contain the following variables 'strSQL'. If any of these variables could come from user input, consider using a stored procedure or a parameterized SQL query instead of building the query with string concatenations.</Issue>
+            </Message>
+           </Messages>
+          </Member>
+          <Member Name="#runSQLScheduling(System.String)" Kind="Method" Static="False" Accessibility="Public" ExternallyVisible="True">
+           <Messages>
+            <Message TypeName="Review SQL queries for security vulnerabilities" Category="Microsoft.Security" CheckId="CA2100" Status="Active" Created="2017-02-23 23:08:10Z" FixCategory="DependsOnFix">
+             <Issue Name="WithNonLiterals" Certainty="75" Level="Warning" Path="C:\pieliae\OzrollPlantationScheduling_old\OzrollPlantationScheduling\App_Code\dao" File="DataDAO.vb" Line="52">The query string passed to 'SqlCommand.CommandText.Set(String)' in 'DataDAO.runSQLScheduling(String)' could contain the following variables 'strSQL'. If any of these variables could come from user input, consider using a stored procedure or a parameterized SQL query instead of building the query with string concatenations.</Issue>
+            </Message>
+           </Messages>
+          </Member>
+         </Members>
+        </Type>
+        <Type Name="RemoteUsersDAO" Kind="Class" Accessibility="Public" ExternallyVisible="True">
+         <Members>
+          <Member Name="#getUserDetailsFromRemoteUsers(System.String,System.String)" Kind="Method" Static="False" Accessibility="Public" ExternallyVisible="True">
+           <Messages>
+            <Message TypeName="Do not dispose objects multiple times" Category="Microsoft.Usage" CheckId="CA2202" Status="Active" Created="2017-02-23 23:08:10Z" FixCategory="DependsOnFix">
+             <Issue Certainty="75" Level="Warning" Path="C:\pieliae\OzrollPlantationScheduling_old\OzrollPlantationScheduling\App_Code\dao" File="RemoteUsersDAO.vb" Line="40">Object 'con' can be disposed more than once in method 'RemoteUsersDAO.getUserDetailsFromRemoteUsers(String, String)'. To avoid generating a System.ObjectDisposedException you should not call Dispose more than one time on an object.: Lines: 40</Issue>
+            </Message>
+            <Message TypeName="Review SQL queries for security vulnerabilities" Category="Microsoft.Security" CheckId="CA2100" Status="Active" Created="2017-02-23 23:08:10Z" FixCategory="DependsOnFix">
+             <Issue Name="WithNonLiterals" Certainty="75" Level="Warning" Path="C:\pieliae\OzrollPlantationScheduling_old\OzrollPlantationScheduling\App_Code\dao" File="RemoteUsersDAO.vb" Line="17">The query string passed to 'SqlCommand.CommandText.Set(String)' in 'RemoteUsersDAO.getUserDetailsFromRemoteUsers(String, String)' could contain the following variables 'strUsername', 'strHash'. If any of these variables could come from user input, consider using a stored procedure or a parameterized SQL query instead of building the query with string concatenations.</Issue>
+            </Message>
+           </Messages>
+          </Member>
+         </Members>
+        </Type>
+       </Types>
+      </Namespace>
+     </Namespaces>
+    </Module>
+   </Modules>
+  </Target>
+ </Targets>
+ <Rules>
+  <Rule TypeName="Do not dispose objects multiple times" Category="Microsoft.Usage" CheckId="CA2202">
+   <Name>Do not dispose objects multiple times</Name>
+   <Description>A correctly implemented Dispose method can be called multiple times without throwing an exception. However, this is not guaranteed and to avoid generating a System.ObjectDisposedException you should not call Dispose more than one time on an object.</Description>
+   <Resolution Name="Default">Object {0} can be disposed more than once in method {1}. To avoid generating a System.ObjectDisposedException you should not call Dispose more than one time on an object.: Lines: 40</Resolution>
+   <Owner>RuleOwner</Owner>
+   <Url>http://msdn.microsoft.com/library/ms182334.aspx</Url>
+   <Email />
+   <MessageLevel Certainty="75">Warning</MessageLevel>
+   <File Name="dataflowrules.dll" Version="12.0.0.0" />
+  </Rule>
+  <Rule TypeName="Review SQL queries for security vulnerabilities" Category="Microsoft.Security" CheckId="CA2100">
+   <Name>Review SQL queries for security vulnerabilities</Name>
+   <Description>A SQL command string built from user input is vulnerable to SQL injection attacks. Microsoft SQL Server and other database servers support stored procedures and parameterized SQL queries, which reduce the risk of injection attacks.</Description>
+   <Resolution Name="WithNonLiterals">The query string passed to {0} in {1} could contain the following variables {2}. If any of these variables could come from user input, consider using a stored procedure or a parameterized SQL query instead of building the query with string concatenations.</Resolution>
+   <Owner>RuleOwner</Owner>
+   <Url>http://msdn.microsoft.com/library/ms182310.aspx</Url>
+   <Email />
+   <MessageLevel Certainty="75">Warning</MessageLevel>
+   <File Name="dataflowrules.dll" Version="12.0.0.0" />
+  </Rule>
+ </Rules>
+ <Localized>
+  <String Key="Category">Category</String>
+  <String Key="Certainty">Certainty</String>
+  <String Key="CollapseAll">Collapse All</String>
+  <String Key="CheckId">Check Id</String>
+  <String Key="Error">Error</String>
+  <String Key="Errors">error(s)</String>
+  <String Key="ExpandAll">Expand All</String>
+  <String Key="Help">Help</String>
+  <String Key="Line">Line</String>
+  <String Key="Messages">message(s)</String>
+  <String Key="LocationNotStoredInPdb">[Location not stored in Pdb]</String>
+  <String Key="Project">Project</String>
+  <String Key="Resolution">Resolution</String>
+  <String Key="Rule">Rule</String>
+  <String Key="RuleFile">Rule File</String>
+  <String Key="RuleDescription">Rule Description</String>
+  <String Key="Source">Source</String>
+  <String Key="Status">Status</String>
+  <String Key="Target">Target</String>
+  <String Key="Warning">Warning</String>
+  <String Key="Warnings">warning(s)</String>
+  <String Key="ReportTitle">Code Analysis Report</String>
+ </Localized>
+ <Exceptions>
+  <Exception Keyword="CA0001" Kind="AssemblyLoad">
+   <Type>Microsoft.FxCop.Common.AssemblyLoadException</Type>
+   <ExceptionMessage>Could not find type 'System.Web.UI.ScriptReferenceBase' in assembly 'System.Web.Extensions, Version=1.0.61025.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35'.</ExceptionMessage>
+   <StackTrace>   at Microsoft.FxCop.Engines.Phoenix.LoadAndResolutionHandler.HandleFailureToFindTypeDefinitionByName(ModuleUnit unit, UInt32 typeRefToken, String name)
+   at Phx.Metadata.LoaderImplementation.FindSymbolAndAssignToken(Symbol symbol)
+   at Phx.Metadata.MetadataLoader.LoadAssemblyDefinition(AssemblyUnit unit)
+   at Microsoft.FxCop.Engines.Phoenix.AssemblyLoader.ProcessWorklist(MetadataLoader metadataLoader, Boolean ignoreErrors)
+   at Microsoft.FxCop.Engines.Phoenix.AssemblyLoader.LoadAssembly(String filePath)
+   at Microsoft.FxCop.Engines.Phoenix.PhoenixAnalysisEngine.AnalyzeInternal()
+   at Microsoft.FxCop.Engines.Phoenix.PhoenixAnalysisEngine.Analyze()
+   at Microsoft.FxCop.Common.EngineManager.Analyze(Project project, Boolean verboseOutput)</StackTrace>
+  </Exception>
+  <Exception Keyword="CA0001" Kind="Engine">
+   <Type>Microsoft.FxCop.Sdk.InvalidMetadataException</Type>
+   <ExceptionMessage>The following error was encountered while reading module 'App_Web_oii4nvz2': Could not resolve type reference: [System.Web.Extensions, Version=1.0.61025.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]System.Web.UI.ScriptReferenceBase.</ExceptionMessage>
+   <StackTrace>   at Microsoft.FxCop.Sdk.Reader.HandleError(ModuleNode mod, String errorMessage)
+   at Microsoft.FxCop.Sdk.Reader.GetDummyTypeNode(Identifier namesp, Identifier name, ModuleNode declaringModule, TypeNode declaringType, Boolean expectStruct)
+   at Microsoft.FxCop.Sdk.Reader.GetTypeFromRef(Int32 i, Boolean expectStruct)
+   at Microsoft.FxCop.Sdk.Reader.GetTypeFromRef(Int32 i)
+   at Microsoft.FxCop.Sdk.Reader.GetMemberFromRef(Int32 i, TypeNodeCollection&amp; varArgTypes, Int32 numGenericArgs)
+   at Microsoft.FxCop.Sdk.Reader.GetMemberFromToken(Int32 tok, TypeNodeCollection&amp; varArgTypes)
+   at Microsoft.FxCop.Sdk.InstructionParser.ParseInstruction()
+   at Microsoft.FxCop.Sdk.InstructionParser.ParseInstructions()
+   at Microsoft.FxCop.Sdk.Reader.ParseMethodInstructions(Method method, Int32 methodIndex, Int32 RVA)
+   at Microsoft.FxCop.Sdk.Reader.GetMethodInstructions(Method method, Object i)
+   at Microsoft.FxCop.Sdk.Reader.GetMethodBody(Method method, Object i, Boolean asInstructionList)
+   at Microsoft.FxCop.Sdk.Method.get_Instructions()
+   at Microsoft.FxCop.Sdk.RuleUtilities.HasImperativeSecurityAction(Method method, SecurityAction action)
+   at Microsoft.FxCop.Sdk.RuleUtilities.HasSecurityAction(Method method, SecurityAction action)
+   at Microsoft.FxCop.Sdk.RuleUtilities.HasSecurityAction(Method method, SecurityAction[] actions)
+   at Microsoft.FxCop.Engines.Introspection.LoadVisitor.RecordCallSites(Method caller)
+   at Microsoft.FxCop.Engines.Introspection.LoadVisitor.VisitMember(Member member, TargetMember target)
+   at Microsoft.FxCop.Engines.Introspection.BaseVisitor.VisitMembers(MemberCollection members, TargetMemberDictionary targets, Boolean visitNestedTypes)
+   at Microsoft.FxCop.Engines.Introspection.BaseVisitor.VisitType(TypeNode type, TargetType target)
+   at Microsoft.FxCop.Engines.Introspection.LoadVisitor.VisitType(TypeNode type, TargetType target)
+   at Microsoft.FxCop.Engines.Introspection.BaseVisitor.VisitTypes(TypeNodeCollection types, TargetNamespaceDictionary targets)
+   at Microsoft.FxCop.Engines.Introspection.LoadVisitor.VisitModule(ModuleNode module, TargetModule target)
+   at Microsoft.FxCop.Engines.Introspection.BaseVisitor.VisitAssembly(AssemblyNode assembly, TargetFile target)
+   at Microsoft.FxCop.Engines.Introspection.LoadVisitor.VisitAssembly(AssemblyNode assembly, TargetFile target)
+   at Microsoft.FxCop.Engines.Introspection.LoadVisitor.Load(TargetFile target, Boolean buildTree, Boolean queueItems, AssemblyNode loadedAssembly)
+   at Microsoft.FxCop.Engines.Introspection.LoadVisitor.LoadAssemblies(Queue queue, ExceptionCollection exceptions)</StackTrace>
+  </Exception>
+  <Exception Keyword="CA0001" Kind="Engine">
+   <Type>Microsoft.FxCop.Sdk.FxCopException</Type>
+   <ExceptionMessage>An unhandled exception occurred while analyzing assemblies:</ExceptionMessage>
+   <InnerType>Microsoft.FxCop.Sdk.InvalidMetadataException</InnerType>
+   <InnerExceptionMessage>The following error was encountered while reading module 'App_Web_oii4nvz2': Could not resolve type reference: [System.Web.Extensions, Version=1.0.61025.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]System.Web.UI.ScriptReferenceBase.</InnerExceptionMessage>
+   <InnerStackTrace>   at Microsoft.FxCop.Sdk.Reader.HandleError(ModuleNode mod, String errorMessage)
+   at Microsoft.FxCop.Sdk.Reader.GetDummyTypeNode(Identifier namesp, Identifier name, ModuleNode declaringModule, TypeNode declaringType, Boolean expectStruct)
+   at Microsoft.FxCop.Sdk.Reader.GetTypeFromRef(Int32 i, Boolean expectStruct)
+   at Microsoft.FxCop.Sdk.Reader.GetTypeFromRef(Int32 i)
+   at Microsoft.FxCop.Sdk.Reader.GetMemberFromRef(Int32 i, TypeNodeCollection&amp; varArgTypes, Int32 numGenericArgs)
+   at Microsoft.FxCop.Sdk.Reader.GetMemberFromToken(Int32 tok, TypeNodeCollection&amp; varArgTypes)
+   at Microsoft.FxCop.Sdk.InstructionParser.ParseInstruction()
+   at Microsoft.FxCop.Sdk.InstructionParser.ParseInstructions()
+   at Microsoft.FxCop.Sdk.Reader.ParseMethodInstructions(Method method, Int32 methodIndex, Int32 RVA)
+   at Microsoft.FxCop.Sdk.Reader.GetMethodInstructions(Method method, Object i)
+   at Microsoft.FxCop.Sdk.Reader.GetMethodBody(Method method, Object i, Boolean asInstructionList)
+   at Microsoft.FxCop.Sdk.Method.get_Instructions()
+   at Microsoft.FxCop.Sdk.AnalysisFilter.IsAspNetEmitted(Member member)
+   at Microsoft.FxCop.Sdk.AnalysisFilter.ShouldNotAnalyze(Member member, FilterOptions options)
+   at Microsoft.FxCop.Engines.Introspection.AnalysisVisitor.ShouldNotAnalyze(Member member, NodeBase nodeBase)
+   at Microsoft.FxCop.Engines.Introspection.AnalysisVisitor.VisitMember(Member member, TargetMember target)
+   at Microsoft.FxCop.Engines.Introspection.BaseVisitor.VisitMembers(MemberCollection members, TargetMemberDictionary targets, Boolean visitNestedTypes)
+   at Microsoft.FxCop.Engines.Introspection.AnalysisVisitor.VisitType(TypeNode type, TargetType target)
+   at Microsoft.FxCop.Engines.Introspection.AnalysisVisitor.Analyze(Queue queue)
+   at Microsoft.FxCop.Engines.Introspection.IntrospectionAnalysisEngine.AnalyzeThread()</InnerStackTrace>
+  </Exception>
+ </Exceptions>
+</FxCopReport>

@@ -1,0 +1,164 @@
+Imports Microsoft.VisualBasic
+
+Public Class LouvreSpecs
+
+
+
+    Implements ICloneable
+
+    Private _ProductScheduleID As Integer
+    Private _LouvreJobTypeID As Integer
+    Private _ColourID As Integer
+    Private _CheckMeasureDate As Date
+    Private _CheckMeasureID As Integer
+    Private _InstallDate As Date
+    Private _InstallID As Integer
+    Private _ReworkDescription As String
+    Private _ReworkReasonID As Integer
+    Private _RectificationDetails As String
+    Private _RectificationLocation As Integer
+    Private _RectificationReasonID As Integer
+    Private _StyleID As Integer
+
+    Public Property ProductScheduleID() As Integer
+        Get
+            Return _ProductScheduleID
+        End Get
+        Set(value As Integer)
+            _ProductScheduleID = value
+        End Set
+    End Property
+
+    Public Property LouvreJobTypeID() As Integer
+        Get
+            Return _LouvreJobTypeID
+        End Get
+        Set(value As Integer)
+            _LouvreJobTypeID = value
+        End Set
+    End Property
+
+    Public Property ColourID() As Integer
+        Get
+            Return _ColourID
+        End Get
+        Set(value As Integer)
+            _ColourID = value
+        End Set
+    End Property
+
+    Public Property CheckMeasureDate() As Date
+        Get
+            Return _CheckMeasureDate
+        End Get
+        Set(value As Date)
+            _CheckMeasureDate = value
+        End Set
+    End Property
+
+    Public Property CheckMeasureID() As Integer
+        Get
+            Return _CheckMeasureID
+        End Get
+        Set(value As Integer)
+            _CheckMeasureID = value
+        End Set
+    End Property
+
+    Public Property InstallDate() As Date
+        Get
+            Return _InstallDate
+        End Get
+        Set(value As Date)
+            _InstallDate = value
+        End Set
+    End Property
+
+    Public Property InstallID() As Integer
+        Get
+            Return _InstallID
+        End Get
+        Set(value As Integer)
+            _InstallID = value
+        End Set
+    End Property
+
+    Public Property ReworkDescription() As String
+        Get
+            Return _ReworkDescription
+        End Get
+        Set(value As String)
+            _ReworkDescription = value
+        End Set
+    End Property
+
+    Public Property ReworkReasonID() As Integer
+        Get
+            Return _ReworkReasonID
+        End Get
+        Set(value As Integer)
+            _ReworkReasonID = value
+        End Set
+    End Property
+
+    Public Property RectificationDetails() As String
+        Get
+            Return _RectificationDetails
+        End Get
+        Set(value As String)
+            _RectificationDetails = value
+        End Set
+    End Property
+
+    Public Property RectificationLocation() As Integer
+        Get
+            Return _RectificationLocation
+        End Get
+        Set(value As Integer)
+            _RectificationLocation = value
+        End Set
+    End Property
+
+    Public Property RectificationReasonID() As Integer
+        Get
+            Return _RectificationReasonID
+        End Get
+        Set(value As Integer)
+            _RectificationReasonID = value
+        End Set
+    End Property
+
+    Public Property StyleID() As Integer
+        Get
+            Return _StyleID
+        End Get
+        Set(value As Integer)
+            _StyleID = value
+        End Set
+    End Property
+
+    Public Sub New()
+
+        _ProductScheduleID = Constants.DEFAULT_INTEGER_VALUE
+        _LouvreJobTypeID = Constants.DEFAULT_INTEGER_VALUE
+        _ColourID = Constants.DEFAULT_INTEGER_VALUE
+        _CheckMeasureDate = Constants.DEFAULT_DATE_VALUE
+        _CheckMeasureID = Constants.DEFAULT_INTEGER_VALUE
+        _InstallDate = Constants.DEFAULT_DATE_VALUE
+        _InstallID = Constants.DEFAULT_INTEGER_VALUE
+        _ReworkDescription = String.Empty
+        _ReworkReasonID = Constants.DEFAULT_INTEGER_VALUE
+        _RectificationDetails = String.Empty
+        _RectificationLocation = Constants.DEFAULT_INTEGER_VALUE
+        _RectificationReasonID = Constants.DEFAULT_INTEGER_VALUE
+        _StyleID = Constants.DEFAULT_INTEGER_VALUE
+
+    End Sub
+
+    Public Function Clone() As Object Implements System.ICloneable.Clone
+
+        Return MyBase.MemberwiseClone
+
+    End Function
+
+End Class

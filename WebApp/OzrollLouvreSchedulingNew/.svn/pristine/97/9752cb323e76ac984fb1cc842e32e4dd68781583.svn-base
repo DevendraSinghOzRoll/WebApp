@@ -1,0 +1,153 @@
+﻿Imports Microsoft.VisualBasic
+Imports System.Data.SqlClient
+
+Public Class LouvreCategoriesDAO
+
+    ''' <summary>
+    ''' Gets the louvre categories for the given parameters from the tblLouvreCategories database table.
+    ''' </summary>
+    ''' <returns>A <see cref="DataTable"/> representing the database table.</returns>
+    Public Function getLouvreCategoriesRecords() As DataTable
+
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getLouvreCategories"
+            cmd.CommandType = CommandType.StoredProcedure
+            SqlCommandBuilder.DeriveParameters(cmd)
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Close()
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+
+        Return dt
+
+    End Function
+
+    Public Function getLouvreCategories() As List(Of LouvreCategory)
+        Dim cLouvreCategory As LouvreCategory
+        Dim lLouvreCategories As New List(Of LouvreCategory)
+
+        Dim dtLouvreCategories As DataTable = getLouvreCategoriesRecords()
+
+        For Each r As DataRow In dtLouvreCategories.Rows
+            cLouvreCategory = convertLouvreCategoryRecordToObject(r)
+            lLouvreCategories.Add(cLouvreCategory)
+        Next
+
+        Return lLouvreCategories
+    End Function
+
+    Private Function convertLouvreCategoryRecordToObject(drLouvrePrice As DataRow) As LouvreCategory
+        Dim cLouvreCategory As New LouvreCategory
+
+        With cLouvreCategory
+            .ID = CInt(drLouvrePrice("ID"))
+            .Name = CInt(drLouvrePrice("CategoryName"))
+        End With
+
+        Return cLouvreCategory
+    End Function
+
+    ''' <summary>
+    ''' Updates the given <see cref="LouvreCategory"/> record in the tblLouvreCategories database table.
+    ''' </summary>
+    ''' <param name="aLouvreCategory">The <see cref="LouvreCategory"/> to update in the database table.</param>
+    ''' <param name="cnn">The <see cref="SqlConnection"/> object.</param>
+    ''' <param name="trans">The <see cref="SqlTransaction"/> object.</param>
+    ''' <returns>True is the record was updated, otherwise false.</returns>
+    Function AddOrUpdateLouvreCategoryRecord(ByVal aLouvreCategory As LouvreCategory, Optional cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As Integer
+        Dim intRecordID As Integer = 0
+        Dim bolAddOK As Boolean = True
+        Dim boolHaveNewCnn As Boolean = False
+        Dim cmd As New SqlCommand
+
+        If IsNothing(cnn) Then
+            Dim dbConn As New DBConnection
+
+            boolHaveNewCnn = True
+
+            cnn = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+            dbConn = Nothing
+        End If
+
+        Try
+            If boolHaveNewCnn Then
+                cnn.Open()
+            End If
+
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_addOrUpdateLouvreCategory"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            If Not boolHaveNewCnn Then
+                cmd.Transaction = trans
+            End If
+
+            setupCommandParameters(aLouvreCategory, cmd, False)
+
+            Dim ra As Integer = cmd.ExecuteNonQuery
+
+            If ra < 1 Then
+                EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - add record failed" & Environment.NewLine)
+                bolAddOK = False
+                cnn.Close()
+            Else
+                ' Return the quote record ID
+                intRecordID = cmd.Parameters("@ID").Value.ToString()
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+            bolAddOK = False
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+            If bolAddOK = False Then
+                cnn.Dispose()
+                cnn = Nothing
+            End If
+        End Try
+
+        Return intRecordID
+    End Function
+
+    ''' <summary>
+    ''' Setup the command parameters for the given Louvre Category.
+    ''' </summary>
+    ''' <param name="aLouvreCategory">The <see cref="LouvreCategory"/> to use to configure the command parameters.</param>
+    ''' <param name="cmd">The <see cref="SqlCommand"/> object to configure.</param>
+    Protected Sub setupCommandParameters(aLouvreCategory As LouvreCategory, ByRef cmd As SqlCommand, bIsAdd As Boolean)
+
+        SqlCommandBuilder.DeriveParameters(cmd)
+
+        cmd.Parameters("@ID").Direction = ParameterDirection.InputOutput
+
+        With aLouvreCategory
+            If .ID > 0 Then
+                cmd.Parameters("@ID").Value = .ID
+            Else
+                cmd.Parameters("@ID").Value = DBNull.Value
+            End If
+
+            cmd.Parameters("@CategoryName").Value = .Name
+        End With
+    End Sub
+End Class

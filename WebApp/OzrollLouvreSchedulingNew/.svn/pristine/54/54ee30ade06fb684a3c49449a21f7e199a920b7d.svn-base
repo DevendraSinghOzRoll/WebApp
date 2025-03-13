@@ -1,0 +1,1084 @@
+﻿Imports System.Data.SqlClient
+Public Class AppService
+
+    Public Function getUserDetailsFromRemoteUsers(ByVal strUsername As String, ByVal strHash As String) As DataTable
+
+        Dim serviceDAO As New RemoteUsersDAO
+        Return serviceDAO.getUserDetailsFromRemoteUsers(strUsername, strHash)
+
+    End Function
+
+    Function runSQLHive(ByVal intSiteID As Integer, ByVal strSQL As String) As DataTable
+
+        Dim serviceDAO As New DataDAO
+        Return serviceDAO.runSQLHive(intSiteID, strSQL)
+
+    End Function
+
+    Function runSQLOzrollSybiz(ByVal strSQL As String) As DataTable
+
+        Dim serviceDAO As New DataDAO
+        Return serviceDAO.runSQLOzrollSybiz(strSQL)
+
+    End Function
+
+    Function runSQLOSCDatabase(ByVal strSQL As String, Optional cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As DataTable
+
+        Dim serviceDAO As New DataDAO
+        Return serviceDAO.runSQLOSCDatabase(strSQL, cnn, trans)
+
+    End Function
+
+    Function runSQLScheduling(ByVal strSQL As String, Optional cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As DataTable
+
+        Dim serviceDAO As New DataDAO
+        Return serviceDAO.runSQLScheduling(strSQL, cnn, trans)
+
+    End Function
+
+    Function runSQLOZOTS(ByVal strSQL As String) As DataTable
+
+        Dim serviceDAO As New DataDAO
+        Return serviceDAO.runSQLOZOTS(strSQL)
+
+    End Function
+
+    Function runSQLOzrollTracking(ByVal strSQL As String) As DataTable
+
+        Dim serviceDAO As New DataDAO
+        Return serviceDAO.runSQLOzrollTracking(strSQL)
+
+    End Function
+
+    Function executeSQLScheduling(ByVal strSQL As String, Optional cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As Boolean
+
+        Dim serviceDAO As New DataDAO
+        Return serviceDAO.executeSQLScheduling(strSQL, cnn, trans)
+
+    End Function
+
+    Function updateScheduledDate(ByVal intSiteID As Integer, ByVal intJobNumber As Integer, ByVal dteScheduledDate As Date) As Boolean
+
+        Dim serviceDAO As New DataDAO
+        Return serviceDAO.updateScheduledDate(intSiteID, intJobNumber, dteScheduledDate)
+
+    End Function
+
+    Function getPlantationOrderDetail(ByVal intSiteID As Integer, ByVal intJobNumber As Integer) As DataTable
+
+        Dim serviceDAO As New DataDAO
+        Return serviceDAO.getPlantationOrderDetail(intSiteID, intJobNumber)
+
+    End Function
+
+    Function getPlantationOrderExtras(ByVal intSiteID As Integer, ByVal intJobNumber As Integer) As DataTable
+
+        Dim serviceDAO As New DataDAO
+        Return serviceDAO.getPlantationOrderExtras(intSiteID, intJobNumber)
+
+    End Function
+
+#Region "Plantation Job Details"
+
+    Function getPlantationJobDetailsRecord(intPSDetailID As Integer) As PlantationJobDetails
+
+        Dim serviceDAO As New PlantationJobDetailsDAO
+        Return serviceDAO.getPlantationJobDetailsRecord(intPSDetailID)
+
+    End Function
+
+    Function getPlantationJobDetailsRecordsByPlantationScheduleID(intPlantationScheduleID As Integer) As DataTable
+
+        Dim serviceDAO As New PlantationJobDetailsDAO
+        Return serviceDAO.getPlantationJobDetailsRecordsByPlantationScheduleID(intPlantationScheduleID)
+
+    End Function
+
+    Function addPlantationJobDetailsRecord(cPlantationJobDetails As PlantationJobDetails, cnn As SqlConnection, ByRef trans As SqlTransaction) As Boolean
+
+        Dim serviceDAO As New PlantationJobDetailsDAO
+        Return serviceDAO.addPlantationJobDetailsRecord(cPlantationJobDetails, cnn, trans)
+
+    End Function
+
+    Function updatePlantationJobDetailsRecord(cPlantationJobDetails As PlantationJobDetails, cnn As SqlConnection, ByRef trans As SqlTransaction) As Boolean
+
+        Dim serviceDAO As New PlantationJobDetailsDAO
+        Return serviceDAO.updatePlantationJobDetailsRecord(cPlantationJobDetails, cnn, trans)
+
+    End Function
+
+#End Region
+
+
+#Region "Production Schedule Section"
+
+    Function createOrderStatusTBL(intProductTypeID As Integer) As DataTable
+
+        Dim ProdScheduleDAO As New ProductionScheduleDAO
+        Return ProdScheduleDAO.createOrderStatusTBL(intProductTypeID)
+
+    End Function
+
+    Function getSchedulingMonths(ByRef dtAllMonths As DataTable, Optional ByVal intYearID As Integer = Nothing) As DataTable
+
+        Dim ProdScheduleDAO As New ProductionScheduleDAO
+        Return ProdScheduleDAO.getSchedulingMonths(dtAllMonths, intYearID)
+
+    End Function
+
+    Function getProductionScheduleByID(ByVal intProdScheduleId As Integer, Optional cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As DataTable
+
+        Dim ProdScheduleDAO As New ProductionScheduleDAO
+        Return ProdScheduleDAO.getProductionScheduleByID(intProdScheduleId)
+
+    End Function
+
+    Function getProdScheduleClsByID(ByVal intProdScheduleId As Integer, Optional cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As ProductionSchedule
+
+        Dim ProdScheduleDAO As New ProductionScheduleDAO
+        Return ProdScheduleDAO.getProdScheduleClsByID(intProdScheduleId)
+
+    End Function
+
+    Function addProductionScheduleRecord(ByVal clsProdSchedule As ProductionSchedule, ByVal cnn As SqlConnection, ByRef trans As SqlTransaction) As Integer
+
+        Dim ProdScheduleDAO As New ProductionScheduleDAO
+        Return ProdScheduleDAO.addProductionScheduleRecord(clsProdSchedule, cnn, trans)
+
+    End Function
+
+    Function updateProductionScheduleByID(ByVal clsProdSchedule As ProductionSchedule, ByVal cnn As SqlConnection, ByRef trans As SqlTransaction) As Boolean
+
+        Dim ProdScheduleDAO As New ProductionScheduleDAO
+        Return ProdScheduleDAO.updateProductionScheduleByID(clsProdSchedule, cnn, trans)
+
+
+    End Function
+
+    Function addProdScheduleHistoryRcd(ByVal intChangedID As Integer, ByVal clsProdSchedule As ProductionSchedule, ByVal cnn As SqlConnection, ByRef trans As SqlTransaction) As Boolean
+
+        Dim ProdScheduleDAO As New ProductionScheduleDAO
+        Return ProdScheduleDAO.addProdScheduleHistoryRcd(intChangedID, clsProdSchedule, cnn, trans)
+
+    End Function
+
+    Function getProductScheduleHistoryNewChgID() As Integer
+
+        Dim ProdScheduleDAO As New ProductionScheduleDAO
+        Return ProdScheduleDAO.getProductScheduleHistoryNewChgID
+
+    End Function
+
+    Function ConvertRcdToProdScheduleCls(ByVal dwProdScheduleTBL As DataRow) As ProductionSchedule
+
+        Dim ProdScheduleDAO As New ProductionScheduleDAO
+        Return ProdScheduleDAO.ConvertRcdToProdScheduleCls(dwProdScheduleTBL)
+
+    End Function
+
+    Function addProdScheduleNoteRcd(ByVal clsProdScheduleNote As ProdScheduleNote, ByVal cnn As SqlConnection, ByRef trans As SqlTransaction) As Boolean
+
+        Dim ProdScheduleDAO As New ProductionScheduleDAO
+        Return ProdScheduleDAO.addProdScheduleNoteRcd(clsProdScheduleNote, cnn, trans)
+
+    End Function
+
+    Function addTempProdScheduleNotes(cNote As ProdScheduleNote, strGUID As String, bolNewNote As Boolean, cnn As SqlConnection, ByRef trans As SqlTransaction) As Boolean
+
+        Dim serviceDAO As New TempProdScheduleNotesDAO
+        Return serviceDAO.addTempProdScheduleNotes(cNote, strGUID, bolNewNote, cnn, trans)
+
+    End Function
+
+#End Region
+
+#Region "Plantation GRA Photos"
+
+    Function addPlatationGRAPhotosRecord(ByVal cPlantationGRAPhotos As PlantationGRAPhotos, ByVal cnn As SqlConnection, ByRef trans As SqlTransaction) As Integer
+
+        Dim ServiceDAO As New PlantationGRAPhotosDAO
+        Return ServiceDAO.addPlatationGRAPhotosRecord(cPlantationGRAPhotos, cnn, trans)
+
+    End Function
+
+    Function updatePlatationGRAPhotosRecord(ByVal cPlantationGRAPhotos As PlantationGRAPhotos, ByVal cnn As SqlConnection, ByRef trans As SqlTransaction) As Boolean
+
+        Dim ServiceDAO As New PlantationGRAPhotosDAO
+        Return ServiceDAO.updatePlatationGRAPhotosRecord(cPlantationGRAPhotos, cnn, trans)
+
+    End Function
+
+    Function getPlantationGRAPhotosDetailsByID(ByVal intPlantGRAID As Integer) As DataTable
+
+        Dim ServiceDAO As New PlantationGRAPhotosDAO
+        Return ServiceDAO.getPlantationGRAPhotosDetailsByID(intPlantGRAID)
+
+    End Function
+
+    Function deletePlantationGRAPhotoByID(ByVal intID As Integer) As Boolean
+
+        Dim ServiceDAO As New PlantationGRAPhotosDAO
+        Return ServiceDAO.deletePlantationGRAPhotoByID(intID)
+
+    End Function
+
+
+#End Region
+
+
+#Region "Job Stages"
+
+    Function addJobStages(cJobStages As JobStages, cnn As SqlConnection, ByRef trans As SqlTransaction) As Integer
+
+        Dim ServiceDAO As New JobStagesDAO
+        Return ServiceDAO.addJobStages(cJobStages, cnn, trans)
+
+    End Function
+
+    Function updateJobStages(cJobStages As JobStages, cnn As SqlConnection, ByRef trans As SqlTransaction) As Boolean
+
+        Dim ServiceDAO As New JobStagesDAO
+        Return ServiceDAO.updateJobStages(cJobStages, cnn, trans)
+
+    End Function
+
+    Function addJobStagesHistoryRecord(cJobStages As JobStages, intUserID As Integer, cnn As SqlConnection, ByRef trans As SqlTransaction) As Boolean
+
+        Dim ServiceDAO As New JobStagesDAO
+        Return ServiceDAO.addJobStagesHistoryRecord(cJobStages, intUserID, cnn, trans)
+
+    End Function
+
+#End Region
+
+#Region "Plantation GRA"
+
+    Function addPlantationGRARecord(clsPlantationGRA As PlantationGRAObj, cnn As SqlConnection, trans As SqlTransaction) As Integer
+
+        Dim ServiceDAO As New PlantationGRADAO
+        Return ServiceDAO.addPlantationGRARecord(clsPlantationGRA, cnn, trans)
+
+    End Function
+
+    Function updatePlantationGRAByID(ByVal clsPlantationGRA As PlantationGRAObj, ByVal cnn As SqlConnection, ByRef trans As SqlTransaction) As Boolean
+
+        Dim ServiceDAO As New PlantationGRADAO
+        Return ServiceDAO.updatePlantationGRAByID(clsPlantationGRA, cnn, trans)
+
+    End Function
+
+    Function getPlantationGRAClassByID(ByVal intPlantationGRADID As Integer) As PlantationGRAObj
+
+        Dim ServiceDAO As New PlantationGRADAO
+        Return ServiceDAO.getPlantationGRAClassByID(intPlantationGRADID)
+
+    End Function
+
+#End Region
+
+    Function getDailyProductionSchedule(dteScheduleDate As Date, intProductTypeID As Integer) As DataTable
+
+        Dim ServiceDAO As New ProductionScheduleDAO
+        Return ServiceDAO.getDailyProductionSchedule(dteScheduleDate, intProductTypeID)
+
+    End Function
+
+    Function getToBeDespatchedList(intProductTypeID As Integer) As DataTable
+
+        Dim ServiceDAO As New ProductionScheduleDAO
+        Return ServiceDAO.getToBeDespatchedList(intProductTypeID)
+
+    End Function
+
+    Function getToBeCollectedFromFactory(intProductTypeID As Integer) As DataTable
+
+        Dim ServiceDAO As New ProductionScheduleDAO
+        Return ServiceDAO.getToBeCollectedFromFactory(intProductTypeID)
+
+    End Function
+
+    Function getToBeInvoiced(intProductTypeID As Integer) As DataTable
+
+        Dim ServiceDAO As New ProductionScheduleDAO
+        Return ServiceDAO.getToBeInvoiced(intProductTypeID)
+
+    End Function
+
+    Function setPlantationJobDetailsFromDatarow(drow As DataRow) As PlantationJobDetails
+
+        Dim ServiceDAO As New PlantationJobDetailsDAO
+        Return ServiceDAO.setPlantationJobDetailsFromDatarow(drow)
+
+    End Function
+
+    Function getUserPermsisionsByUserID(intUserID As Integer) As DataTable
+
+        Dim ServiceDAO As New UserPermissionsDAO
+        Return ServiceDAO.getUserPermsisionsByUserID(intUserID)
+
+    End Function
+
+    Function getUsers() As DataTable
+
+        Dim ServiceDAO As New UsersDAO
+        Return ServiceDAO.getUsers
+
+    End Function
+
+    Public Function addWebsitePageAccess(ByVal strWebsite As String, ByVal intUserID As Integer, ByVal strUserName As String, ByVal strPageName As String, ByVal strReference As String, ByVal dteHitDate As Date) As Boolean
+
+        Dim serviceDAO As New DataDAO
+        Return serviceDAO.addWebsitePageAccess(strWebsite, intUserID, strUserName, strPageName, strReference, dteHitDate)
+
+    End Function
+
+    Function addCustomerRecord(cCustomer As Customer, Optional cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As Integer
+
+        Dim serviceDAO As New CustomerDAO
+        Return serviceDAO.addCustomerRecord(cCustomer, cnn, trans)
+
+    End Function
+
+    Function updateCustomerRecord(cCustomer As Customer, Optional cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As Integer
+
+        Dim serviceDAO As New CustomerDAO
+        Return serviceDAO.updateCustomerRecord(cCustomer, cnn, trans)
+
+    End Function
+
+    Function addAdditionalRequirementsRecord(cRequirement As AdditionalRequirements, cnn As SqlConnection, ByRef trans As SqlTransaction) As Integer
+
+        Dim serviceDAO As New AdditionalRequirementsDAO
+        Return serviceDAO.addAdditionalRequirementsRecord(cRequirement, cnn, trans)
+
+    End Function
+
+    Function updateAdditionalRequirementsRecord(cRequirement As AdditionalRequirements, cnn As SqlConnection, ByRef trans As SqlTransaction) As Boolean
+
+        Dim serviceDAO As New AdditionalRequirementsDAO
+        Return serviceDAO.updateAdditionalRequirementsRecord(cRequirement, cnn, trans)
+
+    End Function
+
+    Function getAdditionalRequirementsRecord(intAdditonalRequirementID As Integer) As DataTable
+
+        Dim serviceDAO As New AdditionalRequirementsDAO
+        Return serviceDAO.getAdditionalRequirementsRecord(intAdditonalRequirementID)
+
+    End Function
+
+    Function getAdditionalRequirementsByProductionScheduleID(intProductionScheduleID As Integer) As DataTable
+
+        Dim serviceDAO As New AdditionalRequirementsDAO
+        Return serviceDAO.getAdditionalRequirementsByProductionScheduleID(intProductionScheduleID)
+
+    End Function
+
+    Function setAdditionalRequirementsObjectFromDataRow(drow As DataRow) As AdditionalRequirements
+
+        Dim serviceDAO As New AdditionalRequirementsDAO
+        Return serviceDAO.setAdditionalRequirementsObjectFromDataRow(drow)
+
+    End Function
+
+    Function addTempAddRequirementsRecord(cRequirement As AdditionalRequirements, cnn As SqlConnection, ByRef trans As SqlTransaction) As Integer
+
+        Dim serviceDAO As New TempAddRequirementsDAO
+        Return serviceDAO.addTempAddRequirementsRecord(cRequirement, cnn, trans)
+
+    End Function
+
+    Function updateTempAddRequirementsRecord(cRequirement As AdditionalRequirements, cnn As SqlConnection, ByRef trans As SqlTransaction) As Boolean
+
+        Dim serviceDAO As New TempAddRequirementsDAO
+        Return serviceDAO.updateTempAddRequirementsRecord(cRequirement, cnn, trans)
+
+    End Function
+
+    Function getTempAddRequirementsRecord(intAdditonalRequirementID As Integer) As DataTable
+
+        Dim serviceDAO As New TempAddRequirementsDAO
+        Return serviceDAO.getTempAddRequirementsRecord(intAdditonalRequirementID)
+
+    End Function
+
+#Region "Temp Plantation Job Details"
+
+    Function getTempPlantationJobDetailsRecord(intPSDetailID As Integer) As PlantationJobDetails
+
+        Dim ServiceDAO As New TempPlantationJobDetailsDAO
+        Return ServiceDAO.getTempPlantationJobDetailsRecord(intPSDetailID)
+
+    End Function
+
+    Function getTempPlantationJobDetailsRecordDatatable(intPSDetailID As Integer) As DataTable
+
+        Dim ServiceDAO As New TempPlantationJobDetailsDAO
+        Return ServiceDAO.getTempPlantationJobDetailsRecordDatatable(intPSDetailID)
+
+    End Function
+
+    Function getTempPlantationJobDetailsRecordsByTempGUID(strTempGUID As String, Optional cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As DataTable
+
+        Dim ServiceDAO As New TempPlantationJobDetailsDAO
+        Return ServiceDAO.getTempPlantationJobDetailsRecordsByTempGUID(strTempGUID, cnn, trans)
+
+    End Function
+
+    Function addTempPlantationJobDetailsRecord(cPlantationJobDetails As PlantationJobDetails, cnn As SqlConnection, ByRef trans As SqlTransaction) As Integer
+
+        Dim ServiceDAO As New TempPlantationJobDetailsDAO
+        Return ServiceDAO.addTempPlantationJobDetailsRecord(cPlantationJobDetails, cnn, trans)
+
+    End Function
+
+    Function updateTempPlantationJobDetailsRecord(cPlantationJobDetails As PlantationJobDetails, cnn As SqlConnection, ByRef trans As SqlTransaction) As Boolean
+
+        Dim ServiceDAO As New TempPlantationJobDetailsDAO
+        Return ServiceDAO.updateTempPlantationJobDetailsRecord(cPlantationJobDetails, cnn, trans)
+
+    End Function
+
+#End Region
+
+#Region "PS Lookups"
+
+    Public Function getPSMaterial(ByVal intManufactureLocation As Integer) As DataTable
+
+        Dim serviceDAO As New PSLookupsDAO
+        Return serviceDAO.getPSMaterial(intManufactureLocation)
+
+    End Function
+
+
+    Public Function getPSRoomLocation() As DataTable
+
+        Dim serviceDAO As New PSLookupsDAO
+        Return serviceDAO.getPSRoomLocation()
+
+    End Function
+
+    Public Function getPSInstallationMethod() As DataTable
+
+        Dim serviceDAO As New PSLookupsDAO
+        Return serviceDAO.getPSInstallationMethod()
+
+    End Function
+
+    Public Function getPSColour(ByVal intMaterialID As Integer) As DataTable
+
+        Dim serviceDAO As New PSLookupsDAO
+        Return serviceDAO.getPSColour(intMaterialID)
+
+    End Function
+
+    Public Function getPSHingeColour(ByVal intMaterialID As Integer, ByVal intConcealed As Integer) As DataTable
+
+        Dim serviceDAO As New PSLookupsDAO
+        Return serviceDAO.getPSHingeColour(intMaterialID, intConcealed)
+
+    End Function
+
+    Public Function getPSModuleColour() As DataTable
+
+        Dim serviceDAO As New PSLookupsDAO
+        Return serviceDAO.getPSModuleColour()
+
+    End Function
+
+    Public Function getPSHingeType() As DataTable
+
+        Dim serviceDAO As New PSLookupsDAO
+        Return serviceDAO.getPSHingeType()
+
+    End Function
+
+    Public Function getPSLouvre(ByVal intMaterialID As Integer, ByVal intMotorized As Integer) As DataTable
+
+        Dim serviceDAO As New PSLookupsDAO
+        Return serviceDAO.getPSLouvre(intMaterialID, intMotorized)
+
+    End Function
+
+    Public Function getPSLouvreTypeWB() As DataTable
+
+        Dim serviceDAO As New PSLookupsDAO
+        Return serviceDAO.getPSLouvreTypeWB()
+
+    End Function
+
+    Public Function getPSLouvreFixed() As DataTable
+
+        Dim serviceDAO As New PSLookupsDAO
+        Return serviceDAO.getPSLouvreFixed()
+
+    End Function
+
+    Public Function getPSTiltRODPosition(ByVal intMotorized As Integer, ByVal intMaterialID As Integer) As DataTable
+
+        Dim serviceDAO As New PSLookupsDAO
+        Return serviceDAO.getPSTiltRODPosition(intMotorized, intMaterialID)
+
+    End Function
+
+    Public Function getPSLayout(ByVal intInstallationMethodID As Integer) As DataTable
+
+        Dim serviceDAO As New PSLookupsDAO
+        Return serviceDAO.getPSLayout(intInstallationMethodID)
+
+    End Function
+
+    Public Function getPSStile(ByVal intMotorized As Integer, ByVal intMaterialID As Integer, ByVal intLayoutLen As Integer, ByVal intConceledHinge As Integer) As DataTable
+
+        Dim serviceDAO As New PSLookupsDAO
+        Return serviceDAO.getPSStile(intMotorized, intMaterialID, intLayoutLen, intConceledHinge)
+
+    End Function
+
+    Public Function getPSFrameType(ByVal intInstallationMethodID As Integer, ByVal intMaterialID As Integer) As DataTable
+
+        Dim serviceDAO As New PSLookupsDAO
+        Return serviceDAO.getPSFrameType(intInstallationMethodID, intMaterialID)
+
+    End Function
+
+    Public Function getPSSillPlate(ByVal intMaterialID As Integer, ByVal intFrameID As Integer) As DataTable
+
+        Dim serviceDAO As New PSLookupsDAO
+        Return serviceDAO.getPSSillPlate(intMaterialID, intFrameID)
+
+    End Function
+
+    Public Function getPSInOut(ByVal intMaterialID As Integer, ByVal intInstallationMethodID As Integer, ByVal intHingeTypeID As Integer, ByVal intFrameTypeID As Integer) As DataTable
+
+        Dim serviceDAO As New PSLookupsDAO
+        Return serviceDAO.getPSInOut(intMaterialID, intInstallationMethodID, intHingeTypeID, intFrameTypeID)
+
+    End Function
+
+    Public Function getPSHangingStrip(ByVal intInstallationMethodID As Integer) As DataTable
+
+        Dim serviceDAO As New PSLookupsDAO
+        Return serviceDAO.getPSHangingStrip(intInstallationMethodID)
+
+    End Function
+
+    Public Function getPSLightBlock(ByVal intInstallationMethodID As Integer) As DataTable
+
+        Dim serviceDAO As New PSLookupsDAO
+        Return serviceDAO.getPSLightBlock(intInstallationMethodID)
+
+    End Function
+
+    Public Function getPSTPos() As DataTable
+
+        Dim serviceDAO As New PSLookupsDAO
+        Return serviceDAO.getPSTPos()
+
+    End Function
+
+    Public Function getPSSplitTiltRodLocation(ByVal strSplitLocation As String) As DataTable
+
+        Dim serviceDAO As New PSLookupsDAO
+        Return serviceDAO.getPSSplitTiltRodLocation(strSplitLocation)
+
+    End Function
+
+    Public Function getPSHandCarveStyle() As DataTable
+
+        Dim serviceDAO As New PSLookupsDAO
+        Return serviceDAO.getPSHandCarveStyle()
+
+    End Function
+
+    Public Function getPSHandCarveLocation() As DataTable
+
+        Dim serviceDAO As New PSLookupsDAO
+        Return serviceDAO.getPSHandCarveLocation()
+
+    End Function
+
+    Public Function getPSRingPullLocation() As DataTable
+
+        Dim serviceDAO As New PSLookupsDAO
+        Return serviceDAO.getPSRingPullLocation()
+
+    End Function
+
+
+#End Region
+
+#Region "PS Lookups 2"
+
+    Function getPSAngleBay() As DataTable
+
+        Dim serviceDAO As New PSLookupsDAO
+        Return serviceDAO.getPSAngleBay()
+
+    End Function
+
+    Function getPSBladeSize() As DataTable
+
+        Dim serviceDAO As New PSLookupsDAO
+        Return serviceDAO.getPSBladeSize()
+
+    End Function
+
+    Function getPSColour() As DataTable
+
+        Dim serviceDAO As New PSLookupsDAO
+        Return serviceDAO.getPSColour()
+
+    End Function
+
+    Function getPSControlType() As DataTable
+
+        Dim serviceDAO As New PSLookupsDAO
+        Return serviceDAO.getPSControlType()
+
+    End Function
+
+    Function getPSFrameType(ByVal intMountID As Integer) As DataTable
+
+        Dim serviceDAO As New PSLookupsDAO
+        Return serviceDAO.getPSFrameType(intMountID)
+
+    End Function
+
+    Function getPSHangStrip() As DataTable
+
+        Dim serviceDAO As New PSLookupsDAO
+        Return serviceDAO.getPSHangStrip()
+
+    End Function
+
+    Function getPSHingeColour(ByVal intInstallatinAreaID As Integer) As DataTable
+
+        Dim serviceDAO As New PSLookupsDAO
+        Return serviceDAO.getPSHingeColour(intInstallatinAreaID)
+
+    End Function
+
+    Function getPSInstallationArea() As DataTable
+
+        Dim serviceDAO As New PSLookupsDAO
+        Return serviceDAO.getPSInstallationArea()
+
+    End Function
+
+    Function getPSLayoutByMountAndPanelQty(ByVal intMountID As Integer, ByVal intPanelQty As Integer) As DataTable
+
+        Dim serviceDAO As New PSLookupsDAO
+        Return serviceDAO.getPSLayoutByMountAndPanelQty(intMountID, intPanelQty)
+
+    End Function
+
+    Function getPSLightBlock() As DataTable
+
+        Dim serviceDAO As New PSLookupsDAO
+        Return serviceDAO.getPSLightBlock()
+
+    End Function
+
+    Function getPSMountConfig() As DataTable
+
+        Dim serviceDAO As New PSLookupsDAO
+        Return serviceDAO.getPSMountConfig()
+
+    End Function
+
+    Function getPSMountMethod() As DataTable
+
+        Dim serviceDAO As New PSLookupsDAO
+        Return serviceDAO.getPSMountMethod()
+
+    End Function
+
+    Function getPSMountStyle() As DataTable
+
+        Dim serviceDAO As New PSLookupsDAO
+        Return serviceDAO.getPSMountStyle()
+
+    End Function
+
+    Function getPSPanelQty() As DataTable
+
+        Dim serviceDAO As New PSLookupsDAO
+        Return serviceDAO.getPSPanelQty()
+
+    End Function
+
+    Function getPSSides() As DataTable
+
+        Dim serviceDAO As New PSLookupsDAO
+        Return serviceDAO.getPSSides()
+
+    End Function
+
+    Function getPSSlidingGuide() As DataTable
+
+        Dim serviceDAO As New PSLookupsDAO
+        Return serviceDAO.getPSSlidingGuide()
+
+    End Function
+
+    Function getPSSlidingOpenClose() As DataTable
+
+        Dim serviceDAO As New PSLookupsDAO
+        Return serviceDAO.getPSSlidingOpenClose()
+
+    End Function
+
+    Function getPSSplitBlade() As DataTable
+
+        Dim serviceDAO As New PSLookupsDAO
+        Return serviceDAO.getPSSplitBlade()
+
+    End Function
+
+    Function getPSTPostQty() As DataTable
+
+        Dim serviceDAO As New PSLookupsDAO
+        Return serviceDAO.getPSTPostQty()
+
+    End Function
+
+    Function getPSTrack() As DataTable
+
+        Dim serviceDAO As New PSLookupsDAO
+        Return serviceDAO.getPSTrack()
+
+    End Function
+#End Region
+
+#Region "OSC Louvre Functions"
+
+    Function addJobRegisterRecord(cJobRegister As OSCJobRegister, cnn As SqlConnection, ByRef trans As SqlTransaction) As Integer
+
+        Dim serviceDAO As New OSCJobRegisterDAO
+        Return serviceDAO.addJobRegisterRecord(cJobRegister, cnn, trans)
+
+    End Function
+
+    Function updateJobRegisterRecord(cJobRegister As OSCJobRegister, cnn As SqlConnection, ByRef trans As SqlTransaction) As Boolean
+
+        Dim serviceDAO As New OSCJobRegisterDAO
+        Return serviceDAO.updateJobRegisterRecord(cJobRegister, cnn, trans)
+
+    End Function
+
+    Function getJobRegisterRecord(intJobRegisterID As Integer) As DataTable
+
+        Dim serviceDAO As New OSCJobRegisterDAO
+        Return serviceDAO.getJobRegisterRecord(intJobRegisterID)
+
+    End Function
+
+    Function getJobRegisterByJobRegisterID(intJobRegisterID As Integer) As OSCJobRegister
+
+        Dim serviceDAO As New OSCJobRegisterDAO
+        Return serviceDAO.getJobRegisterByJobRegisterID(intJobRegisterID)
+
+    End Function
+
+    Function getNextWholesaleContractNumber(cnn As SqlConnection, ByRef trans As SqlTransaction) As DataTable
+
+        Dim serviceDAO As New OSCJobRegisterDAO
+        Return serviceDAO.getNextWholesaleContractNumber(cnn, trans)
+
+    End Function
+
+    Function getAllJobRegisteredList() As DataTable
+
+        Dim serviceDAO As New OSCJobRegisterDAO
+        Return serviceDAO.getAllJobRegisteredList
+
+    End Function
+
+
+#End Region
+
+#Region "Products List Details"
+
+    Function ProdScheduleSQLget(ByVal strSQL As String) As DataTable
+
+        Dim ProdSTDAO As New ProductsListDAO()
+        Return ProdSTDAO.ProdScheduleSQLget(strSQL)
+
+    End Function
+
+    Function getAllPlantationSpecs() As DataTable
+
+        Dim ProdSTDAO As New ProductsListDAO()
+        Return ProdSTDAO.getAllPlantationSpecs()
+
+    End Function
+
+    Function getPlantSpecsByProdSchID(ByVal intProdScheduleID As Integer) As DataTable
+
+        Dim ProdSTDAO As New ProductsListDAO()
+        Return ProdSTDAO.getPlantSpecsByProdSchID(intProdScheduleID)
+
+    End Function
+
+    Function getAllLouvreSpecs() As DataTable
+
+        Dim ProdSTDAO As New ProductsListDAO()
+        Return ProdSTDAO.getAllLouvreSpecs()
+
+    End Function
+
+    Function getLouvreSpecsByProdSchID(ByVal intProdScheduleID As Integer) As DataTable
+
+        Dim ProdSTDAO As New ProductsListDAO()
+        Return ProdSTDAO.getLouvreSpecsByProdSchID(intProdScheduleID)
+
+    End Function
+
+    Function AddPlantationSpecs(ByVal clsPlantationSpecs As PlantationSpecs, ByVal cnn As SqlConnection, ByRef trans As SqlTransaction) As Boolean
+
+        Dim ProdSTDAO As New ProductsListDAO()
+        Return ProdSTDAO.AddPlantationSpecs(clsPlantationSpecs, cnn, trans)
+
+    End Function
+
+    Function updatePlantationSpecs(ByVal clsPlantationSpecs As PlantationSpecs, ByVal cnn As SqlConnection, ByRef trans As SqlTransaction) As Boolean
+
+        Dim ProdSTDAO As New ProductsListDAO()
+        Return ProdSTDAO.updatePlantationSpecs(clsPlantationSpecs, cnn, trans)
+
+    End Function
+
+    Function deletePlantationSpecs(ByVal intProdScheduleID As Integer, ByVal cnn As SqlConnection, ByRef trans As SqlTransaction) As Boolean
+
+        Dim ProdSTDAO As New ProductsListDAO()
+        Return ProdSTDAO.deletePlantationSpecs(intProdScheduleID, cnn, trans)
+
+    End Function
+
+    Function AddLouvreSpecs(ByVal clsLouvreSpecs As LouvreSpecs, ByVal cnn As SqlConnection, ByRef trans As SqlTransaction) As Boolean
+
+        Dim ProdSTDAO As New ProductsListDAO()
+        Return ProdSTDAO.AddLouvreSpecs(clsLouvreSpecs, cnn, trans)
+
+    End Function
+
+    Function updateLouvreSpecs(ByVal clsLouvreSpecs As LouvreSpecs, ByVal cnn As SqlConnection, ByRef trans As SqlTransaction) As Boolean
+
+        Dim ProdSTDAO As New ProductsListDAO()
+        Return ProdSTDAO.updateLouvreSpecs(clsLouvreSpecs, cnn, trans)
+
+    End Function
+
+    Function deleteLouvreSpecs(ByVal intProdScheduleID As Integer, ByVal cnn As SqlConnection, ByRef trans As SqlTransaction) As Boolean
+
+        Dim ProdSTDAO As New ProductsListDAO()
+        Return ProdSTDAO.deleteLouvreSpecs(intProdScheduleID, cnn, trans)
+
+    End Function
+
+    Function convertRowPlantSpecToCLS(ByVal drPlantSpec As DataRow) As PlantationSpecs
+
+        Dim ProdSTDAO As New ProductsListDAO()
+        Return ProdSTDAO.convertRowPlantSpecToCLS(drPlantSpec)
+
+    End Function
+
+    Function getLouvreSpecsClassFromDatarow(ByVal dr As DataRow) As LouvreSpecs
+
+        Dim ProdSTDAO As New ProductsListDAO()
+        Return ProdSTDAO.getLouvreSpecsClassFromDatarow(dr)
+
+    End Function
+
+#End Region
+
+
+#Region "Louvre Details DAO"
+
+    Public Function getLouvreColours() As DataTable
+
+        Dim serviceDAO As New LouvreDetailsDAO
+        Return serviceDAO.getLouvreColours
+
+    End Function
+
+    Public Function getLouvreLocations() As DataTable
+
+        Dim serviceDAO As New LouvreDetailsDAO
+        Return serviceDAO.getLouvreLocations
+
+    End Function
+
+    Public Function getLouvreDetailsByProductionScheduleID(ByVal intScheduleID As Integer, Optional ByVal cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As DataTable
+
+        Dim serviceDAO As New LouvreDetailsDAO
+        Return serviceDAO.getLouvreDetailsByProductionScheduleID(intScheduleID, cnn, trans)
+
+    End Function
+
+    Public Function addLouvreDetails(ByVal cLouvreDetails As LouvreDetails, Optional ByVal cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As Boolean
+
+        Dim serviceDAO As New LouvreDetailsDAO
+        Return serviceDAO.addLouvreDetails(cLouvreDetails, cnn, trans)
+
+    End Function
+
+    Public Function updateLouvreDetails(ByVal cLouvreDetails As LouvreDetails, Optional ByVal cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As Boolean
+
+        Dim serviceDAO As New LouvreDetailsDAO
+        Return serviceDAO.updateLouvreDetails(cLouvreDetails, cnn, trans)
+
+    End Function
+
+    Public Function getLouvreDetailsRecord(ByVal intLouvreDetailID As Integer, Optional ByVal cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As LouvreDetails
+
+        Dim serviceDAO As New LouvreDetailsDAO
+        Return serviceDAO.getLouvreDetailsRecord(intLouvreDetailID, cnn, trans)
+
+    End Function
+
+    Public Function addTempLouvreDetails(ByVal cLouvreDetails As LouvreDetails, Optional ByVal cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As Boolean
+
+        Dim serviceDAO As New TempLouvreDetailsDAO
+        Return serviceDAO.addTempLouvreDetails(cLouvreDetails, cnn, trans)
+
+    End Function
+
+    Public Function updateTempLouvreDetails(ByVal cLouvreDetails As LouvreDetails, Optional ByVal cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As Boolean
+
+        Dim serviceDAO As New TempLouvreDetailsDAO
+        Return serviceDAO.updateTempLouvreDetails(cLouvreDetails, cnn, trans)
+
+    End Function
+
+    Public Function getTempLouvreDetailsRecord(ByVal intLouvreDetailID As Integer, Optional ByVal cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As LouvreDetails
+
+        Dim serviceDAO As New TempLouvreDetailsDAO
+        Return serviceDAO.getTempLouvreDetailsRecord(intLouvreDetailID, cnn, trans)
+
+    End Function
+
+    Public Function getTempLouvreDetailsByLouvreDetailID(ByVal intLouvreDetailID As Integer, Optional ByVal cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As DataTable
+
+        Dim serviceDAO As New TempLouvreDetailsDAO
+        Return serviceDAO.getTempLouvreDetailsByLouvreDetailID(intLouvreDetailID, cnn, trans)
+
+    End Function
+
+    Public Function setLouvreDetailsObjectFromDataRow(ByVal drow As DataRow) As LouvreDetails
+
+        Dim serviceDAO As New LouvreDetailsDAO
+        Return serviceDAO.setLouvreDetailsObjectFromDataRow(drow)
+
+    End Function
+
+    Function getTempLouvreJobDetailsRecordsByTempGUID(strTempGUID As String, Optional cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As DataTable
+
+        Dim serviceDAO As New TempLouvreDetailsDAO
+        Return serviceDAO.getTempLouvreJobDetailsRecordsByTempGUID(strTempGUID, cnn, trans)
+
+    End Function
+
+#End Region
+
+#Region "PS Pricing DAO"
+
+    Function getPSPrice(ByVal intMaterialTypeID As Integer, ByVal intInstallationAreaID As Integer, ByVal intMountMethodID As Integer, ByVal intManufactureLocationID As Integer, ByVal intControlTypeID As Integer, ByVal dteEffectiveDate As Date, ByVal intWidth As Integer, ByVal intBladeSizeID As Integer) As DataTable
+
+        Dim serviceDAO As New PSPricingDAO
+        Return serviceDAO.getPSPrice(intMaterialTypeID, intInstallationAreaID, intMountMethodID, intManufactureLocationID, intControlTypeID, dteEffectiveDate, intWidth, intBladeSizeID)
+        serviceDAO = Nothing
+
+    End Function
+
+    Function getPSPriceMount(ByVal intInstallationAreaID As Integer, ByVal intManufactureLocationID As Integer, ByVal intMountMethodID As Integer, ByVal intTrackID As Integer, ByVal dteEffectiveDate As Date, ByVal intSideboards As Integer, ByVal intBottomboards As Integer, ByVal intMaterialTypeID As Integer) As DataTable
+
+        Dim serviceDAO As New PSPricingDAO
+        Return serviceDAO.getPSPriceMount(intInstallationAreaID, intManufactureLocationID, intMountMethodID, intTrackID, dteEffectiveDate, intSideboards, intBottomboards, intMaterialTypeID)
+        serviceDAO = Nothing
+
+    End Function
+
+    Function getPSPriceFrame(ByVal intManufactureLocationID As Integer, ByVal intFrameTypeID As Integer, ByVal dteEffectiveDate As Date, ByVal intBayPost As Integer, ByVal intCornerPost As Integer, ByVal intMaterialTypeID As Integer) As DataTable
+
+        Dim serviceDAO As New PSPricingDAO
+        Return serviceDAO.getPSPriceFrame(intManufactureLocationID, intFrameTypeID, dteEffectiveDate, intBayPost, intCornerPost, intMaterialTypeID)
+        serviceDAO = Nothing
+
+    End Function
+
+
+
+#End Region
+
+    Function getUploadedFiles(ByVal RefID As String, RefType As String) As DataTable
+
+        Dim serviceDAO As New UploadFilesDAO
+        Return serviceDAO.getUploadedFiles(RefID, RefType)
+
+    End Function
+
+    Function addUploadedFiles(ByVal DataArray As String()) As Boolean
+
+        Dim serviceDAO As New UploadFilesDAO
+        Return serviceDAO.addUploadedFiles(DataArray)
+
+    End Function
+
+    Function deleteUploadedFiles(ByVal RefID As String, UserID As String, Fname As String) As Boolean
+
+        Dim serviceDAO As New UploadFilesDAO
+        Return serviceDAO.deleteUploadedFiles(RefID, UserID, Fname)
+
+    End Function
+
+    Function addLouvreSpecDesign(louvreDesign As LouvreSpecDesign, Optional cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As Integer
+
+        Dim serviceDAO As New LouvreSpecDesignDAO
+        Return serviceDAO.addLouvreSpecDesign(louvreDesign, cnn, trans)
+        serviceDAO = Nothing
+
+    End Function
+
+    Function updateLouvreSpecDesign(louvreDesign As LouvreSpecDesign, Optional cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As Boolean
+
+        Dim serviceDAO As New LouvreSpecDesignDAO
+        Return serviceDAO.updateLouvreSpecDesign(louvreDesign, cnn, trans)
+        serviceDAO = Nothing
+
+    End Function
+
+    Function GetLouvreSpecControllerRecord(ByVal id As Integer, Optional cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As DataTable
+
+        Dim serviceDAO As New LouvreSpecsControllerDAO
+        Return serviceDAO.GetLouvreSpecControllerRecord(id, cnn, trans)
+        serviceDAO = Nothing
+
+    End Function
+
+    Function GetLouvreSpecDesignRecordByLouvreDetailsID(intLouvreDetailsID As Integer, Optional cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As DataTable
+
+        Dim serviceDAO As New LouvreSpecDesignDAO
+        Return serviceDAO.GetLouvreSpecDesignRecordByLouvreDetailsID(intLouvreDetailsID, cnn, trans)
+        serviceDAO = Nothing
+
+    End Function
+
+    Public Function updateProductionLeadDays(prodLead As ProductionLeadDays, Optional ByVal cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As Integer
+        Dim serviceDAO As New ProductionLeadDaysDAO
+        Return serviceDAO.updateProductionLeadDays(prodLead)
+    End Function
+
+    Public Function getJobStockUsageByID(ByVal ScheduleID As Integer, ByVal StockArticleTypeID As Integer) As DataTable
+        Dim serviceDAO As New StockUsageDAO
+        Return serviceDAO.getJobStockUsageByID(ScheduleID, StockArticleTypeID)
+    End Function
+
+    Function getJobStockUsageByReqID(ByVal AdditionalRequirementsID As Integer) As DataTable
+        Dim serviceDAO As New StockUsageDAO
+        Return serviceDAO.getJobStockUsageByReqID(AdditionalRequirementsID)
+    End Function
+
+End Class

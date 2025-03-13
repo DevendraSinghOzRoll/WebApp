@@ -1,0 +1,1263 @@
+﻿Imports Microsoft.VisualBasic
+Imports System.Data.SqlClient
+Imports System.Data
+
+Public Class UsersDAO
+    Function addLoginDetail(ByVal AddStatus As Integer, ByVal LoginDetail As DataRow, Optional ByVal cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As Boolean
+
+        Dim bolAddOK As Boolean = True
+        Dim SaveRecord As Boolean = False
+        If IsNothing(cnn) Then
+            bolAddOK = False
+            Dim dbConn As New DBConnection
+            cnn = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+            dbConn = Nothing
+        End If
+
+        Dim cmd As New SqlCommand
+        Try
+
+            If bolAddOK = False Then
+                cnn.Open()
+            End If
+
+            cmd.Connection = cnn
+            cmd.CommandText = IIf(AddStatus, "sp_addLoginRecord", "sp_UpdateLogins")
+            cmd.CommandType = CommandType.StoredProcedure
+
+            If bolAddOK = True Then
+                cmd.Transaction = trans
+            End If
+
+            setupLoginParameters(cmd, LoginDetail, bolAddOK)
+            Dim ra As Integer = cmd.ExecuteNonQuery
+            If ra < 1 Then
+                EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - add record failed" & Environment.NewLine)
+                bolAddOK = False
+            Else
+                SaveRecord = True
+            End If
+            If bolAddOK = False Then
+                cnn.Close()
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+            bolAddOK = False
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+            If bolAddOK = False Then
+                cnn.Dispose()
+                cnn = Nothing
+            End If
+        End Try
+        Return SaveRecord
+        ''
+
+    End Function
+    Function addLoginDetailOZOTS(ByVal drow As DataRow, Optional ByVal cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As Boolean
+
+        'Dim bolAddOK As Boolean = True, strSQL As String = ""
+        'Dim SaveRecord As Boolean = False
+        'If IsNothing(cnn) Then
+        '    bolAddOK = False
+        '    Dim dbConn As New DBConnection
+        '    cnn = New SqlConnection(dbConn.getSQLConnection_To_ozots)
+        '    dbConn = Nothing
+        'End If
+
+        'Dim cmd As New SqlCommand
+        'Try
+
+        '    If bolAddOK = False Then
+        '        cnn.Open()
+        '    End If
+        '    If drow("id") = "-99" Then
+        '        strSQL = "insert into customer_login (customer_id,username,First_name,last_name,password,salt,email,active,"
+        '        strSQL += "administrator,change_password,login_attempts,locked)  values(" + drow("customer_id").ToString + ",'"
+        '        strSQL += drow("username") + "','" + drow("First_name") + "','" + drow("last_name") + "','" + drow("password") + "','"
+        '        strSQL += drow("salt") + "','" + drow("email") + "'," + IIf(drow("Active"), 1, 0).ToString + ","
+        '        strSQL += IIf(drow("Administrator"), 1, 0).ToString + ",1,0,0" + ")"
+        '    Else
+        '        strSQL = "update customer_login set username='" + drow("username") + "',First_name ='" + drow("First_name")
+        '        strSQL += "',last_name='" + drow("last_name") + "',password='" + drow("password") + "',email='" + drow("email")
+        '        strSQL += +"' where id=" + drow("id").ToString
+        '    End If
+
+
+        '    cmd.Connection = cnn
+        '    cmd.CommandText = strSQL
+        '    cmd.CommandType = CommandType.Text
+
+        '    If bolAddOK = True Then
+        '        cmd.Transaction = trans
+        '    End If
+
+
+        '    Dim ra As Integer = cmd.ExecuteNonQuery
+        '    If ra < 1 Then
+        '        EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - add record failed" & Environment.NewLine)
+        '        bolAddOK = False
+        '    Else
+        '        SaveRecord = True
+        '    End If
+        '    If bolAddOK = False Then
+        '        cnn.Close()
+        '    End If
+
+        'Catch ex As Exception
+        '    EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+        '    bolAddOK = False
+        'Finally
+        '    cmd.Dispose()
+        '    cmd = Nothing
+        '    If bolAddOK = False Then
+        '        cnn.Dispose()
+        '        cnn = Nothing
+        '    End If
+        'End Try
+        'Return SaveRecord
+        '''
+
+    End Function
+    Function addTicket(ByVal AddStatus As Integer, ByVal TicketDetail As DataRow, Optional ByVal cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As Boolean
+
+        Dim bolAddOK As Boolean = True
+        Dim SaveRecord As Boolean = False
+        If IsNothing(cnn) Then
+            bolAddOK = False
+            Dim dbConn As New DBConnection
+            cnn = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+            dbConn = Nothing
+        End If
+
+        Dim cmd As New SqlCommand
+        Try
+
+            If bolAddOK = False Then
+                cnn.Open()
+            End If
+
+            cmd.Connection = cnn
+            cmd.CommandText = IIf(AddStatus, "sp_addTickets", "sp_updateTickets")
+            cmd.CommandType = CommandType.StoredProcedure
+
+            If bolAddOK = True Then
+                cmd.Transaction = trans
+            End If
+
+            setupAddTickets(cmd, TicketDetail, bolAddOK)
+            Dim ra As Integer = cmd.ExecuteNonQuery
+            If ra < 1 Then
+                EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - add record failed" & Environment.NewLine)
+                bolAddOK = False
+            Else
+                SaveRecord = True
+            End If
+            If bolAddOK = False Then
+                cnn.Close()
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+            bolAddOK = False
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+            If bolAddOK = False Then
+                cnn.Dispose()
+                cnn = Nothing
+            End If
+        End Try
+        Return SaveRecord
+        ''
+
+    End Function
+
+
+    Function addNotes(ByVal AddStatus As Integer, ByVal drowNotes As DataRow, Optional ByVal cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As Boolean
+
+        Dim bolAddOK As Boolean = True
+        Dim SaveRecord As Boolean = False
+        If IsNothing(cnn) Then
+            bolAddOK = False
+            Dim dbConn As New DBConnection
+            cnn = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+            dbConn = Nothing
+        End If
+
+        Dim cmd As New SqlCommand
+        Try
+
+            If bolAddOK = False Then
+                cnn.Open()
+            End If
+
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_addTicketNotes"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            If bolAddOK = True Then
+                cmd.Transaction = trans
+            End If
+
+            setupAddNotes(cmd, drowNotes, bolAddOK)
+            Dim ra As Integer = cmd.ExecuteNonQuery
+            If ra < 1 Then
+                EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - add record failed" & Environment.NewLine)
+                bolAddOK = False
+            Else
+                SaveRecord = True
+            End If
+            If bolAddOK = False Then
+                cnn.Close()
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+            bolAddOK = False
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+            If bolAddOK = False Then
+                cnn.Dispose()
+                cnn = Nothing
+            End If
+        End Try
+        Return SaveRecord
+        ''
+
+    End Function
+
+    Function addHistory(ByVal AddStatus As Integer, ByVal drowHistory As DataRow, Optional ByVal cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As Boolean
+
+        Dim bolAddOK As Boolean = True
+        Dim SaveRecord As Boolean = False
+        If IsNothing(cnn) Then
+            bolAddOK = False
+            Dim dbConn As New DBConnection
+            cnn = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+            dbConn = Nothing
+        End If
+
+        Dim cmd As New SqlCommand
+        Try
+
+            If bolAddOK = False Then
+                cnn.Open()
+            End If
+
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_addTicketHistory"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            If bolAddOK = True Then
+                cmd.Transaction = trans
+            End If
+
+            setupAddHistory(cmd, drowHistory, bolAddOK)
+            Dim ra As Integer = cmd.ExecuteNonQuery
+            If ra < 1 Then
+                EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - add record failed" & Environment.NewLine)
+                bolAddOK = False
+            Else
+                SaveRecord = True
+            End If
+            If bolAddOK = False Then
+                cnn.Close()
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+            bolAddOK = False
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+            If bolAddOK = False Then
+                cnn.Dispose()
+                cnn = Nothing
+            End If
+        End Try
+        Return SaveRecord
+        ''
+
+    End Function
+
+    Function addUpdate(ByVal AddStatus As Integer, ByVal drowUpdate As DataRow, Optional ByVal cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As Boolean
+
+        Dim bolAddOK As Boolean = True
+        Dim SaveRecord As Boolean = False
+        If IsNothing(cnn) Then
+            bolAddOK = False
+            Dim dbConn As New DBConnection
+            cnn = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+            dbConn = Nothing
+        End If
+
+        Dim cmd As New SqlCommand
+        Try
+
+            If bolAddOK = False Then
+                cnn.Open()
+            End If
+
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_addTicketUpdate"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            If bolAddOK = True Then
+                cmd.Transaction = trans
+            End If
+
+            setupAddUpdate(cmd, drowUpdate, bolAddOK)
+            Dim ra As Integer = cmd.ExecuteNonQuery
+            If ra < 1 Then
+                EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - add record failed" & Environment.NewLine)
+                bolAddOK = False
+            Else
+                SaveRecord = True
+            End If
+            If bolAddOK = False Then
+                cnn.Close()
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+            bolAddOK = False
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+            If bolAddOK = False Then
+                cnn.Dispose()
+                cnn = Nothing
+            End If
+        End Try
+        Return SaveRecord
+        ''
+
+    End Function
+
+
+    Function addAttachment(ByVal AddStatus As Integer, ByVal drowAttachment As DataRow, Optional ByVal cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As Boolean
+
+        Dim bolAddOK As Boolean = True
+        Dim SaveRecord As Boolean = False
+        If IsNothing(cnn) Then
+            bolAddOK = False
+            Dim dbConn As New DBConnection
+            cnn = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+            dbConn = Nothing
+        End If
+
+        Dim cmd As New SqlCommand
+        Try
+
+            If bolAddOK = False Then
+                cnn.Open()
+            End If
+
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_addTicketAttachments"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            If bolAddOK = True Then
+                cmd.Transaction = trans
+            End If
+
+            setupAddAttachment(cmd, drowAttachment, bolAddOK)
+            Dim ra As Integer = cmd.ExecuteNonQuery
+            If ra < 1 Then
+                EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - add record failed" & Environment.NewLine)
+                bolAddOK = False
+            Else
+                SaveRecord = True
+            End If
+            If bolAddOK = False Then
+                cnn.Close()
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+            bolAddOK = False
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+            If bolAddOK = False Then
+                cnn.Dispose()
+                cnn = Nothing
+            End If
+        End Try
+        Return SaveRecord
+        ''
+
+    End Function
+
+    Function updateAttachment(ByVal AddStatus As Integer, ByVal drowUpdateAttachment As DataRow, Optional ByVal cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As Boolean
+
+        Dim bolAddOK As Boolean = True
+        Dim SaveRecord As Boolean = False
+        If IsNothing(cnn) Then
+            bolAddOK = False
+            Dim dbConn As New DBConnection
+            cnn = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+            dbConn = Nothing
+        End If
+
+        Dim cmd As New SqlCommand
+        Try
+
+            If bolAddOK = False Then
+                cnn.Open()
+            End If
+
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_updateTicketAttachment"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            If bolAddOK = True Then
+                cmd.Transaction = trans
+            End If
+
+            setupUpdateAttachment(cmd, drowUpdateAttachment, bolAddOK)
+            Dim ra As Integer = cmd.ExecuteNonQuery
+            If ra < 1 Then
+                EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - add record failed" & Environment.NewLine)
+                bolAddOK = False
+            Else
+                SaveRecord = True
+            End If
+            If bolAddOK = False Then
+                cnn.Close()
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+            bolAddOK = False
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+            If bolAddOK = False Then
+                cnn.Dispose()
+                cnn = Nothing
+            End If
+        End Try
+        Return SaveRecord
+        ''
+
+    End Function
+
+    Function updateNotes(ByVal AddStatus As Integer, ByVal drowUpdateNotes As DataRow, Optional ByVal cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As Boolean
+
+        Dim bolAddOK As Boolean = True
+        Dim SaveRecord As Boolean = False
+        If IsNothing(cnn) Then
+            bolAddOK = False
+            Dim dbConn As New DBConnection
+            cnn = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+            dbConn = Nothing
+        End If
+
+        Dim cmd As New SqlCommand
+        Try
+
+            If bolAddOK = False Then
+                cnn.Open()
+            End If
+
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_updateTicketNotes"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            If bolAddOK = True Then
+                cmd.Transaction = trans
+            End If
+
+            setupUpdateNotes(cmd, drowUpdateNotes, bolAddOK)
+            Dim ra As Integer = cmd.ExecuteNonQuery
+            If ra < 1 Then
+                EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - add record failed" & Environment.NewLine)
+                bolAddOK = False
+            Else
+                SaveRecord = True
+            End If
+            If bolAddOK = False Then
+                cnn.Close()
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+            bolAddOK = False
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+            If bolAddOK = False Then
+                cnn.Dispose()
+                cnn = Nothing
+            End If
+        End Try
+        Return SaveRecord
+        ''
+
+    End Function
+
+    Function getUsers() As DataTable
+
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "select * from dbo.tblUsers"
+            cmd.CommandType = CommandType.Text
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+
+            cnn.Close()
+
+            Return dt
+        Catch ex As Exception
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+
+    End Function
+    Function getUsersByName(SQLstr As String) As DataTable
+
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = SQLstr
+            cmd.CommandType = CommandType.Text
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+
+            cnn.Close()
+
+            Return dt
+        Catch ex As Exception
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+    End Function
+    Function getUsersDetails(SQLstr As String) As DataTable
+
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        'Dim cnn As New SqlConnection(dbConn.getSQLConnection_To_ozots)
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = SQLstr
+            cmd.CommandType = CommandType.Text
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+
+            cnn.Close()
+
+            Return dt
+        Catch ex As Exception
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+    End Function
+    Function getCustomerDetails(ByVal intCusID As Integer) As DataTable
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Dim ResultName As String = ""
+        Dim SQLstr As String
+        SQLstr = "select * from dbo.tblCustomers where CustomerID = " + CStr(intCusID)
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = SQLstr
+            cmd.CommandType = CommandType.Text
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+            cnn.Close()
+
+            Return dt
+        Catch ex As Exception
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+    End Function
+    Function getOZOTSUserDetails(SQLstr As String) As DataTable
+
+        'Dim dbConn As New DBConnection
+        'Dim cnn As New SqlConnection(dbConn.getSQLConnection_To_ozots_test)
+        'Dim cmd As New SqlCommand
+        'Dim adp As New SqlDataAdapter
+        'Dim dt As New DataTable
+
+        'Try
+        '    cnn.Open()
+        '    cmd.Connection = cnn
+        '    cmd.CommandText = SQLstr
+        '    cmd.CommandType = CommandType.Text
+
+        '    adp.SelectCommand = cmd
+        '    adp.Fill(dt)
+
+        '    cnn.Close()
+
+        '    Return dt
+        'Catch ex As Exception
+        '    Return dt
+        'Finally
+        '    adp.Dispose()
+        '    adp = Nothing
+        '    cmd.Dispose()
+        '    cmd = Nothing
+        '    cnn.Dispose()
+        '    cnn = Nothing
+        'End Try
+    End Function
+    Function getAttachmentDetails(SqlStr2 As String) As DataTable
+
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dtAttach As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = SqlStr2
+            cmd.CommandType = CommandType.Text
+
+            adp.SelectCommand = cmd
+            adp.Fill(dtAttach)
+
+            cnn.Close()
+
+            Return dtAttach
+        Catch ex As Exception
+            Return dtAttach
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+    End Function
+
+    Function getNotesDetails(strSQLNotes As String) As DataTable
+
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dtAttach As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = strSQLNotes
+            cmd.CommandType = CommandType.Text
+
+            adp.SelectCommand = cmd
+            adp.Fill(dtAttach)
+
+            cnn.Close()
+
+            Return dtAttach
+        Catch ex As Exception
+            Return dtAttach
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+    End Function
+
+    Protected Sub setupLoginParameters(ByRef cmd As SqlCommand, drow As DataRow, bolAdd As Boolean)
+
+        SqlCommandBuilder.DeriveParameters(cmd)
+        If bolAdd Then
+            cmd.Parameters("@LoginID").Direction = ParameterDirection.Output
+        Else
+
+            If drow.Item("LoginID") <> Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@LoginID").Value = drow.Item("LoginID")
+            Else
+                cmd.Parameters("@LoginID").Value = DBNull.Value
+            End If
+        End If
+
+        If drow.Item("UserID") <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@UserID").Value = drow.Item("UserID")
+        Else
+            cmd.Parameters("@UserID").Value = DBNull.Value
+        End If
+
+
+        If drow.Item("CustomerID") <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@CustomerID").Value = drow.Item("CustomerID")
+        Else
+            cmd.Parameters("@CustomerID").Value = DBNull.Value
+        End If
+
+        If drow.Item("LoginName") <> String.Empty Then
+            cmd.Parameters("@LoginName").Value = drow.Item("LoginName")
+        Else
+            cmd.Parameters("@LoginName").Value = DBNull.Value
+        End If
+
+        If drow.Item("FirstName") <> String.Empty Then
+            cmd.Parameters("@FirstName").Value = drow.Item("FirstName")
+        Else
+            cmd.Parameters("@FirstName").Value = DBNull.Value
+        End If
+
+        If drow.Item("LastName") <> String.Empty Then
+            cmd.Parameters("@LastName").Value = drow.Item("LastName")
+        Else
+            cmd.Parameters("@LastName").Value = DBNull.Value
+        End If
+
+        If drow.Item("Password") <> String.Empty Then
+            cmd.Parameters("@Password").Value = drow.Item("Password")
+        Else
+            cmd.Parameters("@Password").Value = DBNull.Value
+        End If
+
+        If drow.Item("EmailAddress") <> String.Empty Then
+            cmd.Parameters("@EmailAddress").Value = drow.Item("EmailAddress")
+        Else
+            cmd.Parameters("@EmailAddress").Value = DBNull.Value
+        End If
+
+        If drow.Item("Discontinued") <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@Discontinued").Value = drow.Item("Discontinued")
+        Else
+            cmd.Parameters("@Discontinued").Value = DBNull.Value
+        End If
+
+        If drow.Item("AdminUser") <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@AdminUser").Value = drow.Item("AdminUser")
+        Else
+            cmd.Parameters("@AdminUser").Value = DBNull.Value
+        End If
+
+    End Sub
+
+    Protected Sub setupAddTickets(ByRef cmd As SqlCommand, drow As DataRow, bolAdd As Boolean)
+
+        SqlCommandBuilder.DeriveParameters(cmd)
+        If bolAdd Then
+            cmd.Parameters("@TicketID").Direction = ParameterDirection.Output
+        Else
+
+            If drow.Item("TicketID") <> Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@TicketID").Value = drow.Item("TicketID")
+            Else
+                cmd.Parameters("@TicketID").Value = DBNull.Value
+            End If
+        End If
+
+        If drow.Item("OrderNo") <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@OrderNo").Value = drow.Item("OrderNo")
+        Else
+            cmd.Parameters("@OrderNo").Value = DBNull.Value
+        End If
+
+        If drow.Item("TicketSubject") <> String.Empty Then
+            cmd.Parameters("@TicketSubject").Value = drow.Item("TicketSubject")
+        Else
+            cmd.Parameters("@TicketSubject").Value = DBNull.Value
+        End If
+
+        If drow.Item("RequestDetails") <> String.Empty Then
+            cmd.Parameters("@RequestDetails").Value = drow.Item("RequestDetails")
+        Else
+            cmd.Parameters("@RequestDetails").Value = DBNull.Value
+        End If
+
+        If drow.Item("CustomerID") <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@CustomerID").Value = drow.Item("CustomerID")
+        Else
+            cmd.Parameters("@CustomerID").Value = DBNull.Value
+        End If
+
+        If drow.Item("PriorityID") <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@PriorityID").Value = drow.Item("PriorityID")
+        Else
+            cmd.Parameters("@PriorityID").Value = DBNull.Value
+        End If
+
+        If drow.Item("StatusID") <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@StatusID").Value = drow.Item("StatusID")
+        Else
+            cmd.Parameters("@StatusID").Value = DBNull.Value
+        End If
+
+        If drow.Item("RequestedByID") <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@RequestedByID").Value = drow.Item("RequestedByID")
+        Else
+            cmd.Parameters("@RequestedByID").Value = DBNull.Value
+        End If
+
+        If drow.Item("Email") <> String.Empty Then
+            cmd.Parameters("@Email").Value = drow.Item("Email")
+        Else
+            cmd.Parameters("@Email").Value = DBNull.Value
+        End If
+
+        If drow.Item("AssignedLoginID") <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@AssignedLoginID").Value = drow.Item("AssignedLoginID")
+        Else
+            cmd.Parameters("@AssignedLoginID").Value = DBNull.Value
+        End If
+
+        If drow.Item("RequestType") <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@RequestType").Value = drow.Item("RequestType")
+        Else
+            cmd.Parameters("@RequestType").Value = DBNull.Value
+        End If
+
+        If drow.Item("RequestSubType") <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@RequestSubType").Value = drow.Item("RequestSubType")
+        Else
+            cmd.Parameters("@RequestSubType").Value = DBNull.Value
+        End If
+
+        If drow.Item("TicketClosedBy") <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@TicketClosedBy").Value = drow.Item("TicketClosedBy")
+        Else
+            cmd.Parameters("@TicketClosedBy").Value = DBNull.Value
+        End If
+    End Sub
+
+
+    Protected Sub setupAddNotes(ByRef cmd As SqlCommand, drowNotes As DataRow, bolAdd As Boolean)
+        SqlCommandBuilder.DeriveParameters(cmd)
+        If bolAdd Then
+            cmd.Parameters("@ID").Direction = ParameterDirection.Output
+        Else
+
+            If drowNotes.Item("ID") <> Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@ID").Value = drowNotes.Item("ID")
+            Else
+                cmd.Parameters("@ID").Value = DBNull.Value
+            End If
+        End If
+
+        If drowNotes.Item("TicketID") <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@TicketID").Value = drowNotes.Item("TicketID")
+        Else
+            cmd.Parameters("@TicketID").Value = DBNull.Value
+        End If
+
+        If drowNotes.Item("Notes") <> String.Empty Then
+            cmd.Parameters("@Notes").Value = drowNotes.Item("Notes")
+        Else
+            cmd.Parameters("@Notes").Value = DBNull.Value
+        End If
+
+        If drowNotes.Item("LoginID") <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@LoginID").Value = drowNotes.Item("LoginID")
+        Else
+            cmd.Parameters("@LoginID").Value = DBNull.Value
+        End If
+
+        If drowNotes.Item("NoteDate") <> Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@NoteDate").Value = drowNotes.Item("NoteDate")
+        Else
+            cmd.Parameters("@NoteDate").Value = DBNull.Value
+        End If
+
+        If drowNotes.Item("Deleted") <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@Deleted").Value = drowNotes.Item("Deleted")
+        Else
+            cmd.Parameters("@Deleted").Value = DBNull.Value
+        End If
+
+        If drowNotes.Item("HiddenToClients") <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@HiddenToClients").Value = drowNotes.Item("HiddenToClients")
+        Else
+            cmd.Parameters("@HiddenToClients").Value = DBNull.Value
+        End If
+
+        If drowNotes.Item("DeletedByID") <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@DeletedByID").Value = drowNotes.Item("DeletedByID")
+        Else
+            cmd.Parameters("@DeletedByID").Value = DBNull.Value
+        End If
+
+        If drowNotes.Item("DeletedDateTime") <> Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@DeletedDateTime").Value = drowNotes.Item("DeletedDateTime")
+        Else
+            cmd.Parameters("@DeletedDateTime").Value = DBNull.Value
+        End If
+    End Sub
+
+    Protected Sub setupUpdateNotes(ByRef cmd As SqlCommand, drowNotes As DataRow, bolAdd As Boolean)
+        SqlCommandBuilder.DeriveParameters(cmd)
+        If bolAdd Then
+            cmd.Parameters("@ID").Direction = ParameterDirection.Output
+        Else
+
+            If drowNotes.Item("ID") <> Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@ID").Value = drowNotes.Item("ID")
+            Else
+                cmd.Parameters("@ID").Value = DBNull.Value
+            End If
+        End If
+
+        If drowNotes.Item("TicketID") <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@TicketID").Value = drowNotes.Item("TicketID")
+        Else
+            cmd.Parameters("@TicketID").Value = DBNull.Value
+        End If
+
+        If drowNotes.Item("Notes") <> String.Empty Then
+            cmd.Parameters("@Notes").Value = drowNotes.Item("Notes")
+        Else
+            cmd.Parameters("@Notes").Value = DBNull.Value
+        End If
+
+        If drowNotes.Item("LoginID") <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@LoginID").Value = drowNotes.Item("LoginID")
+        Else
+            cmd.Parameters("@LoginID").Value = DBNull.Value
+        End If
+
+        If drowNotes.Item("NoteDate") <> Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@NoteDate").Value = drowNotes.Item("NoteDate")
+        Else
+            cmd.Parameters("@NoteDate").Value = DBNull.Value
+        End If
+
+        If drowNotes.Item("Deleted") <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@Deleted").Value = drowNotes.Item("Deleted")
+        Else
+            cmd.Parameters("@Deleted").Value = DBNull.Value
+        End If
+
+        If drowNotes.Item("HiddenToClients") <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@HiddenToClients").Value = drowNotes.Item("HiddenToClients")
+        Else
+            cmd.Parameters("@HiddenToClients").Value = DBNull.Value
+        End If
+
+        If drowNotes.Item("DeletedByID") <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@DeletedByID").Value = drowNotes.Item("DeletedByID")
+        Else
+            cmd.Parameters("@DeletedByID").Value = DBNull.Value
+        End If
+
+        If drowNotes.Item("DeletedDateTime") <> Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@DeletedDateTime").Value = drowNotes.Item("DeletedDateTime")
+        Else
+            cmd.Parameters("@DeletedDateTime").Value = DBNull.Value
+        End If
+    End Sub
+
+    Protected Sub setupAddAttachment(ByRef cmd As SqlCommand, drowAttachment As DataRow, bolAdd As Boolean)
+
+        SqlCommandBuilder.DeriveParameters(cmd)
+        If bolAdd Then
+            cmd.Parameters("@ID").Direction = ParameterDirection.Output
+        Else
+
+            If drowAttachment.Item("ID") <> Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@ID").Value = drowAttachment.Item("ID")
+            Else
+                cmd.Parameters("@ID").Value = DBNull.Value
+            End If
+        End If
+
+        If drowAttachment.Item("TicketID") <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@TicketID").Value = drowAttachment.Item("TicketID")
+        Else
+            cmd.Parameters("@TicketID").Value = DBNull.Value
+        End If
+
+        If drowAttachment.Item("FilePath") <> String.Empty Then
+            cmd.Parameters("@FilePath").Value = drowAttachment.Item("FilePath")
+        Else
+            cmd.Parameters("@FilePath").Value = DBNull.Value
+        End If
+
+        If drowAttachment.Item("LoginID") <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@LoginID").Value = drowAttachment.Item("LoginID")
+        Else
+            cmd.Parameters("@LoginID").Value = DBNull.Value
+        End If
+
+        If drowAttachment.Item("UploadedDate") <> Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@UploadedDate").Value = drowAttachment.Item("UploadedDate")
+        Else
+            cmd.Parameters("@UploadedDate").Value = DBNull.Value
+        End If
+
+        If drowAttachment.Item("Deleted") <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@Deleted").Value = drowAttachment.Item("Deleted")
+        Else
+            cmd.Parameters("@Deleted").Value = DBNull.Value
+        End If
+
+        If drowAttachment.Item("DeletedByID") <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@DeletedByID").Value = drowAttachment.Item("DeletedByID")
+        Else
+            cmd.Parameters("@DeletedByID").Value = DBNull.Value
+        End If
+
+        If drowAttachment.Item("DeletedDateTime") <> Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@DeletedDateTime").Value = drowAttachment.Item("DeletedDateTime")
+        Else
+            cmd.Parameters("@DeletedDateTime").Value = DBNull.Value
+        End If
+    End Sub
+
+    Protected Sub setupUpdateAttachment(ByRef cmd As SqlCommand, drowUpdateAttachment As DataRow, bolAdd As Boolean)
+
+        SqlCommandBuilder.DeriveParameters(cmd)
+        If bolAdd Then
+            cmd.Parameters("@ID").Direction = ParameterDirection.Output
+        Else
+
+            If drowUpdateAttachment.Item("ID") <> Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@ID").Value = drowUpdateAttachment.Item("ID")
+            Else
+                cmd.Parameters("@ID").Value = DBNull.Value
+            End If
+        End If
+
+        If drowUpdateAttachment.Item("TicketID") <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@TicketID").Value = drowUpdateAttachment.Item("TicketID")
+        Else
+            cmd.Parameters("@TicketID").Value = DBNull.Value
+        End If
+
+        If drowUpdateAttachment.Item("FilePath") <> String.Empty Then
+            cmd.Parameters("@FilePath").Value = drowUpdateAttachment.Item("FilePath")
+        Else
+            cmd.Parameters("@FilePath").Value = DBNull.Value
+        End If
+
+        If drowUpdateAttachment.Item("LoginID") <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@LoginID").Value = drowUpdateAttachment.Item("LoginID")
+        Else
+            cmd.Parameters("@LoginID").Value = DBNull.Value
+        End If
+
+        If drowUpdateAttachment.Item("UploadedDate") <> Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@UploadedDate").Value = drowUpdateAttachment.Item("UploadedDate")
+        Else
+            cmd.Parameters("@UploadedDate").Value = DBNull.Value
+        End If
+
+        If drowUpdateAttachment.Item("Deleted") <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@Deleted").Value = drowUpdateAttachment.Item("Deleted")
+        Else
+            cmd.Parameters("@Deleted").Value = DBNull.Value
+        End If
+
+        If drowUpdateAttachment.Item("DeletedByID") <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@DeletedByID").Value = drowUpdateAttachment.Item("DeletedByID")
+        Else
+            cmd.Parameters("@DeletedByID").Value = DBNull.Value
+        End If
+
+        If drowUpdateAttachment.Item("DeletedDateTime") <> Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@DeletedDateTime").Value = drowUpdateAttachment.Item("DeletedDateTime")
+        Else
+            cmd.Parameters("@DeletedDateTime").Value = DBNull.Value
+        End If
+    End Sub
+
+
+    Protected Sub setupAddHistory(ByRef cmd As SqlCommand, drow As DataRow, bolAdd As Boolean)
+
+        SqlCommandBuilder.DeriveParameters(cmd)
+        If bolAdd Then
+            cmd.Parameters("@TicketID").Direction = ParameterDirection.Output
+        Else
+
+            If drow.Item("TicketID") <> Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@TicketID").Value = drow.Item("TicketID")
+            Else
+                cmd.Parameters("@TicketID").Value = DBNull.Value
+            End If
+        End If
+
+        If drow.Item("OrderNo") <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@OrderNo").Value = drow.Item("OrderNo")
+        Else
+            cmd.Parameters("@OrderNo").Value = DBNull.Value
+        End If
+
+        If drow.Item("TicketSubject") <> String.Empty Then
+            cmd.Parameters("@TicketSubject").Value = drow.Item("TicketSubject")
+        Else
+            cmd.Parameters("@TicketSubject").Value = DBNull.Value
+        End If
+
+        If drow.Item("RequestDetails") <> String.Empty Then
+            cmd.Parameters("@RequestDetails").Value = drow.Item("RequestDetails")
+        Else
+            cmd.Parameters("@RequestDetails").Value = DBNull.Value
+        End If
+
+        If drow.Item("CustomerID") <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@CustomerID").Value = drow.Item("CustomerID")
+        Else
+            cmd.Parameters("@CustomerID").Value = DBNull.Value
+        End If
+
+        If drow.Item("PriorityID") <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@PriorityID").Value = drow.Item("PriorityID")
+        Else
+            cmd.Parameters("@PriorityID").Value = DBNull.Value
+        End If
+
+        If drow.Item("StatusID") <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@StatusID").Value = drow.Item("StatusID")
+        Else
+            cmd.Parameters("@StatusID").Value = DBNull.Value
+        End If
+
+        If drow.Item("RequestedByID") <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@RequestedByID").Value = drow.Item("RequestedByID")
+        Else
+            cmd.Parameters("@RequestedByID").Value = DBNull.Value
+        End If
+
+        If drow.Item("Email") <> String.Empty Then
+            cmd.Parameters("@Email").Value = drow.Item("Email")
+        Else
+            cmd.Parameters("@Email").Value = DBNull.Value
+        End If
+
+        If drow.Item("AssignedLoginID") <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@AssignedLoginID").Value = drow.Item("AssignedLoginID")
+        Else
+            cmd.Parameters("@AssignedLoginID").Value = DBNull.Value
+        End If
+
+        If drow.Item("RequestType") <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@RequestType").Value = drow.Item("RequestType")
+        Else
+            cmd.Parameters("@RequestType").Value = DBNull.Value
+        End If
+
+        If drow.Item("RequestSubType") <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@RequestSubType").Value = drow.Item("RequestSubType")
+        Else
+            cmd.Parameters("@RequestSubType").Value = DBNull.Value
+        End If
+
+        If drow.Item("TicketClosedBy") <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@TicketClosedBy").Value = drow.Item("TicketClosedBy")
+        Else
+            cmd.Parameters("@TicketClosedBy").Value = DBNull.Value
+        End If
+
+        If drow.Item("LoginID") <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@LoginID").Value = drow.Item("LoginID")
+        Else
+            cmd.Parameters("@LoginID").Value = DBNull.Value
+        End If
+
+        If drow.Item("ChangedByLoginID") <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@ChangedByLoginID").Value = drow.Item("ChangedByLoginID")
+        Else
+            cmd.Parameters("@ChangedByLoginID").Value = DBNull.Value
+        End If
+
+        If drow.Item("ChangedDateTime") <> Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@ChangedDateTime").Value = drow.Item("ChangedDateTime")
+        Else
+            cmd.Parameters("@ChangedDateTime").Value = DBNull.Value
+        End If
+
+    End Sub
+
+    Protected Sub setupAddUpdate(ByRef cmd As SqlCommand, drowUpdate As DataRow, bolAdd As Boolean)
+
+        SqlCommandBuilder.DeriveParameters(cmd)
+        If bolAdd Then
+            cmd.Parameters("@TicketID").Direction = ParameterDirection.Output
+        Else
+
+            If drowUpdate.Item("TicketID") <> Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@TicketID").Value = drowUpdate.Item("TicketID")
+            Else
+                cmd.Parameters("@TicketID").Value = DBNull.Value
+            End If
+        End If
+
+        If drowUpdate.Item("LoginID") <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@LoginID").Value = drowUpdate.Item("LoginID")
+        Else
+            cmd.Parameters("@LoginID").Value = DBNull.Value
+        End If
+
+        If drowUpdate.Item("UpdatedDateTime") <> Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@UpdatedDateTime").Value = drowUpdate.Item("UpdatedDateTime")
+        Else
+            cmd.Parameters("@UpdatedDateTime").Value = DBNull.Value
+        End If
+
+        If drowUpdate.Item("UpdateDescription") <> String.Empty Then
+            cmd.Parameters("@UpdateDescription").Value = drowUpdate.Item("UpdateDescription")
+        Else
+            cmd.Parameters("@UpdateDescription").Value = DBNull.Value
+        End If
+
+    End Sub
+End Class

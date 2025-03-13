@@ -1,0 +1,609 @@
+﻿Imports Microsoft.VisualBasic
+Imports System.Data.SqlClient
+
+Public Class ProductsListDAO
+
+    Function ProdScheduleSQLget(ByVal strSQL As String) As DataTable
+
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        dbConn = Nothing
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = strSQL
+            cmd.CommandType = CommandType.Text
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Close()
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+        Return dt
+
+    End Function
+
+    Function getAllPlantationSpecs() As DataTable
+
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getAllPlantationSpecs"
+            cmd.CommandType = CommandType.StoredProcedure
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Close()
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+        Return dt
+
+    End Function
+
+    Function getPlantSpecsByProdSchID(ByVal intProdScheduleID As Integer) As DataTable
+
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getPlantSpecsByProdSchID"
+            cmd.CommandType = CommandType.StoredProcedure
+            SqlCommandBuilder.DeriveParameters(cmd)
+            cmd.Parameters("@ProductScheduleID").Value = intProdScheduleID
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Close()
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+        Return dt
+
+    End Function
+
+    Function getAllLouvreSpecs() As DataTable
+
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getAllLouvreSpecs"
+            cmd.CommandType = CommandType.StoredProcedure
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Close()
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+        Return dt
+
+    End Function
+
+    Function getLouvreSpecsByProdSchID(ByVal intProdScheduleID As Integer) As DataTable
+
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getLouvreSpecsByProdSchID"
+            cmd.CommandType = CommandType.StoredProcedure
+            SqlCommandBuilder.DeriveParameters(cmd)
+            cmd.Parameters("@ProductScheduleID").Value = intProdScheduleID
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Close()
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+        Return dt
+
+    End Function
+
+    Function getLouvreSpecsByProductionScheduleID(intID As Integer) As LouvreSpecs
+        Dim cLouvreSpecs As New LouvreSpecs
+        Dim dtSpecs As DataTable = getLouvreSpecsByProdSchID(intID)
+
+        For Each r As DataRow In dtSpecs.Rows
+            With cLouvreSpecs
+                .ProductScheduleID = CInt(r("ProductScheduleID"))
+
+                If Not IsDBNull(r("LouvreJobTypeID")) Then
+                    .LouvreJobTypeID = CInt(r("LouvreJobTypeID"))
+                End If
+
+                If Not IsDBNull(r("ColourID")) Then
+                    .ColourID = CInt(r("ColourID"))
+                End If
+
+                If Not IsDBNull(r("CheckMeasureDate")) Then
+                    .CheckMeasureDate = CDate(r("CheckMeasureDate"))
+                End If
+
+                If Not IsDBNull(r("CheckMeasureID")) Then
+                    .CheckMeasureID = CInt(r("CheckMeasureID"))
+                End If
+
+                If Not IsDBNull(r("InstallDate")) Then
+                    .InstallDate = CDate(r("InstallDate"))
+                End If
+
+                If Not IsDBNull(r("InstallID")) Then
+                    .InstallID = CInt(r("InstallID"))
+                End If
+
+                .ReworkDescription = r("ReworkDescription").ToString()
+
+                If Not IsDBNull(r("ReworkReasonID")) Then
+                    .ReworkReasonID = CInt(r("ReworkReasonID"))
+                End If
+
+                .RectificationDetails = r("RectificationDetails").ToString()
+
+                If Not IsDBNull(r("RectificationLocation")) Then
+                    .RectificationLocation = CInt(r("RectificationLocation"))
+                End If
+
+                If Not IsDBNull(r("RectificationReasonID")) Then
+                    .RectificationReasonID = CInt(r("RectificationReasonID"))
+                End If
+
+                If Not IsDBNull(r("StyleID")) Then
+                    .StyleID = CInt(r("StyleID"))
+                End If
+            End With
+        Next
+
+        Return cLouvreSpecs
+    End Function
+
+    Function AddPlantationSpecs(ByVal clsPlantationSpecs As PlantationSpecs, ByVal cnn As SqlConnection, ByRef trans As SqlTransaction) As Boolean
+
+        Dim cmd As New SqlCommand
+        Try
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_addPlantationSpecs"
+            cmd.CommandType = CommandType.StoredProcedure
+            cmd.Transaction = trans
+            setupPlantCMDParameters(clsPlantationSpecs, cmd)
+
+            Dim intVal As Integer = cmd.ExecuteNonQuery()
+            If intVal > 0 Then
+                Return True
+            Else
+                Return False
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+            Return False
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+        End Try
+
+
+    End Function
+
+    Function updatePlantationSpecs(ByVal clsPlantationSpecs As PlantationSpecs, ByVal cnn As SqlConnection, ByRef trans As SqlTransaction) As Boolean
+
+        Dim cmd As New SqlCommand
+        Dim bolUpdate As Boolean = True
+        Try
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_updatePlantSpecsByProdSchID"
+            cmd.CommandType = CommandType.StoredProcedure
+            cmd.Transaction = trans
+            setupPlantCMDParameters(clsPlantationSpecs, cmd)
+            Dim intVal As Integer = cmd.ExecuteNonQuery()
+            If intVal > 0 Then
+                bolUpdate = True
+            Else
+                bolUpdate = False
+            End If
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+        End Try
+        Return bolUpdate
+
+    End Function
+
+    Function deletePlantationSpecs(ByVal intProdScheduleID As Integer, ByVal cnn As SqlConnection, ByRef trans As SqlTransaction) As Boolean
+
+        Dim cmd As New SqlCommand
+        Dim bolDelete As Boolean = True
+        Try
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_deletePlantSpecsByProdSchID"
+            cmd.CommandType = CommandType.StoredProcedure
+            cmd.Transaction = trans
+
+            SqlCommandBuilder.DeriveParameters(cmd)
+            cmd.Parameters("@ProductScheduleID").Value = intProdScheduleID
+            Dim intVal As Integer = cmd.ExecuteNonQuery()
+            If intVal > 0 Then
+                bolDelete = True
+            Else
+                bolDelete = False
+            End If
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+        End Try
+        Return bolDelete
+
+    End Function
+
+    Sub setupPlantCMDParameters(ByVal clsPlantationSpecs As PlantationSpecs, ByRef cmd As SqlCommand)
+
+        SqlCommandBuilder.DeriveParameters(cmd)
+        If clsPlantationSpecs.ProductScheduleID = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@ProductScheduleID").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ProductScheduleID").Value = clsPlantationSpecs.ProductScheduleID
+        End If
+        If clsPlantationSpecs.PanelsLess700 = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@PanelsLess700").Value = DBNull.Value
+        Else
+            cmd.Parameters("@PanelsLess700").Value = clsPlantationSpecs.PanelsLess700
+        End If
+        If clsPlantationSpecs.PanelsMore700 = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@PanelsMore700").Value = DBNull.Value
+        Else
+            cmd.Parameters("@PanelsMore700").Value = clsPlantationSpecs.PanelsMore700
+        End If
+        If clsPlantationSpecs.QtyHinges = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@QtyHinges").Value = DBNull.Value
+        Else
+            cmd.Parameters("@QtyHinges").Value = clsPlantationSpecs.QtyHinges
+        End If
+        If clsPlantationSpecs.QtySliding = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@QtySliding").Value = DBNull.Value
+        Else
+            cmd.Parameters("@QtySliding").Value = clsPlantationSpecs.QtySliding
+        End If
+        If clsPlantationSpecs.QtyBifold = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@QtyBifold").Value = DBNull.Value
+        Else
+            cmd.Parameters("@QtyBifold").Value = clsPlantationSpecs.QtyBifold
+        End If
+        If clsPlantationSpecs.QtyFixed = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@QtyFixed").Value = DBNull.Value
+        Else
+            cmd.Parameters("@QtyFixed").Value = clsPlantationSpecs.QtyFixed
+        End If
+        If clsPlantationSpecs.QtyZFrame = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@QtyZFrame").Value = DBNull.Value
+        Else
+            cmd.Parameters("@QtyZFrame").Value = clsPlantationSpecs.QtyZFrame
+        End If
+        If clsPlantationSpecs.QtyLFrame = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@QtyLFrame").Value = DBNull.Value
+        Else
+            cmd.Parameters("@QtyLFrame").Value = clsPlantationSpecs.QtyLFrame
+        End If
+        If clsPlantationSpecs.ColourID = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@ColourID").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ColourID").Value = clsPlantationSpecs.ColourID
+        End If
+
+    End Sub
+
+    Function AddLouvreSpecs(ByVal clsLouvreSpecs As LouvreSpecs, ByVal cnn As SqlConnection, ByRef trans As SqlTransaction) As Boolean
+
+        Dim cmd As New SqlCommand
+        Try
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_addLouvreSpecs"
+            cmd.CommandType = CommandType.StoredProcedure
+            cmd.Transaction = trans
+
+            setupLouvreCMDParameters(clsLouvreSpecs, cmd)
+
+            Dim intVal As Integer = cmd.ExecuteNonQuery()
+            If intVal > 0 Then
+                Return True
+            Else
+                Return False
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+            Return False
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+        End Try
+
+    End Function
+
+    Function updateLouvreSpecs(ByVal clsLouvreSpecs As LouvreSpecs, ByVal cnn As SqlConnection, ByRef trans As SqlTransaction) As Boolean
+
+        Dim cmd As New SqlCommand
+        Dim bolUpdate As Boolean = True
+        Try
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_updateLouvreSpecsByProdSchID"
+            cmd.CommandType = CommandType.StoredProcedure
+            cmd.Transaction = trans
+            setupLouvreCMDParameters(clsLouvreSpecs, cmd)
+            Dim intVal As Integer = cmd.ExecuteNonQuery()
+            If intVal > 0 Then
+                bolUpdate = True
+            Else
+                bolUpdate = False
+            End If
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+        End Try
+        Return bolUpdate
+
+    End Function
+
+    Function deleteLouvreSpecs(ByVal intProdScheduleID As Integer, ByVal cnn As SqlConnection, ByRef trans As SqlTransaction) As Boolean
+
+        Dim cmd As New SqlCommand
+        Dim bolDelete As Boolean = True
+        Try
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_deleteLouvreSpecsByProdSchID"
+            cmd.CommandType = CommandType.StoredProcedure
+            cmd.Transaction = trans
+            SqlCommandBuilder.DeriveParameters(cmd)
+            cmd.Parameters("@ProductScheduleID").Value = intProdScheduleID
+            Dim intVal As Integer = cmd.ExecuteNonQuery()
+            If intVal > 0 Then
+                bolDelete = True
+            Else
+                bolDelete = False
+            End If
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+        End Try
+        Return bolDelete
+
+    End Function
+
+    Sub setupLouvreCMDParameters(ByVal clsLouvreSpecs As LouvreSpecs, ByRef cmd As SqlCommand)
+
+        SqlCommandBuilder.DeriveParameters(cmd)
+        If clsLouvreSpecs.ProductScheduleID = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@ProductScheduleID").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ProductScheduleID").Value = clsLouvreSpecs.ProductScheduleID
+        End If
+        If clsLouvreSpecs.LouvreJobTypeID = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@LouvreJobTypeID").Value = DBNull.Value
+        Else
+            cmd.Parameters("@LouvreJobTypeID").Value = clsLouvreSpecs.LouvreJobTypeID
+        End If
+        If clsLouvreSpecs.ColourID = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@ColourID").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ColourID").Value = clsLouvreSpecs.ColourID
+        End If
+        If clsLouvreSpecs.CheckMeasureDate = Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@CheckMeasureDate").Value = DBNull.Value
+        Else
+            cmd.Parameters("@CheckMeasureDate").Value = clsLouvreSpecs.CheckMeasureDate
+        End If
+        If clsLouvreSpecs.CheckMeasureID = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@CheckMeasureID").Value = DBNull.Value
+        Else
+            cmd.Parameters("@CheckMeasureID").Value = clsLouvreSpecs.CheckMeasureID
+        End If
+        If clsLouvreSpecs.InstallDate = Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@InstallDate").Value = DBNull.Value
+        Else
+            cmd.Parameters("@InstallDate").Value = clsLouvreSpecs.InstallDate
+        End If
+        If clsLouvreSpecs.InstallID = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@InstallID").Value = DBNull.Value
+        Else
+            cmd.Parameters("@InstallID").Value = clsLouvreSpecs.InstallID
+        End If
+
+        If clsLouvreSpecs.ReworkDescription = String.Empty Then
+            cmd.Parameters("@ReworkDescription").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ReworkDescription").Value = clsLouvreSpecs.ReworkDescription
+        End If
+
+        If clsLouvreSpecs.ReworkReasonID = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@ReworkReasonID").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ReworkReasonID").Value = clsLouvreSpecs.ReworkReasonID
+        End If
+
+        If clsLouvreSpecs.RectificationDetails = String.Empty Then
+            cmd.Parameters("@RectificationDetails").Value = DBNull.Value
+        Else
+            cmd.Parameters("@RectificationDetails").Value = clsLouvreSpecs.RectificationDetails
+        End If
+
+        If clsLouvreSpecs.RectificationLocation = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@RectificationLocation").Value = DBNull.Value
+        Else
+            cmd.Parameters("@RectificationLocation").Value = clsLouvreSpecs.RectificationLocation
+        End If
+
+        If clsLouvreSpecs.RectificationReasonID = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@RectificationReasonID").Value = DBNull.Value
+        Else
+            cmd.Parameters("@RectificationReasonID").Value = clsLouvreSpecs.RectificationReasonID
+        End If
+
+        If clsLouvreSpecs.StyleID = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@StyleID").Value = DBNull.Value
+        Else
+            cmd.Parameters("@StyleID").Value = clsLouvreSpecs.StyleID
+        End If
+
+    End Sub
+
+    Function convertRowPlantSpecToCLS(ByVal drPlantSpec As DataRow) As PlantationSpecs
+
+        Dim clsPlantSpecs As New PlantationSpecs
+        If Not IsDBNull(drPlantSpec("ProductScheduleID")) Then
+            clsPlantSpecs.ProductScheduleID = drPlantSpec("ProductScheduleID")
+        End If
+        If Not IsDBNull(drPlantSpec("PanelsLess700")) Then
+            clsPlantSpecs.PanelsLess700 = drPlantSpec("PanelsLess700")
+        End If
+        If Not IsDBNull(drPlantSpec("PanelsMore700")) Then
+            clsPlantSpecs.PanelsMore700 = drPlantSpec("PanelsMore700")
+        End If
+        If Not IsDBNull(drPlantSpec("QtyHinges")) Then
+            clsPlantSpecs.QtyHinges = drPlantSpec("QtyHinges")
+        End If
+        If Not IsDBNull(drPlantSpec("QtySliding")) Then
+            clsPlantSpecs.QtySliding = drPlantSpec("QtySliding")
+        End If
+        If Not IsDBNull(drPlantSpec("QtyBifold")) Then
+            clsPlantSpecs.QtyBifold = drPlantSpec("QtyBifold")
+        End If
+        If Not IsDBNull(drPlantSpec("QtyFixed")) Then
+            clsPlantSpecs.QtyFixed = drPlantSpec("QtyFixed")
+        End If
+        If Not IsDBNull(drPlantSpec("QtyZFrame")) Then
+            clsPlantSpecs.QtyZFrame = drPlantSpec("QtyZFrame")
+        End If
+        If Not IsDBNull(drPlantSpec("QtyLFrame")) Then
+            clsPlantSpecs.QtyLFrame = drPlantSpec("QtyLFrame")
+        End If
+        If Not IsDBNull(drPlantSpec("ColourID")) Then
+            clsPlantSpecs.ColourID = drPlantSpec("ColourID")
+        End If
+        Return clsPlantSpecs
+
+    End Function
+
+    Function getLouvreSpecsClassFromDatarow(ByVal dr As DataRow) As LouvreSpecs
+
+        Dim cLouvreSpecs As New LouvreSpecs
+        If Not IsDBNull(dr("ProductScheduleID")) Then
+            cLouvreSpecs.ProductScheduleID = CInt(dr("ProductScheduleID"))
+        End If
+
+        If Not IsDBNull(dr("LouvreJobTypeID")) Then
+            cLouvreSpecs.LouvreJobTypeID = CInt(dr("LouvreJobTypeID"))
+        End If
+
+        If Not IsDBNull(dr("ColourID")) Then
+            cLouvreSpecs.ColourID = CInt(dr("ColourID"))
+        End If
+
+        If Not IsDBNull(dr("CheckMeasureDate")) Then
+            cLouvreSpecs.CheckMeasureDate = CDate(dr("CheckMeasureDate"))
+        End If
+
+        If Not IsDBNull(dr("CheckMeasureID")) Then
+            cLouvreSpecs.CheckMeasureID = CInt(dr("CheckMeasureID"))
+        End If
+
+        If Not IsDBNull(dr("InstallDate")) Then
+            cLouvreSpecs.InstallDate = CDate(dr("InstallDate"))
+        End If
+
+        If Not IsDBNull(dr("InstallID")) Then
+            cLouvreSpecs.InstallID = CInt(dr("InstallID"))
+        End If
+
+        cLouvreSpecs.ReworkDescription = dr("ReworkDescription").ToString
+
+        If Not IsDBNull(dr("ReworkReasonID")) Then
+            cLouvreSpecs.ReworkReasonID = CInt(dr("ReworkReasonID"))
+        End If
+
+        cLouvreSpecs.RectificationDetails = dr("RectificationDetails").ToString
+
+        If Not IsDBNull(dr("RectificationLocation")) Then
+            cLouvreSpecs.RectificationLocation = CInt(dr("RectificationLocation"))
+        End If
+
+        If Not IsDBNull(dr("RectificationReasonID")) Then
+            cLouvreSpecs.RectificationReasonID = CInt(dr("RectificationReasonID"))
+        End If
+
+        If Not IsDBNull(dr("StyleID")) Then
+            cLouvreSpecs.StyleID = CInt(dr("StyleID"))
+        End If
+
+        Return cLouvreSpecs
+
+    End Function
+
+
+End Class

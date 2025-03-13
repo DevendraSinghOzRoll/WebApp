@@ -1,0 +1,173 @@
+﻿Imports Microsoft.VisualBasic
+
+Public Class AdditionalRequirements
+
+    Implements ICloneable
+
+    Private _AdditionalRequirementsID As Integer
+    Private _TempGUID As String
+    Private _OriginalAddRequirementsID As Integer
+    Private _ProductionScheduleID As Integer
+    Private _AdditionalRequirementTypeID As Integer
+    Private _DescriptionText As String
+    Private _StartDate As Date
+    Private _ETADate As Date
+    Private _CompleteDate As Date
+    Private _StatusID As Integer
+    Private _PowdercoaterID As Integer
+    Private _PurchaseOrderNo As String
+    Private _CostPrice As Decimal
+    Private _PickDate As Date
+
+    Public Sub New()
+
+        _AdditionalRequirementsID = Constants.DEFAULT_INTEGER_VALUE
+        _TempGUID = String.Empty
+        _OriginalAddRequirementsID = Constants.DEFAULT_INTEGER_VALUE
+        _ProductionScheduleID = Constants.DEFAULT_INTEGER_VALUE
+        _AdditionalRequirementTypeID = Constants.DEFAULT_INTEGER_VALUE
+        _DescriptionText = String.Empty
+        _StartDate = Constants.DEFAULT_DATE_VALUE
+        _ETADate = Constants.DEFAULT_DATE_VALUE
+        _CompleteDate = Constants.DEFAULT_DATE_VALUE
+        _StatusID = Constants.DEFAULT_INTEGER_VALUE
+        _PowdercoaterID = Constants.DEFAULT_INTEGER_VALUE
+        _PurchaseOrderNo = String.Empty
+        _CostPrice = Constants.DEFAULT_DECIMAL_VALUE
+        _PickDate = Constants.DEFAULT_DATE_VALUE
+
+    End Sub
+
+    Public Function Clone() As Object Implements ICloneable.Clone
+
+        Return MyBase.MemberwiseClone
+
+    End Function
+
+    Property AdditionalRequirementsID As Integer
+        Get
+            Return _AdditionalRequirementsID
+        End Get
+        Set(value As Integer)
+            _AdditionalRequirementsID = value
+        End Set
+    End Property
+
+    Property TempGUID As String
+        Get
+            Return _TempGUID
+        End Get
+        Set(value As String)
+            _TempGUID = value
+        End Set
+    End Property
+
+    Property OriginalAddRequirementsID As Integer
+        Get
+            Return _OriginalAddRequirementsID
+        End Get
+        Set(value As Integer)
+            _OriginalAddRequirementsID = value
+        End Set
+    End Property
+
+    Property ProductionScheduleID As Integer
+        Get
+            Return _ProductionScheduleID
+        End Get
+        Set(value As Integer)
+            _ProductionScheduleID = value
+        End Set
+    End Property
+
+    Property AdditionalRequirementTypeID As Integer
+        Get
+            Return _AdditionalRequirementTypeID
+        End Get
+        Set(value As Integer)
+            _AdditionalRequirementTypeID = value
+        End Set
+    End Property
+
+    Property DescriptionText As String
+        Get
+            Return _DescriptionText
+        End Get
+        Set(value As String)
+            _DescriptionText = value
+        End Set
+    End Property
+
+    Property StartDate As Date
+        Get
+            Return _StartDate
+        End Get
+        Set(value As Date)
+            _StartDate = value
+        End Set
+    End Property
+
+    Property ETADate As Date
+        Get
+            Return _ETADate
+        End Get
+        Set(value As Date)
+            _ETADate = value
+        End Set
+    End Property
+
+    Property CompleteDate As Date
+        Get
+            Return _CompleteDate
+        End Get
+        Set(value As Date)
+            _CompleteDate = value
+        End Set
+    End Property
+
+    Property StatusID As Integer
+        Get
+            Return _StatusID
+        End Get
+        Set(value As Integer)
+            _StatusID = value
+        End Set
+    End Property
+
+    Property PowdercoaterID As Integer
+        Get
+            Return _PowdercoaterID
+        End Get
+        Set(value As Integer)
+            _PowdercoaterID = value
+        End Set
+    End Property
+
+    Property PurchaseOrderNo As Integer
+        Get
+            Return _PurchaseOrderNo
+        End Get
+        Set(value As Integer)
+            _PurchaseOrderNo = value
+        End Set
+    End Property
+
+    Property CostPrice As Integer
+        Get
+            Return _CostPrice
+        End Get
+        Set(value As Integer)
+            _CostPrice = value
+        End Set
+    End Property
+
+    Property PickDate As Date
+        Get
+            Return _PickDate
+        End Get
+        Set(value As Date)
+            _PickDate = value
+        End Set
+    End Property
+
+End Class

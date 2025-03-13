@@ -1,0 +1,230 @@
+﻿
+Partial Class PlantationJobDetails
+    Inherits System.Web.UI.Page
+
+    Protected Sub Page_Load(ByVal sender As Object, ByVal e As EventArgs) Handles Me.Load
+        If Not IsPostBack Then
+            Dim service As New AppService
+
+            Try
+
+                Dim intJobNumber As Integer = Constants.DEFAULT_INTEGER_VALUE
+                Dim intSiteID As Integer = Constants.DEFAULT_INTEGER_VALUE
+
+                If Not Request.QueryString.Count = 0 Then
+                    If Not IsNothing(Request.Params("JobNumber")) Then
+                        intJobNumber = CInt(Request.Params("JobNumber"))
+                    End If
+                End If
+
+                If Not Request.QueryString.Count = 0 Then
+                    If Not IsNothing(Request.Params("SiteID")) Then
+                        intSiteID = CInt(Request.Params("SiteID"))
+                    End If
+                End If
+
+                'intJobNumber = 437659
+                Dim dtOrder As DataTable = service.getPlantationOrderDetail(intSiteID, intJobNumber)
+                lblContractNumber.Text = SharedFunctions.nz(dtOrder.Rows(0)("ContractNo"), "")
+                lblShutter.Text &= "<table class=""form-table"" width=""100%"">"
+                lblShutter.Text &= "<tr>"
+                lblShutter.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">Contract No </td>"
+                lblShutter.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">" & SharedFunctions.nz(dtOrder.Rows(0)("ContractNo"), "") & " </td>"
+                lblShutter.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">Customer Name </td>"
+                lblShutter.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">" & SharedFunctions.nz(dtOrder.Rows(0)("CustomerName"), "") & " </td>"
+                lblShutter.Text &= "</tr>"
+                lblShutter.Text &= "<tr>"
+                lblShutter.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">Notes </td>"
+                lblShutter.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"" Colspan=3>" & SharedFunctions.nz(dtOrder.Rows(0)("Notes"), "") & " </td>"
+                lblShutter.Text &= "</tr>"
+                lblShutter.Text &= "</table>"
+
+                Dim strSQL As String = String.Empty
+                strSQL = "Select * From dbo.tblTradesmanPSDetails where JobNumber = " & intJobNumber.ToString & " and RecordTypeID = 2 and Deleted=0"
+
+                Dim dtOrderDtl As DataTable = service.runSQLHive(intSiteID, strSQL)
+                If dtOrderDtl.Rows.Count > 0 Then
+                    Dim strBoxType As String = String.Empty
+
+                    lblShutterDtl.Text &= "<table class=""form-table"" width=""100%"">"
+                    For k As Integer = 0 To dtOrderDtl.Rows.Count - 1
+                        lblShutterDtl.Text &= "<tr>"
+                        lblShutterDtl.Text &= "<td><h3>Shutter - " & dtOrderDtl.Rows(k)("ShutterID") & " </h3></td>"
+                        lblShutterDtl.Text &= "</tr>"
+
+                        lblShutterDtl.Text &= "<tr>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">Width </td>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">" & SharedFunctions.nz(dtOrderDtl.Rows(k)("Width"), "") & " </td>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">Height </td>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">" & SharedFunctions.nz(dtOrderDtl.Rows(k)("Height"), "") & " </td>"
+                        lblShutterDtl.Text &= "</tr>"
+
+                        lblShutterDtl.Text &= "<tr>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">No of Panels </td>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">" & SharedFunctions.nz(dtOrderDtl.Rows(k)("PanelQty"), "") & " </td>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">Blade Size </td>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">" & SharedFunctions.nz(dtOrderDtl.Rows(k)("BladeSize"), "") & " </td>"
+                        lblShutterDtl.Text &= "</tr>"
+
+                        lblShutterDtl.Text &= "<tr>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">Material </td>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">" & SharedFunctions.nz(dtOrderDtl.Rows(k)("Material"), "") & " </td>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">Colour </td>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">" & SharedFunctions.nz(dtOrderDtl.Rows(k)("Colour"), "") & " </td>"
+                        lblShutterDtl.Text &= "</tr>"
+
+                        lblShutterDtl.Text &= "<tr>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">Installation Area </td>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">" & SharedFunctions.nz(dtOrderDtl.Rows(k)("InstallationArea"), "") & " </td>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">Room Location </td>"
+                        If SharedFunctions.nz(dtOrderDtl.Rows(k)("RoomLocationOther"), "") = String.Empty Then
+                            lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">" & SharedFunctions.nz(dtOrderDtl.Rows(k)("RoomLocation"), "") & " </td>"
+                        Else
+                            lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">" & SharedFunctions.nz(dtOrderDtl.Rows(k)("RoomLocation"), "") & " - " & SharedFunctions.nz(dtOrderDtl.Rows(k)("RoomLocationOther"), "") & " </td>"
+                        End If
+
+                        lblShutterDtl.Text &= "</tr>"
+
+                        lblShutterDtl.Text &= "<tr>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">Layout Code </td>"
+                        If SharedFunctions.nz(dtOrderDtl.Rows(k)("LayoutOther"), "") = String.Empty Then
+                            lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">" & SharedFunctions.nz(dtOrderDtl.Rows(k)("Layout"), "") & " </td>"
+                        Else
+                            lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">" & SharedFunctions.nz(dtOrderDtl.Rows(k)("Layout"), "") & "-" & SharedFunctions.nz(dtOrderDtl.Rows(k)("LayoutOther"), "") & " </td>"
+                        End If
+
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">Midrail Height </td>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">" & SharedFunctions.nz(dtOrderDtl.Rows(k)("MidrailHeight"), "") & " </td>"
+                        lblShutterDtl.Text &= "</tr>"
+
+                        lblShutterDtl.Text &= "<tr>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">Mount Config </td>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">" & SharedFunctions.nz(dtOrderDtl.Rows(k)("MountConfig"), "") & " </td>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">Mount Style </td>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">" & SharedFunctions.nz(dtOrderDtl.Rows(k)("MountStyle"), "") & " </td>"
+                        lblShutterDtl.Text &= "</tr>"
+
+                        lblShutterDtl.Text &= "<tr>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">Mount Method </td>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">" & SharedFunctions.nz(dtOrderDtl.Rows(k)("MountMethod"), "") & " </td>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">Hinge Colour </td>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">" & SharedFunctions.nz(dtOrderDtl.Rows(k)("HingeColour"), "") & " </td>"
+                        lblShutterDtl.Text &= "</tr>"
+
+                        lblShutterDtl.Text &= "<tr>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">Frame Type </td>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">" & SharedFunctions.nz(dtOrderDtl.Rows(k)("FrameType"), "") & " </td>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">Sides </td>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">" & SharedFunctions.nz(dtOrderDtl.Rows(k)("Sides"), "") & " </td>"
+                        lblShutterDtl.Text &= "</tr>"
+
+                        lblShutterDtl.Text &= "<tr>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">Control Type </td>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">" & SharedFunctions.nz(dtOrderDtl.Rows(k)("ControlType"), "") & " </td>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">Track </td>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">" & SharedFunctions.nz(dtOrderDtl.Rows(k)("Track"), "") & " </td>"
+                        lblShutterDtl.Text &= "</tr>"
+
+                        lblShutterDtl.Text &= "<tr>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">Sliding Guide </td>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">" & SharedFunctions.nz(dtOrderDtl.Rows(k)("SlidingGuide"), "") & " </td>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">Sliding Open/Close </td>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">" & SharedFunctions.nz(dtOrderDtl.Rows(k)("SlidingOpenClose"), "") & " </td>"
+                        lblShutterDtl.Text &= "</tr>"
+
+
+                        lblShutterDtl.Text &= "<tr>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">Split Blade </td>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">" & SharedFunctions.nz(dtOrderDtl.Rows(k)("SplitBlade"), "") & " </td>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">Split Blade Height </td>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">" & SharedFunctions.nz(dtOrderDtl.Rows(k)("SplitBladeHeight"), "") & " </td>"
+                        lblShutterDtl.Text &= "</tr>"
+
+
+                        lblShutterDtl.Text &= "<tr>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">Hang Strip </td>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">" & SharedFunctions.nz(dtOrderDtl.Rows(k)("HangStrip"), "") & " </td>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">Light Block </td>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">" & SharedFunctions.nz(dtOrderDtl.Rows(k)("LightBlock"), "") & " </td>"
+                        lblShutterDtl.Text &= "</tr>"
+
+                        lblShutterDtl.Text &= "<tr>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">No Of TPosts </td>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">" & SharedFunctions.nz(dtOrderDtl.Rows(k)("TPostQty"), "") & " </td>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">TPost Location </td>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">" & SharedFunctions.nz(dtOrderDtl.Rows(k)("TPostQtyLocation"), "") & " </td>"
+                        lblShutterDtl.Text &= "</tr>"
+
+                        lblShutterDtl.Text &= "<tr>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">TPost Pos 1 </td>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">" & SharedFunctions.nz(dtOrderDtl.Rows(k)("ToCenterTPos1"), "") & " </td>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">TPost Pos 2 </td>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">" & SharedFunctions.nz(dtOrderDtl.Rows(k)("ToCenterTPos2"), "") & " </td>"
+                        lblShutterDtl.Text &= "</tr>"
+
+                        lblShutterDtl.Text &= "<tr>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">TPost Pos 3 </td>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">" & SharedFunctions.nz(dtOrderDtl.Rows(k)("ToCenterTPos3"), "") & " </td>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">TPost Pos 4 </td>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">" & SharedFunctions.nz(dtOrderDtl.Rows(k)("ToCenterTPos4"), "") & " </td>"
+                        lblShutterDtl.Text &= "</tr>"
+
+                        lblShutterDtl.Text &= "<tr>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">TPost Pos 5 </td>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">" & SharedFunctions.nz(dtOrderDtl.Rows(k)("ToCenterTPos5"), "") & " </td>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">Angle Bay </td>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">" & SharedFunctions.nz(dtOrderDtl.Rows(k)("AngleBay"), "") & " </td>"
+                        lblShutterDtl.Text &= "</tr>"
+
+                        lblShutterDtl.Text &= "<tr>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">Special Requirements </td>"
+                        lblShutterDtl.Text &= "<td class=""form-field-td-search"" colspan=3 style=""width: 2%;padding:0px"">" & SharedFunctions.nz(dtOrderDtl.Rows(k)("SpecialRequirements"), "") & " </td>"
+                        lblShutterDtl.Text &= "</tr>"
+
+                    Next
+                    lblShutterDtl.Text &= "</table>"
+
+                End If
+
+                Dim dtExtra As DataTable = service.getPlantationOrderExtras(intSiteID, intJobNumber)
+                If dtExtra.Rows.Count > 0 Then
+                    lblExtras.Text &= "<table class=""form-table"" width=""100%"">"
+                    lblExtras.Text &= "<tr>"
+                    lblExtras.Text &= "<td ><h3>Extras</h3> </td>"
+                    lblExtras.Text &= "</tr>"
+                    lblExtras.Text &= "<tr>"
+                    lblExtras.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px""><b>Description</b> </td>"
+                    lblExtras.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px""><b>Quantity</b> </td>"
+                    lblExtras.Text &= "</tr>"
+                    For k As Integer = 0 To dtExtra.Rows.Count - 1
+                        lblExtras.Text &= "<tr>"
+                        lblExtras.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">" & SharedFunctions.nz(dtExtra.Rows(k)("Description"), "") & " </td>"
+                        lblExtras.Text &= "<td class=""form-field-td-search"" style=""width: 2%;padding:0px"">" & SharedFunctions.nz(dtExtra.Rows(k)("Quantity"), "") & " </td>"
+                        lblExtras.Text &= "</tr>"
+                    Next
+                    lblExtras.Text &= "</table>"
+
+                End If
+
+            Catch ex As Exception
+
+            End Try
+
+        End If
+    End Sub
+
+    Protected Sub btnHome_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles btnHome.Click
+        Response.Redirect("Home.aspx", False)
+    End Sub
+
+    Protected Sub btnBack_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles btnback.Click
+
+        Response.Redirect("PlantationJobList.aspx", False)
+
+    End Sub
+
+    Protected Sub btnLogout_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles btnLogout.Click
+        Response.Redirect("Logout.aspx", False)
+    End Sub
+
+End Class

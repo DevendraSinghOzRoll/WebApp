@@ -1,0 +1,1436 @@
+﻿
+Partial Class RemakeDetails
+    Inherits System.Web.UI.Page
+
+    Protected Sub Page_Load(sender As Object, e As System.EventArgs) Handles Me.Load
+
+        If Not IsPostBack Then
+
+            Dim intScheduleID As Integer = SharedConstants.DEFAULT_INTEGER_VALUE
+            Dim intViewType As Integer = SharedConstants.DEFAULT_INTEGER_VALUE
+
+            If Not Request.QueryString.Count = 0 Then
+                If Not IsNothing(Request.Params("ScheduleId")) Then
+                    intScheduleId = CInt(Request.Params("ScheduleId"))
+                End If
+                If Not IsNothing(Request.Params("ViewType")) Then
+                    intViewType = CInt(Request.Params("ViewType"))
+                End If
+            End If
+
+            intScheduleID = 1
+            intViewType = 0
+
+            Me.txtId.Text = intScheduleID.ToString
+            Me.txtViewType.Text = intViewType.ToString
+
+            loadDetailsComboBoxLists()
+
+            If intScheduleID <> SharedConstants.DEFAULT_INTEGER_VALUE Then
+                loadExistingScheduleData(intScheduleID)
+
+                loadShutterDetailsForDataGrid(intScheduleID)
+            End If
+
+        End If
+
+    End Sub
+
+    Private Sub Page_Error(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.Error
+        Dim objErr1 As Exception = Server.GetLastError().GetBaseException()
+
+        Dim strErrorMessage As String = String.Empty
+
+        strErrorMessage &= "Error In: " & Request.Url.ToString() & Environment.NewLine & Environment.NewLine
+
+        strErrorMessage &= "Server.GetLastError().GetBaseException()" & Environment.NewLine & Environment.NewLine
+
+        strErrorMessage &= "Error Message: " & objErr1.Message & Environment.NewLine
+        strErrorMessage &= "Stack Trace:" & Environment.NewLine
+        strErrorMessage &= objErr1.StackTrace & Environment.NewLine & Environment.NewLine
+
+        Dim objErr2 As Exception = Server.GetLastError()
+
+        strErrorMessage &= "Server.GetLastError()" & Environment.NewLine & Environment.NewLine
+
+        strErrorMessage &= "Error Message: " & objErr2.Message & Environment.NewLine
+        strErrorMessage &= "Stack Trace:" & Environment.NewLine
+        strErrorMessage &= objErr2.StackTrace & Environment.NewLine
+
+        EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & strErrorMessage)
+
+        Server.ClearError()
+
+        Response.Redirect("GenericErrorPage.aspx", False)
+    End Sub
+
+    Private Function getPageInfo() As String
+
+        Dim strPageInfo As String = String.Empty
+
+        Dim strName As String = String.Empty
+        If Session.Contents.Count > 0 Then
+            strPageInfo &= "Session Variables" & Environment.NewLine
+            For Each strName In Session.Contents
+                strPageInfo &= strName & ": " & CStr(Session.Contents(strName)) & Environment.NewLine
+            Next
+        Else
+            strPageInfo &= "No Session Variables" & Environment.NewLine
+        End If
+
+        strPageInfo &= Environment.NewLine
+
+        If Me.HasControls Then
+            strPageInfo &= "Form Controls" & Environment.NewLine
+            getPageControls(Me, strPageInfo)
+        Else
+            strPageInfo &= "No Form Controls" & Environment.NewLine
+        End If
+        Return strPageInfo
+
+    End Function
+
+    Private Sub getPageControls(ByVal ctrl As Control, ByRef strPageControls As String)
+
+        If ctrl.HasControls Then
+            For Each childCtrl As Control In ctrl.Controls
+                getPageControls(childCtrl, strPageControls)
+            Next
+        Else
+            Select Case ctrl.GetType.Name
+                Case "TextBox"
+                    Dim frmTxt As TextBox
+                    frmTxt = DirectCast(ctrl, TextBox)
+                    strPageControls &= frmTxt.ID & ": " & Left(frmTxt.Text, 100) & Environment.NewLine
+                Case "DropDownList"
+                    Dim frmCbo As DropDownList
+                    frmCbo = DirectCast(ctrl, DropDownList)
+                    If frmCbo.Items.Count > 0 Then
+                        strPageControls &= frmCbo.ID & ": " & frmCbo.SelectedItem.Text & " (" & frmCbo.SelectedValue & ")" & Environment.NewLine
+                    Else
+                        strPageControls &= frmCbo.ID & ": Not Populated" & Environment.NewLine
+                    End If
+                Case "CheckBox"
+                    Dim frmChk As CheckBox
+                    frmChk = DirectCast(ctrl, CheckBox)
+                    strPageControls &= frmChk.ID & ": " & frmChk.Checked & Environment.NewLine
+                Case "RadioButton"
+                    Dim frmRdo As RadioButton
+                    frmRdo = DirectCast(ctrl, RadioButton)
+                    strPageControls &= frmRdo.ID & ": " & frmRdo.Checked & Environment.NewLine
+                Case "RadioButtonList"
+                    Dim frmRdoLst As RadioButtonList
+                    frmRdoLst = DirectCast(ctrl, RadioButtonList)
+                    If frmRdoLst.SelectedIndex >= 0 Then
+                        strPageControls &= frmRdoLst.ID & ": " & frmRdoLst.SelectedItem.Text & " (" & frmRdoLst.SelectedValue & ")" & Environment.NewLine
+                    Else
+                        strPageControls &= frmRdoLst.ID & ": Not Selected" & Environment.NewLine
+                    End If
+            End Select
+        End If
+
+    End Sub
+
+    Protected Sub loadDetailsComboBoxLists()
+        Dim service As New AppService
+
+        SharedFunctions.fillDropDownList(service.getPSInstallationArea(), "ID", "Description", cboInstallationArea, True)
+        SharedFunctions.fillDropDownList(service.getPSRoomLocation(), "ID", "Description", cboRoomLocation, True)
+        SharedFunctions.fillDropDownList(service.getPSMountConfig(), "ID", "Description", cboMountConfig, True)
+        SharedFunctions.fillDropDownList(service.getPSMountStyle(), "ID", "Description", cboMountStyle, True)
+        SharedFunctions.fillDropDownList(service.getPSPanelQty(), "ID", "Description", cboPanelQty, True)
+        'SharedFunctions.fillDropDownList(service.getPSMaterial(2), "ID", "Description", cboMaterial, True)
+        SharedFunctions.fillDropDownList(service.getPSBladeSize(), "ID", "Description", cboBladeSize, True)
+        SharedFunctions.fillDropDownList(service.getPSColour(), "ID", "Description", cboColour, True)
+        SharedFunctions.fillDropDownList(service.getPSMountMethod(), "ID", "Description", cboMountMethod, True)
+        SharedFunctions.FillDropDownList(service.GetPSSides(), "ID", "Description", cboSides, True)
+        SharedFunctions.fillDropDownList(service.getPSSlidingGuide(), "ID", "Description", cboBottomGuide, True)
+        SharedFunctions.fillDropDownList(service.getPSSlidingOpenClose(), "ID", "Description", cboSliding, True)
+        SharedFunctions.FillDropDownList(service.GetPSTPostQty(), "ID", "Description", cboTPostQty, True)
+        SharedFunctions.fillDropDownList(service.getPSAngleBay(), "ID", "Description", cboAngleBay, True)
+
+        'on change of txt mid height
+        SharedFunctions.fillDropDownList(service.getPSSplitBlade(), "ID", "Description", cboSplitBlade, True)
+
+        service = Nothing
+
+    End Sub
+
+    Protected Sub btnLogout_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles btnLogout.Click
+
+        Response.Redirect("Logout.aspx", False)
+
+    End Sub
+
+    Protected Sub dgvDetails_RowCommand(ByVal sender As Object, ByVal e As System.Web.UI.WebControls.GridViewCommandEventArgs) Handles dgvDetails.RowCommand
+
+        If (e.CommandName = "PlantationDetail") Then
+            Dim index As Integer = Convert.ToInt32(e.CommandArgument)
+            Dim row As GridViewRow = dgvDetails.Rows(index)
+
+            Dim intPSDetailsID As Integer = CInt(dgvDetails.DataKeys(row.RowIndex).Values("PSDetailID"))
+            loadShutterDetailsToPopup(intPSDetailsID)
+
+            Me.txtPSDetailID.Text = intPSDetailsID.ToString
+
+            ModalPopupExtender.Show()
+
+        End If
+
+    End Sub
+
+
+    Protected Sub loadExistingScheduleData(intScheduleID As Integer)
+
+        Dim service As New AppService
+        Dim cProductionSchedule As ProductionSchedule = service.getProdScheduleClsByID(intScheduleID)
+        service = Nothing
+
+        Me.txtContractNumber.Text = cProductionSchedule.OrderReference.ToString
+        Me.lblShutterProNumber.Text = cProductionSchedule.ShutterProNumber.ToString
+        Me.cboCustomer.SelectedIndex = cProductionSchedule.CustomerID
+        Me.cboOrderType.SelectedIndex = cProductionSchedule.OrderTypeID
+        Me.txtCustomerName.Text = cProductionSchedule.CustomerName.ToString
+        Me.txtState.Text = cProductionSchedule.State.ToString
+        Me.txtOrderDate.Text = Format(cProductionSchedule.OrderDate, "d MMM yyyy")
+        Me.cboOrderStatus.SelectedIndex = cProductionSchedule.OrderStatus
+        Me.txtScheduledDate.Text = Format(cProductionSchedule.ScheduledDate, "d MMM yyyy")
+        Me.cboPriority.SelectedIndex = cProductionSchedule.PriorityLevel
+        Me.txtNotes.Text = cProductionSchedule.RemakeIssueDescription
+
+
+    End Sub
+
+    Protected Sub loadShutterDetailsForDataGrid(intScheduleID As Integer)
+
+        Dim service As New AppService
+        Dim dt As DataTable = service.getPlantationJobDetailsRecordsByPlantationScheduleID(intScheduleID)
+
+        service = Nothing
+
+        Me.dgvDetails.DataSource = dt
+        Me.dgvDetails.DataBind()
+
+    End Sub
+
+    Protected Sub loadShutterDetailsToPopup(intPSDetailID As Integer)
+
+        Dim service As New AppService
+
+        Dim cQuoteDetail As PlantationJobDetails = service.getPlantationJobDetailsRecord(intPSDetailID)
+
+        If Not cQuoteDetail.ShutterID = SharedConstants.DEFAULT_INTEGER_VALUE Then
+            If Not cQuoteDetail.InstallationAreaID = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                cboInstallationArea.SelectedValue = cQuoteDetail.InstallationAreaID
+                cboInstallationArea_SelectedIndexChanged(Me, Nothing)
+            End If
+
+            If Not cQuoteDetail.RoomLocationID = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                cboRoomLocation.SelectedValue = cQuoteDetail.RoomLocationID
+                cboRoomLocation_SelectedIndexChanged(Me, Nothing)
+                If Not cQuoteDetail.RoomLocationOther = String.Empty Then
+                    txtRLOther.Text = cQuoteDetail.RoomLocationOther
+                End If
+            End If
+
+            If Not cQuoteDetail.Width = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                txtWidth.Text = CInt(cQuoteDetail.Width)
+            End If
+
+            If Not cQuoteDetail.Height = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                txtHeight.Text = CInt(cQuoteDetail.Height)
+            End If
+
+            If Not cQuoteDetail.MountConfigID = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                cboMountConfig.SelectedValue = cQuoteDetail.MountConfigID
+            End If
+
+            If Not cQuoteDetail.MountStyleID = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                cboMountStyle.SelectedValue = cQuoteDetail.MountStyleID
+            End If
+
+            If Not cQuoteDetail.PanelQtyID = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                cboPanelQty.SelectedValue = cQuoteDetail.PanelQtyID
+            End If
+
+            If Not cQuoteDetail.BladeSizeID = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                cboBladeSize.SelectedValue = cQuoteDetail.BladeSizeID
+            End If
+
+            If Not cQuoteDetail.ColourID = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                cboColour.SelectedValue = cQuoteDetail.ColourID
+            End If
+
+            If Not cQuoteDetail.MidRailHeight = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                txtMidRailHeight.Text = CInt(cQuoteDetail.MidRailHeight)
+                txtMidRailHeight_TextChanged(Me, Nothing)
+            End If
+
+            If Not cQuoteDetail.MountMethodID = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                cboMountMethod.SelectedValue = cQuoteDetail.MountMethodID
+                pnlSliding.Visible = False
+                pnlStainlessSteelWheels.Visible = False
+                If cboMountMethod.SelectedIndex > 0 Then
+                    pnlLayoutOther.Visible = False
+                    txtLayoutOther.Text = String.Empty
+
+                    '                    SharedFunctions.fillDropDownList(service.getPSLayoutByMountAndPanelQty(cboMountMethod.SelectedValue, cboPanelQty.SelectedValue), "ID", "Description", cboLayout, True)
+                    SharedFunctions.fillDropDownList(service.getPSFrameType(cboMountMethod.SelectedValue), "Id", "Description", cboFrameType, True)
+
+                    If cboMountMethod.SelectedItem.Text = "Sliding" Or cboMountMethod.SelectedItem.Text = "Bifold IN" Or cboMountMethod.SelectedItem.Text = "Bifold OUT" Then
+                        pnlSliding.Visible = True
+                        pnlStainlessSteelWheels.Visible = True
+                        pnlboards.Visible = True
+                    Else
+                        pnlboards.Visible = False
+                    End If
+
+                    If cboMountMethod.SelectedItem.Text = "Sliding" Or cboMountMethod.SelectedItem.Text = "Bifold IN" Or cboMountMethod.SelectedItem.Text = "Bifold OUT" Then
+                        pnlStainlessSteelWheels.Visible = True
+                    End If
+
+                    cboTrack.Items.Clear()
+                    If cboMountMethod.SelectedItem.Text = "Sliding" Then
+                        SharedFunctions.fillDropDownList(service.getPSTrack(), "ID", "Description", cboTrack, True)
+                    Else
+                        Dim lstItem As New ListItem
+                        lstItem.Value = 0
+                        lstItem.Text = ""
+                        cboTrack.Items.Add(lstItem)
+                        lstItem = New ListItem
+                        lstItem.Value = 1
+                        lstItem.Text = "Yes"
+                        cboTrack.Items.Add(lstItem)
+                        lstItem = New ListItem
+                        lstItem.Value = 2
+                        lstItem.Text = "No"
+                        cboTrack.Items.Add(lstItem)
+                    End If
+
+                    If Not cQuoteDetail.Sideboards = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                        cboSideboards.SelectedValue = cQuoteDetail.Sideboards
+                    End If
+
+                Else
+                    cboFrameType.Items.Clear()
+                    cboLayout.Items.Clear()
+                End If
+            End If
+
+            If Not cQuoteDetail.LayoutID = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                cboLayout.SelectedValue = cQuoteDetail.LayoutID
+                cboLayout_SelectedIndexChanged(Me, Nothing)
+                If Not cQuoteDetail.LayoutOther = String.Empty Then
+                    txtLayoutOther.Text = cQuoteDetail.LayoutOther
+                End If
+            End If
+
+            If Not cQuoteDetail.SlidingGuideID = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                cboBottomGuide.SelectedValue = cQuoteDetail.SlidingGuideID
+            End If
+
+            If Not cQuoteDetail.SlidingOpenCloseID = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                cboSliding.SelectedValue = cQuoteDetail.SlidingOpenCloseID
+            End If
+
+            If Not cQuoteDetail.HingeColourID = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                cboHingeColour.SelectedValue = cQuoteDetail.HingeColourID
+            End If
+
+            If Not cQuoteDetail.FrameTypeID = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                Dim litem As ListItem = cboFrameType.Items.FindByValue(cQuoteDetail.FrameTypeID)
+                If Not IsNothing(litem) Then
+                    cboFrameType.SelectedValue = cQuoteDetail.FrameTypeID
+                    If cboMountMethod.SelectedItem.Text = "Fixed" Then
+                        cboSides.Enabled = False
+                        cboSides.CssClass = "form-select-disable"
+                    Else
+                        cboSides.Enabled = True
+                        cboSides.CssClass = "form-select"
+                    End If
+                End If
+            End If
+
+            If Not cQuoteDetail.SidesID = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                cboSides.SelectedValue = cQuoteDetail.SidesID
+            End If
+
+            If Not cQuoteDetail.TPostQtyID = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                cboTPostQty.SelectedValue = cQuoteDetail.TPostQtyID
+            End If
+
+            If Not cQuoteDetail.SplitBladeID = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                cboSplitBlade.SelectedValue = cQuoteDetail.SplitBladeID
+                cboSplitBlade_SelectedIndexChanged(Me, Nothing)
+                If Not cQuoteDetail.SplitBladeHeight = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                    txtHeightSplitBlade.Text = cQuoteDetail.SplitBladeHeight
+                End If
+            End If
+
+            If Not cQuoteDetail.LightBlockID = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                cboLightBlock.SelectedValue = cQuoteDetail.LightBlockID
+            End If
+
+            If Not cQuoteDetail.AngleBayID = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                cboAngleBay.SelectedValue = cQuoteDetail.AngleBayID
+            End If
+
+            If Not cQuoteDetail.SpecialRequirements = String.Empty Then
+                txtSpecialRequirements.Text = CStr(cQuoteDetail.SpecialRequirements)
+            End If
+
+        End If
+
+        service = Nothing
+
+    End Sub
+
+    Protected Function prepareShutterDetailForSave(cPlantationJobDetails As PlantationJobDetails) As PlantationJobDetails
+
+        Try
+            cPlantationJobDetails.PSDetailID = 0
+            cPlantationJobDetails.PlantationScheduleListID = CInt(Me.txtId.Text)
+
+            'cPlantationJobDetails.ShutterID = CInt(txtSelectedShutter.Text)
+
+            If IsNumeric(cboInstallationArea.SelectedValue) Then
+                cPlantationJobDetails.InstallationAreaID = CInt(cboInstallationArea.SelectedValue)
+                cPlantationJobDetails.InstallationArea = cboInstallationArea.SelectedItem.Text
+            End If
+
+            If IsNumeric(cboRoomLocation.SelectedValue) Then
+                cPlantationJobDetails.RoomLocationID = CInt(cboRoomLocation.SelectedValue)
+                cPlantationJobDetails.RoomLocation = cboRoomLocation.SelectedItem.Text
+
+                If pnlRoomLocation.Visible = True Then
+                    cPlantationJobDetails.RoomLocationOther = txtRLOther.Text
+                End If
+            End If
+
+            If IsNumeric(txtWidth.Text) Then
+                cPlantationJobDetails.Width = CInt(txtWidth.Text)
+            End If
+
+            If IsNumeric(txtHeight.Text) Then
+                cPlantationJobDetails.Height = CInt(txtHeight.Text)
+            End If
+
+            If IsNumeric(cboMountConfig.SelectedValue) Then
+                cPlantationJobDetails.MountConfigID = CInt(cboMountConfig.SelectedValue)
+                cPlantationJobDetails.MountConfig = cboMountConfig.SelectedItem.Text
+            End If
+
+            If IsNumeric(cboMountStyle.SelectedValue) Then
+                cPlantationJobDetails.MountStyleID = CInt(cboMountStyle.SelectedValue)
+                cPlantationJobDetails.MountStyle = cboMountStyle.SelectedItem.Text
+            End If
+
+            If IsNumeric(cboPanelQty.SelectedValue) Then
+                cPlantationJobDetails.PanelQtyID = CInt(cboPanelQty.SelectedValue)
+                cPlantationJobDetails.PanelQty = cboPanelQty.SelectedItem.Text
+            End If
+
+            If IsNumeric(cboBladeSize.SelectedValue) Then
+                cPlantationJobDetails.BladeSizeID = CInt(cboBladeSize.SelectedValue)
+                cPlantationJobDetails.BladeSize = cboBladeSize.SelectedItem.Text
+            End If
+
+            If IsNumeric(cboColour.SelectedValue) Then
+                cPlantationJobDetails.ColourID = CInt(cboColour.SelectedValue)
+                cPlantationJobDetails.Colour = cboColour.SelectedItem.Text
+            End If
+
+            If IsNumeric(txtMidRailHeight.Text) Then
+                cPlantationJobDetails.MidRailHeight = CInt(txtMidRailHeight.Text)
+            End If
+
+            If IsNumeric(cboMountMethod.SelectedValue) Then
+                cPlantationJobDetails.MountMethodID = CInt(cboMountMethod.SelectedValue)
+                cPlantationJobDetails.MountMethod = cboMountMethod.SelectedItem.Text
+            End If
+
+
+            If IsNumeric(cboLayout.SelectedValue) Then
+                cPlantationJobDetails.LayoutID = CInt(cboLayout.SelectedValue)
+                cPlantationJobDetails.Layout = cboLayout.SelectedItem.Text
+            End If
+
+            If pnlLayoutOther.Visible = True Then
+                If txtLayoutOther.Text <> String.Empty Then
+                    cPlantationJobDetails.LayoutOther = CStr(txtLayoutOther.Text)
+                End If
+            End If
+
+            If pnlSliding.Visible = True Then
+                If IsNumeric(cboBottomGuide.SelectedValue) Then
+                    cPlantationJobDetails.SlidingGuideID = CInt(cboBottomGuide.SelectedValue)
+                    cPlantationJobDetails.SlidingGuide = cboBottomGuide.SelectedItem.Text
+                End If
+
+                If IsNumeric(cboSliding.SelectedValue) Then
+                    cPlantationJobDetails.SlidingOpenCloseID = CInt(cboSliding.SelectedValue)
+                    cPlantationJobDetails.SlidingOpenClose = cboSliding.SelectedItem.Text
+                End If
+            End If
+
+            If IsNumeric(cboHingeColour.SelectedValue) Then
+                cPlantationJobDetails.HingeColourID = CInt(cboHingeColour.SelectedValue)
+                cPlantationJobDetails.HingeColour = cboHingeColour.SelectedItem.Text
+            End If
+
+            If IsNumeric(cboFrameType.SelectedValue) Then
+                cPlantationJobDetails.FrameTypeID = CInt(cboFrameType.SelectedValue)
+                cPlantationJobDetails.FrameType = cboFrameType.SelectedItem.Text
+            End If
+
+            If IsNumeric(cboSides.SelectedValue) Then
+                cPlantationJobDetails.SidesID = CInt(cboSides.SelectedValue)
+                cPlantationJobDetails.Sides = cboSides.SelectedItem.Text
+            End If
+
+            If IsNumeric(cboTPostQty.SelectedValue) Then
+                cPlantationJobDetails.TPostQtyID = CInt(cboTPostQty.SelectedValue)
+                cPlantationJobDetails.TPostQty = cboTPostQty.SelectedItem.Text
+            End If
+
+            If pnlSplitBlade.Visible = True Then
+                If IsNumeric(cboSplitBlade.SelectedValue) Then
+                    cPlantationJobDetails.SplitBladeID = CInt(cboSplitBlade.SelectedValue)
+                    cPlantationJobDetails.SplitBlade = cboSplitBlade.SelectedItem.Text
+
+                    If pnlSplitBladeHeight.Visible = True Then
+                        If IsNumeric(txtHeightSplitBlade.Text) Then
+                            cPlantationJobDetails.SplitBladeHeight = txtHeightSplitBlade.Text
+                        End If
+                    End If
+                End If
+            End If
+
+            If pnlLightBlock.Visible = True Then
+                If IsNumeric(cboLightBlock.SelectedValue) Then
+                    cPlantationJobDetails.LightBlockID = CInt(cboLightBlock.SelectedValue)
+                End If
+            End If
+
+            If IsNumeric(cboAngleBay.SelectedValue) Then
+                cPlantationJobDetails.AngleBayID = CInt(cboAngleBay.SelectedValue)
+                cPlantationJobDetails.AngleBay = cboAngleBay.SelectedItem.Text
+            End If
+
+            If txtSpecialRequirements.Text <> String.Empty Then
+                cPlantationJobDetails.SpecialRequirements = txtSpecialRequirements.Text
+            End If
+
+            If pnlboards.Visible = True Then
+                cPlantationJobDetails.Sideboards = CInt(cboSideboards.SelectedValue)
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+        End Try
+
+        Return cPlantationJobDetails
+
+
+    End Function
+
+    Protected Sub btnAddDetails_Click(sender As Object, e As System.EventArgs) Handles btnAddDetails.Click
+
+        resetPopupControlsToDefault()
+        ModalPopupExtender.Show()
+
+    End Sub
+
+    Protected Sub resetPopupControlsToDefault()
+
+        cboInstallationArea.SelectedValue = cboInstallationArea.Items.FindByText("Internal").Value
+        cboHingeColour.Items.Clear()
+        cboInstallationArea_SelectedIndexChanged(Me, Nothing)
+
+        cboRoomLocation.SelectedIndex = 0
+        pnlRoomLocation.Visible = False
+        txtRLOther.Text = String.Empty
+
+        txtWidth.Text = String.Empty
+        txtHeight.Text = String.Empty
+
+
+        cboMountConfig.SelectedValue = cboMountConfig.Items.FindByText("Reveal").Value
+        cboFrameType.SelectedIndex = -1
+
+        cboMountStyle.SelectedValue = cboMountStyle.Items.FindByText("Full H").Value
+
+        cboPanelQty.SelectedIndex = 0
+        cboMaterial.SelectedValue = cboMaterial.Items.FindByText("Insulite").Value
+
+        cboBladeSize.SelectedValue = cboBladeSize.Items.FindByText("90").Value
+        cboColour.SelectedIndex = 0
+
+        txtMidRailHeight.Text = String.Empty
+        cboMountMethod.SelectedValue = cboMountMethod.Items.FindByText("H.Hinge").Value
+        cboMountMethod_SelectedIndexChanged(Me, Nothing)
+
+        If cboLayout.Items.Count > 0 Then
+            cboLayout.SelectedIndex = 0
+        End If
+
+        pnlLayoutOther.Visible = False
+        txtLayoutOther.Text = String.Empty
+
+        cboBottomGuide.SelectedIndex = 0
+        cboSliding.SelectedIndex = 0
+        pnlSliding.Visible = False
+
+        cboSides.SelectedIndex = 0
+        cboControlType.SelectedValue = cboControlType.Items.FindByText("Ultra C").Value
+
+        cboTPostQty.SelectedIndex = 0
+
+        cboSplitBlade.SelectedIndex = 0
+        pnlSplitBlade.Visible = True
+
+        txtHeightSplitBlade.Text = String.Empty
+        pnlSplitBladeHeight.Visible = False
+
+        cboHangStrip.SelectedIndex = 0
+        cboLightBlock.SelectedIndex = 0
+
+        cboAngleBay.SelectedIndex = 0
+        cboFixedBlades.SelectedIndex = 0
+
+        cboStainlessSteelWheels.SelectedIndex = 0
+        pnlStainlessSteelWheels.Visible = False
+
+        txtSpecialRequirements.Text = String.Empty
+
+    End Sub
+
+#Region "Shutter Details Functions"
+
+    Private Sub LoadControls()
+        Dim intLocation As Integer
+        Try
+            cboInstallationArea.SelectedValue = cboInstallationArea.Items.FindByText("Internal").Value
+            cboHingeColour.Items.Clear()
+            cboInstallationArea_SelectedIndexChanged(Me, Nothing)
+
+            cboRoomLocation.SelectedIndex = 0
+            pnlRoomLocation.Visible = False
+            txtRLOther.Text = String.Empty
+
+            txtWidth.Text = String.Empty
+            txtHeight.Text = String.Empty
+
+
+            cboMountConfig.SelectedValue = cboMountConfig.Items.FindByText("Reveal").Value
+            cboFrameType.SelectedIndex = -1
+
+            cboMountStyle.SelectedValue = cboMountStyle.Items.FindByText("Full H").Value
+
+            cboPanelQty.SelectedIndex = 0
+            cboMaterial.SelectedValue = cboMaterial.Items.FindByText("Insulite").Value
+
+            cboBladeSize.SelectedValue = cboBladeSize.Items.FindByText("90").Value
+            cboColour.SelectedIndex = 0
+
+            txtMidRailHeight.Text = String.Empty
+            cboMountMethod.SelectedValue = cboMountMethod.Items.FindByText("H.Hinge").Value
+            cboMountMethod_SelectedIndexChanged(Me, Nothing)
+
+            If cboLayout.Items.Count > 0 Then
+                cboLayout.SelectedIndex = 0
+            End If
+
+            pnlLayoutOther.Visible = False
+            txtLayoutOther.Text = String.Empty
+
+            cboBottomGuide.SelectedIndex = 0
+            cboSliding.SelectedIndex = 0
+            pnlSliding.Visible = False
+
+            cboSides.SelectedIndex = 0
+            cboControlType.SelectedValue = cboControlType.Items.FindByText("Ultra C").Value
+
+            cboTPostQty.SelectedIndex = 0
+
+            cboSplitBlade.SelectedIndex = 0
+            pnlSplitBlade.Visible = True
+
+            txtHeightSplitBlade.Text = String.Empty
+            pnlSplitBladeHeight.Visible = False
+
+            cboHangStrip.SelectedIndex = 0
+            cboLightBlock.SelectedIndex = 0
+
+            cboAngleBay.SelectedIndex = 0
+            cboFixedBlades.SelectedIndex = 0
+
+            cboStainlessSteelWheels.SelectedIndex = 0
+            pnlStainlessSteelWheels.Visible = False
+
+            txtSpecialRequirements.Text = String.Empty
+
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & "; Location:  -  " & CStr(intLocation))
+        End Try
+    End Sub
+
+    Protected Sub setAllControlsToViewModeOnly()
+
+        Try
+            'Handles the shutter details section
+            cboInstallationArea.Enabled = False
+            cboInstallationArea.CssClass = "form-select-disable"
+            cboRoomLocation.Enabled = False
+            cboRoomLocation.CssClass = "form-select-disable"
+            txtRLOther.Enabled = False
+            txtWidth.Enabled = False
+            txtHeight.Enabled = False
+            cboMountConfig.Enabled = False
+            cboMountConfig.CssClass = "form-select-disable"
+            cboMountStyle.Enabled = False
+            cboMountStyle.CssClass = "form-select-disable"
+            cboPanelQty.Enabled = False
+            cboPanelQty.CssClass = "form-select-disable"
+            cboMaterial.Enabled = False
+            cboMaterial.CssClass = "form-select-disable"
+            cboBladeSize.Enabled = False
+            cboBladeSize.CssClass = "form-select-disable"
+            cboColour.Enabled = False
+            cboColour.CssClass = "form-select-disable"
+            txtMidRailHeight.Enabled = False
+            cboMountMethod.Enabled = False
+            cboMountMethod.CssClass = "form-select-disable"
+            cboLayout.Enabled = False
+            cboLayout.CssClass = "form-select-disable"
+            txtLayoutOther.Enabled = False
+            cboBottomGuide.Enabled = False
+            cboBottomGuide.CssClass = "form-select-disable"
+            cboSliding.Enabled = False
+            cboSliding.CssClass = "form-select-disable"
+            cboHingeColour.Enabled = False
+            cboHingeColour.CssClass = "form-select-disable"
+            cboFrameType.Enabled = False
+            cboFrameType.CssClass = "form-select-disable"
+            cboSides.Enabled = False
+            cboSides.CssClass = "form-select-disable"
+            cboControlType.Enabled = False
+            cboControlType.CssClass = "form-select-disable"
+            cboTrack.Enabled = False
+            cboTrack.CssClass = "form-select-disable"
+            cboTPostQty.Enabled = False
+            cboTPostQty.CssClass = "form-select-disable"
+            cboSplitBlade.Enabled = False
+            cboSplitBlade.CssClass = "form-select-disable"
+            txtHeightSplitBlade.Enabled = False
+            txtHeight.Enabled = False
+            cboHangStrip.Enabled = False
+            cboHangStrip.CssClass = "form-select-disable"
+            cboLightBlock.Enabled = False
+            cboLightBlock.CssClass = "form-select-disable"
+            cboAngleBay.Enabled = False
+            cboAngleBay.CssClass = "form-select-disable"
+            cboFixedBlades.Enabled = False
+            cboFixedBlades.CssClass = "form-select-disable"
+            cboStainlessSteelWheels.Enabled = False
+            cboStainlessSteelWheels.CssClass = "form-select-disable"
+
+            txtSpecialRequirements.Enabled = False
+
+            cboSideboards.Enabled = False
+            cboSideboards.CssClass = "form-select-disable"
+            cboBottomboards.Enabled = False
+            cboBottomboards.CssClass = "form-select-disable"
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+        End Try
+    End Sub
+
+    Protected Function AllShutterDetailsValid() As Boolean
+        Dim bolContinue As Boolean = True
+        lblShutterStatus.Text = String.Empty
+
+        If bolContinue Then
+            If cboInstallationArea.SelectedIndex <= 0 Then
+                bolContinue = False
+                lblShutterStatus.Text = "Please select a Installation Area."
+            End If
+        End If
+
+        If bolContinue Then
+            If cboRoomLocation.SelectedIndex <= 0 Then
+                bolContinue = False
+                lblShutterStatus.Text = "Please select a Room Location."
+            ElseIf txtRLOther.Visible = True Then
+                If txtRLOther.Text = String.Empty Then
+                    bolContinue = False
+                    lblShutterStatus.Text = "Please enter a Room Location."
+                End If
+            End If
+        End If
+
+        If bolContinue Then
+            If txtWidth.Text = String.Empty Then
+                bolContinue = False
+                lblShutterStatus.Text = "Please enter a Width."
+            Else
+                If Not IsNumeric(txtWidth.Text) Then
+                    bolContinue = False
+                    lblShutterStatus.Text = "Please enter a valid Width."
+                End If
+            End If
+        End If
+
+        If bolContinue Then
+            If txtHeight.Text = String.Empty Then
+                bolContinue = False
+                lblShutterStatus.Text = "Please enter a Height."
+            Else
+                If Not IsNumeric(txtHeight.Text) Then
+                    bolContinue = False
+                    lblShutterStatus.Text = "Please enter a valid Height."
+                End If
+            End If
+        End If
+
+        If bolContinue Then
+            If cboMountConfig.SelectedIndex <= 0 Then
+                bolContinue = False
+                lblShutterStatus.Text = "Please select a Mount Config."
+            End If
+        End If
+
+        If bolContinue Then
+            If cboMountStyle.SelectedIndex <= 0 Then
+                bolContinue = False
+                lblShutterStatus.Text = "Please select a Mount Style."
+            End If
+        End If
+
+        If bolContinue Then
+            If cboPanelQty.SelectedIndex <= 0 Then
+                bolContinue = False
+                lblShutterStatus.Text = "Please select a Panel Quantity."
+            End If
+        End If
+
+        If bolContinue Then
+            If cboMaterial.SelectedIndex <= 0 Then
+                bolContinue = False
+                lblShutterStatus.Text = "Please select a Material."
+            End If
+        End If
+
+        If bolContinue Then
+            If cboBladeSize.SelectedIndex <= 0 Then
+                bolContinue = False
+                lblShutterStatus.Text = "Please select a Blade Size."
+            End If
+        End If
+
+        If bolContinue Then
+            If cboColour.SelectedIndex <= 0 Then
+                bolContinue = False
+                lblShutterStatus.Text = "Please select a Colour."
+            End If
+        End If
+
+        If bolContinue Then
+            If Not txtMidRailHeight.Text = String.Empty Then
+                If Not IsNumeric(txtMidRailHeight.Text) Then
+                    bolContinue = False
+                    lblShutterStatus.Text = "Please enter a valid Mid Rail Height."
+                ElseIf CInt(txtHeight.Text) > 1500 Then
+                    If CInt(txtMidRailHeight.Text) < 100 Or CInt(txtMidRailHeight.Text) > 2300 Then
+                        bolContinue = False
+                        lblShutterStatus.Text = "Mid Rail Height should be between 100mm to 2300mm"
+                    End If
+                End If
+            ElseIf CInt(txtHeight.Text) > 1500 Then
+                bolContinue = False
+                lblShutterStatus.Text = "Please enter a Mid Rail Height."
+            End If
+        End If
+
+        If bolContinue Then
+            If cboMountMethod.SelectedIndex <= 0 Then
+                bolContinue = False
+                lblShutterStatus.Text = "Please select a Mount Method."
+            End If
+        End If
+
+        If pnlboards.Visible = True Then
+            If bolContinue Then
+                If cboSideboards.SelectedIndex <= 0 Then
+                    bolContinue = False
+                    lblShutterStatus.Text = "Please select a Sideboards."
+                End If
+            End If
+
+            If bolContinue Then
+                If cboBottomboards.SelectedIndex <= 0 Then
+                    bolContinue = False
+                    lblShutterStatus.Text = "Please select a Bottomboards."
+                End If
+            End If
+        End If
+
+        If bolContinue Then
+            If cboLayout.SelectedIndex <= 0 Then
+                bolContinue = False
+                lblShutterStatus.Text = "Please select a Layout."
+            End If
+            If bolContinue And pnlLayoutOther.Visible = True Then
+                If txtLayoutOther.Text = String.Empty Then
+                    bolContinue = False
+                    lblShutterStatus.Text = "Please enter Other Layout."
+                End If
+            End If
+        End If
+
+        If bolContinue And pnlSliding.Visible = True Then
+            If cboBottomGuide.SelectedIndex <= 0 Then
+                bolContinue = False
+                lblShutterStatus.Text = "Please select a Bottom Guide."
+            End If
+            If cboMountMethod.SelectedItem.Text = "Sliding" Then
+                If cboSliding.SelectedIndex <= 0 Then
+                    bolContinue = False
+                    lblShutterStatus.Text = "Please select a Sliding option."
+                End If
+            End If
+        End If
+
+        If bolContinue Then
+            If Not (cboMountMethod.SelectedItem.Text = "Sliding" Or cboMountMethod.SelectedItem.Text = "Fixed") Then
+                If cboHingeColour.SelectedIndex <= 0 Then
+                    bolContinue = False
+                    lblShutterStatus.Text = "Please select a Hinge Colour."
+                End If
+            End If
+        End If
+
+        If bolContinue Then
+            If cboFrameType.SelectedIndex < 0 Then
+                bolContinue = False
+                lblShutterStatus.Text = "Please select a Frame Type."
+            End If
+            'If cboFrameType.Items(0).Value = 0 Then
+            '    If cboFrameType.SelectedIndex <= 0 Then
+            '        bolContinue = False
+            '        lblShutterStatus.Text = "Please select a Frame Type."
+            '    End If
+            'Else
+            '    If cboFrameType.SelectedIndex < 0 Then
+            '        bolContinue = False
+            '        lblShutterStatus.Text = "Please select a Frame Type."
+            '    End If
+            'End If
+        End If
+
+        If bolContinue Then
+            If cboFrameType.SelectedItem.Text <> "Direct Mount" Then
+                If cboSides.SelectedIndex <= 0 Then
+                    bolContinue = False
+                    lblShutterStatus.Text = "Please select a Sides layout."
+                End If
+            End If
+        End If
+
+        If bolContinue Then
+            If cboControlType.SelectedIndex <= 0 Then
+                bolContinue = False
+                lblShutterStatus.Text = "Please select a Control Type."
+            End If
+        End If
+
+        If bolContinue Then
+            If cboTrack.SelectedIndex <= 0 Then
+                bolContinue = False
+                lblShutterStatus.Text = "Please select a Track option."
+            End If
+        End If
+
+        'If bolContinue Then
+        '    If cboTPostQty.SelectedIndex <= 0 Then
+        '        bolContinue = False
+        '        lblShutterStatus.Text = "Please select a T Post Qty."
+        '    End If
+        'End If
+
+        If bolContinue And pnlSplitBlade.Visible = True Then
+
+            If cboSplitBlade.SelectedIndex <= 0 Then
+                bolContinue = False
+                lblShutterStatus.Text = "Please select a Split Blade option."
+            End If
+            If pnlSplitBladeHeight.Visible = True Then
+                If Not txtHeightSplitBlade.Text = String.Empty Then
+                    If Not IsNumeric(txtHeightSplitBlade.Text) Then
+                        bolContinue = False
+                        lblShutterStatus.Text = "Please enter a valid Split Blade Height."
+                    End If
+                End If
+            End If
+        End If
+
+        'If bolContinue Then
+        '    If cboHangStrip.SelectedIndex <= 0 Then
+        '        bolContinue = False
+        '        lblShutterStatus.Text = "Please select a Hang Strip."
+        '    End If
+        'End If
+
+        If bolContinue Then
+            If pnlLightBlock.Visible = True And cboFrameType.SelectedItem.Text = "Direct Mount" Then
+                If cboLightBlock.SelectedIndex <= 0 Then
+                    bolContinue = False
+                    lblShutterStatus.Text = "Please select a Light Block."
+                End If
+            End If
+        End If
+
+        If bolContinue Then
+            Dim strLayout As String = String.Empty
+            Dim bolFlag As Boolean = False
+
+            If cboMountMethod.SelectedItem.Text <> "Sliding" Then
+                If cboLayout.SelectedItem.Text = "Other" Then
+                    strLayout = txtLayoutOther.Text
+                Else
+                    strLayout = cboLayout.SelectedItem.Text
+                End If
+
+                If Not strLayout = String.Empty Then
+                    For i As Integer = 0 To Len(strLayout) - 1
+
+                        If strLayout.Substring(i, 1) = "B" Or strLayout.Substring(i, 1) = "C" Then
+                            bolFlag = True
+                        End If
+                    Next
+
+                End If
+            End If
+
+            If bolFlag = True Then
+                If cboAngleBay.SelectedIndex <= 0 Then
+                    bolContinue = False
+                    lblShutterStatus.Text = "Please select a Angle Bay."
+                End If
+            Else
+                cboAngleBay.SelectedIndex = -1
+            End If
+        End If
+
+        'If bolContinue Then
+        '    If cboFixedBlades.SelectedIndex <= 0 Then
+        '        bolContinue = False
+        '        lblShutterStatus.Text = "Please select a Fixed Blades."
+        '    End If
+        'End If
+
+        If bolContinue And pnlStainlessSteelWheels.Visible = True Then
+            If cboStainlessSteelWheels.SelectedIndex <= 0 Then
+                bolContinue = False
+                lblShutterStatus.Text = "Please select a Stainless Steel Wheels."
+            End If
+        End If
+
+        Return bolContinue
+    End Function
+    Protected Sub cboInstallationArea_SelectedIndexChanged(ByVal sender As Object, ByVal e As System.EventArgs) Handles cboInstallationArea.SelectedIndexChanged
+        If cboInstallationArea.SelectedIndex > 0 Then
+            Dim service As New AppService
+            service = Nothing
+
+            If cboInstallationArea.SelectedItem.Text = "Internal" Then
+                cboStainlessSteelWheels.SelectedValue = 2 'cboTrack.Items.FindByText("No").Value
+            ElseIf cboInstallationArea.SelectedItem.Text = "External / Wet Area" Then
+                cboStainlessSteelWheels.SelectedValue = 1 'cboTrack.Items.FindByText("Yes").Value
+            End If
+        End If
+
+    End Sub
+    Protected Sub cboMountMethod_SelectedIndexChanged(ByVal sender As Object, ByVal e As System.EventArgs) Handles cboMountMethod.SelectedIndexChanged
+        pnlSliding.Visible = False
+        pnlStainlessSteelWheels.Visible = False
+        cboFrameType.Items.Clear()
+        cboLayout.Items.Clear()
+
+        Dim service As New AppService
+
+        If cboMountMethod.SelectedIndex > 0 Then
+            pnlLayoutOther.Visible = False
+            txtLayoutOther.Text = String.Empty
+
+            If cboPanelQty.SelectedIndex > 0 Then
+                '                SharedFunctions.fillDropDownList(service.getPSLayoutByMountAndPanelQty(cboMountMethod.SelectedValue, cboPanelQty.SelectedValue), "ID", "Description", cboLayout, True)
+                cboLayout_SelectedIndexChanged(Me, Nothing) 'Ramandeep
+            End If
+
+            SharedFunctions.fillDropDownList(service.getPSFrameType(cboMountMethod.SelectedValue), "ID", "Description", cboFrameType, True)
+
+
+            If cboMountMethod.SelectedItem.Text = "Sliding" Or cboMountMethod.SelectedItem.Text = "Bifold IN" Or cboMountMethod.SelectedItem.Text = "Bifold OUT" Then
+                pnlSliding.Visible = True
+                pnlboards.Visible = True
+            Else
+                pnlboards.Visible = False
+            End If
+
+            If cboMountMethod.SelectedItem.Text = "Fixed" Then
+                cboSides.SelectedValue = cboSides.Items.FindByText("TB").Value
+                cboSides.Enabled = False
+                cboSides.CssClass = "form-select-disable"
+            Else
+                cboSides.Enabled = True
+                cboSides.CssClass = "form-select"
+            End If
+
+            cboTrack.Items.Clear()
+            If cboMountMethod.SelectedItem.Text = "Sliding" Then
+                pnlStainlessSteelWheels.Visible = True
+                SharedFunctions.fillDropDownList(service.getPSTrack(), "ID", "Description", cboTrack, True)
+            Else
+                Dim lstItem As New ListItem
+                lstItem.Value = 0
+                lstItem.Text = ""
+                cboTrack.Items.Add(lstItem)
+                lstItem = New ListItem
+                lstItem.Value = 1
+                lstItem.Text = "Yes"
+                cboTrack.Items.Add(lstItem)
+                lstItem = New ListItem
+                lstItem.Value = 2
+                lstItem.Text = "No"
+                cboTrack.Items.Add(lstItem)
+
+                If cboMountMethod.SelectedItem.Text = "Bifold IN" Or cboMountMethod.SelectedItem.Text = "Bifold OUT" Then
+                    pnlStainlessSteelWheels.Visible = True
+                    cboTrack.SelectedValue = cboTrack.Items.FindByText("Yes").Value
+                Else
+                    cboTrack.SelectedValue = cboTrack.Items.FindByText("No").Value
+                End If
+            End If
+
+            If cboMountMethod.SelectedItem.Text = "H.Hinge" Or cboMountMethod.SelectedItem.Text = "P.Hinge" Then
+                cboFrameType.SelectedValue = cboFrameType.Items.FindByText("Z Frame").Value
+            End If
+
+            If cboMountMethod.SelectedItem.Text = "Sliding" Or cboMountMethod.SelectedItem.Text = "Bifold IN" Or cboMountMethod.SelectedItem.Text = "Bifold OUT" Then
+                If cboInstallationArea.SelectedItem.Text = "External / Wet Area" Then
+                    cboStainlessSteelWheels.SelectedValue = 1
+                Else
+                    cboStainlessSteelWheels.SelectedValue = 2
+                End If
+            Else
+                cboStainlessSteelWheels.SelectedValue = 2
+            End If
+
+        End If
+
+        service = Nothing
+    End Sub
+
+    Protected Sub cboFrameType_SelectedIndexChanged(ByVal sender As Object, ByVal e As System.EventArgs) Handles cboFrameType.SelectedIndexChanged
+        If cboFrameType.SelectedItem.Text = "L Frame" Or cboFrameType.SelectedItem.Text = "Z Frame" Then
+            cboSides.SelectedValue = cboSides.Items.FindByText("LRTB").Value
+        End If
+    End Sub
+
+    Protected Sub txtMidRailHeight_TextChanged(ByVal sender As Object, ByVal e As System.EventArgs) Handles txtMidRailHeight.TextChanged
+        'pnlSplitBlade.Visible = False
+        If Not txtMidRailHeight.Text = String.Empty Then
+            If IsNumeric(txtMidRailHeight.Text) Then
+                pnlSplitBlade.Visible = True
+                cboSplitBlade.SelectedValue = cboSplitBlade.Items.FindByText("Split T").Value
+                pnlSplitBladeHeight.Visible = True
+            End If
+        End If
+    End Sub
+
+    Protected Sub cboSplitBlade_SelectedIndexChanged(ByVal sender As Object, ByVal e As System.EventArgs) Handles cboSplitBlade.SelectedIndexChanged
+        pnlSplitBladeHeight.Visible = False
+        If cboMountMethod.SelectedIndex > 0 Then
+            If Not cboSplitBlade.SelectedItem.Text = "N" Then
+                pnlSplitBladeHeight.Visible = True
+            End If
+        End If
+    End Sub
+
+    Protected Sub cboRoomLocation_SelectedIndexChanged(ByVal sender As Object, ByVal e As System.EventArgs) Handles cboRoomLocation.SelectedIndexChanged
+        Try
+            txtRLOther.Text = String.Empty
+            If cboRoomLocation.SelectedItem.Text = "Other" Then
+                pnlRoomLocation.Visible = True
+            Else
+                pnlRoomLocation.Visible = False
+            End If
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+        End Try
+    End Sub
+
+    Protected Sub cboLayout_SelectedIndexChanged(ByVal sender As Object, ByVal e As System.EventArgs) Handles cboLayout.SelectedIndexChanged
+        Try
+
+            txtLayoutOther.Text = String.Empty
+            If cboLayout.SelectedIndex > 0 Then
+                If cboLayout.SelectedItem.Text = "Other" Then
+                    pnlLayoutOther.Visible = True
+                Else
+                    pnlLayoutOther.Visible = False
+                    CountTPost()
+                End If
+            Else
+                cboTPostQty.SelectedIndex = -1
+                pnlLayoutOther.Visible = False
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+        End Try
+    End Sub
+
+    Protected Sub cboColour_SelectedIndexChanged(ByVal sender As Object, ByVal e As System.EventArgs) Handles cboColour.SelectedIndexChanged
+        If Not cboHingeColour.Items.FindByText(cboColour.SelectedItem.Text) Is Nothing Then
+            cboHingeColour.SelectedValue = cboHingeColour.Items.FindByText(cboColour.SelectedItem.Text).Value
+        End If
+    End Sub
+
+    Protected Sub cboPanelQty_SelectedIndexChanged(ByVal sender As Object, ByVal e As System.EventArgs) Handles cboPanelQty.SelectedIndexChanged
+
+        pnlLayoutOther.Visible = False
+
+        Try
+
+            If cboPanelQty.SelectedIndex > 0 And cboMountMethod.SelectedIndex > 0 Then
+                Dim service As New AppService
+                '                SharedFunctions.fillDropDownList(service.getPSLayoutByMountAndPanelQty(cboMountMethod.SelectedValue, cboPanelQty.SelectedValue), "ID", "Description", cboLayout, True)
+                service = Nothing
+                cboLayout_SelectedIndexChanged(Me, Nothing)
+            Else
+                cboLayout.Items.Clear()
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+        End Try
+
+    End Sub
+
+    Protected Sub cboMountConfig_SelectedIndexChanged(ByVal sender As Object, ByVal e As System.EventArgs) Handles cboMountConfig.SelectedIndexChanged
+        cboFrameType.SelectedIndex = -1
+    End Sub
+
+    Protected Sub txtHeight_TextChanged(ByVal sender As Object, ByVal e As System.EventArgs) Handles txtHeight.TextChanged
+        If CInt(txtHeight.Text) > 1500 Then
+            pnlMidRail.Visible = True
+        Else
+            pnlMidRail.Visible = False
+            txtMidRailHeight.Text = String.Empty
+        End If
+    End Sub
+
+    Protected Sub txtLayoutOther_TextChanged(ByVal sender As Object, ByVal e As System.EventArgs) Handles txtLayoutOther.TextChanged
+        If Not txtLayoutOther.Text.Trim() = String.Empty Then
+            CountTPost()
+        Else
+            cboTPostQty.SelectedIndex = -1
+        End If
+    End Sub
+
+
+    Private Sub CountTPost()
+        Dim strLayout As String = String.Empty
+        Dim bolFlag As Boolean = False
+        If cboLayout.SelectedItem.Text = "Other" Then
+            strLayout = txtLayoutOther.Text
+        Else
+            strLayout = cboLayout.SelectedItem.Text
+        End If
+        Dim NoOfTPost As Integer = 0
+        If Not strLayout = String.Empty Then
+            For i As Integer = 0 To Len(strLayout) - 1
+                If strLayout.Substring(i, 1) = "B" Or strLayout.Substring(i, 1) = "T" Or strLayout.Substring(i, 1) = "C" Then
+                    NoOfTPost += 1
+                End If
+                If strLayout.Substring(i, 1) = "B" Or strLayout.Substring(i, 1) = "C" Then
+                    bolFlag = True
+                End If
+            Next
+            If bolFlag = False Then
+                cboAngleBay.SelectedIndex = -1
+            End If
+            If Not cboTPostQty.Items.FindByText(NoOfTPost) Is Nothing Then
+                cboTPostQty.SelectedValue = cboTPostQty.Items.FindByText(NoOfTPost).Value
+            Else
+                cboTPostQty.SelectedIndex = 0
+            End If
+        Else
+            cboTPostQty.SelectedIndex = -1
+        End If
+    End Sub
+
+
+#End Region
+
+    Protected Sub btnCancelDetails_Click(sender As Object, e As System.EventArgs) Handles btnCancelDetails.Click
+
+        Me.txtPSDetailID.Text = "0"
+
+    End Sub
+
+    Protected Sub btnSaveDetails_Click(sender As Object, e As System.EventArgs) Handles btnSaveDetails.Click
+
+        'modal popup save button
+
+        Dim service As New AppService
+
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlClient.SqlConnection = dbConn.getSQLConnection_To_OzRollLouvreScheduling
+        Dim trans As SqlClient.SqlTransaction = Nothing
+
+        Dim bolSavedOK As Boolean = True
+
+        Try
+            Dim cPlantationJobDetails As New PlantationJobDetails
+            If CInt(Me.txtPSDetailID.Text) > 0 Then
+                cPlantationJobDetails = service.getPlantationJobDetailsRecord(CInt(Me.txtPSDetailID.Text))
+            End If
+
+            cPlantationJobDetails = prepareShutterDetailForSave(cPlantationJobDetails)
+
+            cnn.Open()
+            trans = cnn.BeginTransaction
+
+            If cPlantationJobDetails.PSDetailID = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                bolSavedOK = service.addPlantationJobDetailsRecord(cPlantationJobDetails, cnn, trans)
+            Else
+                bolSavedOK = service.updatePlantationJobDetailsRecord(cPlantationJobDetails, cnn, trans)
+            End If
+
+            If bolSavedOK Then
+                trans.Commit()
+            Else
+                trans.Rollback()
+            End If
+
+        Catch ex As Exception
+            If Not trans Is Nothing Then
+                trans.Rollback()
+            End If
+            If cnn.State = ConnectionState.Open Then
+                cnn.Close()
+            End If
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine & getPageInfo())
+        Finally
+            trans.Dispose()
+            trans = Nothing
+            If cnn.State = ConnectionState.Open Then
+                cnn.Close()
+            End If
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+
+        Me.txtPSDetailID.Text = "0"
+
+    End Sub
+
+    Protected Sub btnSave_Click(sender As Object, e As System.EventArgs) Handles btnSave.Click
+
+        'main save button on page
+        Dim service As New AppService
+        Dim bolSavedOK As Boolean = True
+
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlClient.SqlConnection = dbConn.getSQLConnection_To_OzRollLouvreScheduling
+        Dim trans As SqlClient.SqlTransaction = Nothing
+
+        Try
+            Dim bolNew As Boolean = True
+            Dim cProductionSchedule As ProductionSchedule = New ProductionSchedule
+            If Me.txtId.Text <> SharedConstants.DEFAULT_INTEGER_VALUE Then
+                cProductionSchedule = service.getProdScheduleClsByID(CInt(Me.txtId.Text))
+                bolNew = True
+            End If
+
+            'update class with details from the page before save
+            setProductionScheduleDetailsForSave(cProductionSchedule)
+
+            cnn.Open()
+            trans = cnn.BeginTransaction
+
+            Dim intProductionScheduleID As Integer = SharedConstants.DEFAULT_INTEGER_VALUE
+
+            If bolNew Then
+                intProductionScheduleID = service.addProductionScheduleRecord(cProductionSchedule, cnn, trans)
+                If intProductionScheduleID = SharedConstants.DEFAULT_INTEGER_VALUE Then
+                    bolSavedOK = False
+                End If
+            Else
+                bolSavedOK = service.updateProductionScheduleByID(cProductionSchedule, cnn, trans)
+            End If
+
+            If bolSavedOK Then
+                bolSavedOK = service.addProdScheduleHistoryRcd(0, cProductionSchedule, cnn, trans)
+            End If
+
+            'save details records from temp to main
+            If bolSavedOK Then
+
+            End If
+
+            If bolSavedOK Then
+                trans.Commit()
+            Else
+                trans.Rollback()
+            End If
+
+
+        Catch ex As Exception
+            If Not trans Is Nothing Then
+                trans.Rollback()
+            End If
+            If cnn.State = ConnectionState.Open Then
+                cnn.Close()
+            End If
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine & getPageInfo())
+        Finally
+            trans.Dispose()
+            trans = Nothing
+            If cnn.State = ConnectionState.Open Then
+                cnn.Close()
+            End If
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+
+        service = Nothing
+
+        If bolSavedOK Then
+            Response.Redirect("Home.aspx", False)
+        End If
+
+    End Sub
+
+    Protected Sub setProductionScheduleDetailsForSave(ByRef cProductionSchedule As ProductionSchedule)
+
+        cProductionSchedule.OrderReference = Me.txtContractNumber.Text
+        'Me.lblShutterProNumber.Text = cProductionSchedule.ShutterProNumber.ToString
+        cProductionSchedule.CustomerID = CInt(Me.cboCustomer.SelectedValue)
+        cProductionSchedule.OrderTypeID = CInt(Me.cboOrderType.SelectedValue)
+        cProductionSchedule.CustomerName = Me.txtCustomerName.Text
+        cProductionSchedule.State = Me.txtState.Text
+        cProductionSchedule.OrderDate = CDate(Me.txtOrderDate.Text)
+        cProductionSchedule.OrderStatus = CInt(Me.cboOrderStatus.SelectedValue)
+        cProductionSchedule.ScheduledDate = CDate(Me.txtScheduledDate.Text)
+        cProductionSchedule.PriorityLevel = CInt(Me.cboPriority.SelectedValue)
+        cProductionSchedule.RemakeIssueDescription = Me.txtNotes.Text
+
+    End Sub
+
+End Class

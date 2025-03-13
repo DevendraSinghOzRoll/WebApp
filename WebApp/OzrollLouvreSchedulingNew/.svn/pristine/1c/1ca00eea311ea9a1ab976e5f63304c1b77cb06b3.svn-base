@@ -1,0 +1,4 @@
+﻿<asp:GridView runat="server" BackColor="#F2F2F2" Width="100%" CellSpacing="20" CellPadding="10" AllowPaging="false" AutoGenerateColumns="False" Font-Size="12" PageSize="20" CssClass="Grid" ShowHeader="true" >
+    <PagerSettings Mode="NumericFirstLast" PageButtonCount="10" Position="TopAndBottom" />
+    <PagerStyle Font-Underline="True" CssClass="GridPaging" ForeColor="#000000" BackColor="White" />
+</asp:GridView>

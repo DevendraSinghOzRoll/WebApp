@@ -1,0 +1,1151 @@
+﻿Imports Microsoft.VisualBasic
+Imports System.IO
+Imports iTextSharp.text
+Imports iTextSharp.text.pdf
+Imports iTextSharp.text.pdf.draw
+
+Public Class LouvreJobCoverSheet
+
+    Public Shared intTotalPages As Integer
+
+    Public Shared Sub GetProjectCoverSheetPDF(intScheduleID As Integer)
+
+        Dim Response = HttpContext.Current.Response
+
+        Dim objBuffer() As Byte
+        Dim output As MemoryStream = New MemoryStream()
+
+        Dim document As Document = New Document(PageSize.A4, 50, 50, 25, 25)
+        document.SetMargins(15, 15, 50, 15)
+        Dim writer As PdfWriter = PdfWriter.GetInstance(document, output)
+        'Dim events = New PDFGeneration.Events
+        'writer.PageEvent = New PDFGeneration.Events()
+        document.Open()
+        output = LouvreJobCoverSheet.CreateCoverSheetPDF(intScheduleID, output, document, writer)
+
+        objBuffer = output.ToArray
+
+        Response.Clear()
+        Response.ContentType = "application/pdf"
+        Response.AddHeader("Content-Disposition", "attachment;filename=ProjectCoverSheet.pdf")
+        Response.BinaryWrite(output.ToArray())
+        Response.End()
+
+    End Sub
+
+    Public Shared Function CreateCoverSheetPDF(intScheduleID As Integer, ByRef output As MemoryStream, document As Document, writer As PdfWriter) As MemoryStream
+
+        Dim baseFont2 As Font = New Font(Font.HELVETICA, 2.0F, Font.NORMAL)
+        Dim BaseFont As Font = New Font(Font.HELVETICA, 10.5F, Font.NORMAL)
+        Dim baseFont8 As Font = New Font(Font.HELVETICA, 8.0F, Font.NORMAL)
+
+        Dim baseFontBold12 As Font = New Font(Font.HELVETICA, 12.0F, Font.BOLD)
+        Dim baseFontBold As Font = New Font(Font.HELVETICA, 10.5F, Font.BOLD)
+        Dim baseFontBoldRed As Font = New Font(Font.HELVETICA, 10.5F, Font.BOLD, Color.RED)
+        Dim baseFontBold8 As Font = New Font(Font.HELVETICA, 8.0F, Font.BOLD)
+
+        Dim line As LineSeparator = New LineSeparator(1.0F, 100.0F, Color.BLACK, Element.ALIGN_LEFT, 1)
+
+        writer.PageEvent = New Footer
+        Dim footer As Paragraph = New Paragraph()
+
+        writer.PageEvent = New Footer
+        Dim headerImage As Paragraph = New Paragraph()
+
+        writer.PageEvent = New Footer
+        Dim headerTitle As Paragraph = New Paragraph()
+
+        'repeated job information for header
+
+        Dim service As New AppService
+
+        Dim cProductionSchedule As ProductionSchedule = service.getProdScheduleClsByID(intScheduleID)
+
+        Dim strCustomerName As String = String.Empty
+        Dim strCustomerAddress As String = String.Empty
+        Dim strCustomerSuburb As String = String.Empty
+
+        Dim strProjectName As String = cProductionSchedule.CustomerName
+        Dim strProjectAddress As String = String.Empty
+        Dim strProjectSuburb As String = String.Empty
+
+        Dim dtCustomer As DataTable = service.runSQLScheduling("select * from dbo.tblCustomers where CustomeriD = " & cProductionSchedule.CustomerID)
+
+        If dtCustomer.Rows.Count > 0 Then
+            strCustomerName = dtCustomer.Rows(0)("CustomerName").ToString & vbCrLf
+        End If
+        dtCustomer.Dispose()
+        dtCustomer = Nothing
+
+        Dim dtAddress As DataTable = service.runSQLScheduling("select * from dbo.tblCustomerDelivery where DeliveryID =" & cProductionSchedule.DeliveryAddressID)
+        If dtAddress.Rows.Count > 0 Then
+            strCustomerAddress = dtAddress.Rows(0)("AddressLine1").ToString
+            strCustomerSuburb = dtAddress.Rows(0)("Suburb").ToString & " " & dtAddress.Rows(0)("State").ToString & " " & dtAddress.Rows(0)("PostCode").ToString
+        End If
+        dtAddress.Dispose()
+        dtAddress = Nothing
+
+        Dim strSybizRef As String = cProductionSchedule.OzrollContractNo
+        Dim strScheduleRef As String = cProductionSchedule.ShutterProNumber
+
+
+        'Header Space
+        Dim pageHeader As New PdfPTable({100.0F})
+        pageHeader.WidthPercentage = 100.0F
+        pageHeader.DefaultCell.Border = Rectangle.NO_BORDER
+
+        pageHeader.SpacingBefore = 15.0F
+        pageHeader.SpacingAfter = 5.0F
+
+        pageHeader.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        document.Add(pageHeader)
+
+        'Top Section Of Header
+        Dim pageHeaderTop As New PdfPTable({10.0F, 10.0F, 4.0, 10.0F, 15.0F, 20.0F, 10.0F, 10.0F})
+        pageHeaderTop.WidthPercentage = 100.0F
+        pageHeaderTop.DefaultCell.Border = Rectangle.NO_BORDER
+
+        pageHeaderTop.SpacingAfter = 2.0F
+
+        pageHeaderTop.AddCell(New PdfPCell(New Phrase("Date Sold:", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageHeaderTop.AddCell(New PdfPCell(New Phrase(Format(cProductionSchedule.OrderDate, "d MMM yyyy"), baseFontBold8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageHeaderTop.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageHeaderTop.AddCell(New PdfPCell(New Phrase("Sold By:", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageHeaderTop.AddCell(New PdfPCell(New Phrase("", baseFontBold8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER}) 'sold by
+        pageHeaderTop.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageHeaderTop.AddCell(New PdfPCell(New Phrase("Type:", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageHeaderTop.AddCell(New PdfPCell(New Phrase("", baseFontBold8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER}) 'type
+
+        document.Add(pageHeaderTop)
+
+        'Top Section Of Header
+        Dim pageHeaderTopOther As New PdfPTable({15.0F, 30.0F, 20.0F, 10.0F, 10.0F})
+        pageHeaderTopOther.WidthPercentage = 100.0F
+        pageHeaderTopOther.DefaultCell.Border = Rectangle.NO_BORDER
+
+        pageHeaderTopOther.AddCell(New PdfPCell(New Phrase("Client Name:", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageHeaderTopOther.AddCell(New PdfPCell(New Phrase(strCustomerName, baseFontBold8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageHeaderTopOther.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageHeaderTopOther.AddCell(New PdfPCell(New Phrase("  Code:", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageHeaderTopOther.AddCell(New PdfPCell(New Phrase("", baseFontBold8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER}) 'code
+
+        pageHeaderTopOther.AddCell(New PdfPCell(New Phrase("Client Address:", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageHeaderTopOther.AddCell(New PdfPCell(New Phrase(strCustomerAddress, baseFontBold8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageHeaderTopOther.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageHeaderTopOther.AddCell(New PdfPCell(New Phrase("  Style", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageHeaderTopOther.AddCell(New PdfPCell(New Phrase("", baseFontBold8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER}) 'style
+
+        document.Add(pageHeaderTopOther)
+
+        Dim pageHeaderTopOther2 As New PdfPTable({15.0F, 20.0F, 6.0F, 26.0F, 10.0F, 10.0F})
+        pageHeaderTopOther2.WidthPercentage = 100.0F
+        pageHeaderTopOther2.DefaultCell.Border = Rectangle.NO_BORDER
+
+
+        pageHeaderTopOther2.AddCell(New PdfPCell(New Phrase("Client Suburb:", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageHeaderTopOther2.AddCell(New PdfPCell(New Phrase(strCustomerSuburb, baseFontBold8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageHeaderTopOther2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageHeaderTopOther2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageHeaderTopOther2.AddCell(New PdfPCell(New Phrase(" Job Status:", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageHeaderTopOther2.AddCell(New PdfPCell(New Phrase("", baseFontBold8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER}) 'job status
+
+        pageHeaderTopOther2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageHeaderTopOther2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageHeaderTopOther2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageHeaderTopOther2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageHeaderTopOther2.AddCell(New PdfPCell(New Phrase(" Date Required: ", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        If cProductionSchedule.ScheduledDate <> Constants.DEFAULT_DATE_VALUE Then
+            pageHeaderTopOther2.AddCell(New PdfPCell(New Phrase(Format(cProductionSchedule.ScheduledDate, "d MMM yyyy"), baseFontBold8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        Else
+            pageHeaderTopOther2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        End If
+
+
+        document.Add(pageHeaderTopOther2)
+
+        'Bottom Section Of Header
+        Dim pageHeaderBottomOther As New PdfPTable({15.0F, 30.0F, 10.0F, 20.0F, 10.0F})
+        pageHeaderBottomOther.WidthPercentage = 100.0F
+        pageHeaderBottomOther.DefaultCell.Border = Rectangle.NO_BORDER
+
+        pageHeaderBottomOther.AddCell(New PdfPCell(New Phrase("Project Name:", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageHeaderBottomOther.AddCell(New PdfPCell(New Phrase(strProjectName, baseFontBold8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageHeaderBottomOther.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageHeaderBottomOther.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageHeaderBottomOther.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+
+        pageHeaderBottomOther.AddCell(New PdfPCell(New Phrase("Project Address:", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageHeaderBottomOther.AddCell(New PdfPCell(New Phrase(strProjectAddress, baseFontBold8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageHeaderBottomOther.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageHeaderBottomOther.AddCell(New PdfPCell(New Phrase("Contract No:", baseFontBold)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageHeaderBottomOther.AddCell(New PdfPCell(New Phrase(strSybizRef, baseFontBoldRed)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+
+        pageHeaderBottomOther.AddCell(New PdfPCell(New Phrase("Project Suburb:", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageHeaderBottomOther.AddCell(New PdfPCell(New Phrase(strProjectSuburb, baseFontBold8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageHeaderBottomOther.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageHeaderBottomOther.AddCell(New PdfPCell(New Phrase("Contract No:", baseFontBold)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageHeaderBottomOther.AddCell(New PdfPCell(New Phrase(strScheduleRef, baseFontBoldRed)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+
+        pageHeaderBottomOther.SpacingAfter = 2.0F
+
+        document.Add(pageHeaderBottomOther)
+
+        document.Add(line)
+
+        'MainDetail - Colour
+        Dim pageMainDetailColour As New PdfPTable({20.0F, 25.0F, 55.0F})
+        pageMainDetailColour.WidthPercentage = 100.0F
+        pageMainDetailColour.DefaultCell.Border = Rectangle.NO_BORDER
+
+        Dim strColourName As String = String.Empty
+        Dim strJobDescription As String = String.Empty
+
+        Dim dtColour As DataTable = service.runSQLScheduling("select dbo.tblColours.ColourName from dbo.tblLouvreSpecs inner join dbo.tblColours on dbo.tblLouvreSpecs.ColourID  = dbo.tblColours.ColourID where dbo.tblLouvreSpecs.ProductScheduleID = " & intScheduleID.ToString)
+        If dtColour.Rows.Count > 0 Then
+            strColourName = dtColour.Rows(0)("ColourName").ToString
+        End If
+        dtColour.Dispose()
+        dtColour = Nothing
+
+
+        pageMainDetailColour.AddCell(New PdfPCell(New Phrase("Colour: ", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageMainDetailColour.AddCell(New PdfPCell(New Phrase(strColourName, baseFontBold8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageMainDetailColour.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        document.Add(pageMainDetailColour)
+
+        'MainDetail - Colour Description
+        Dim pageMainDetailColourDetail As New PdfPTable({20.0F, 80.0F})
+        pageMainDetailColourDetail.WidthPercentage = 100.0F
+        pageMainDetailColourDetail.DefaultCell.Border = Rectangle.NO_BORDER
+        pageMainDetailColourDetail.SpacingAfter = 4.0F
+
+        pageMainDetailColourDetail.AddCell(New PdfPCell(New Phrase("Brief Job Description: ", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageMainDetailColourDetail.AddCell(New PdfPCell(New Phrase(strJobDescription, baseFontBold8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        document.Add(pageMainDetailColourDetail)
+
+        'MainDetail - Contact Details
+        Dim pageMainDetailContact As New PdfPTable({15.0F, 15.0F, 16.0F, 16.0F, 16.0F, 16.0F, 1.0F, 16.0F})
+        pageMainDetailContact.WidthPercentage = 100.0F
+        pageMainDetailContact.DefaultCell.Border = Rectangle.NO_BORDER
+
+        pageMainDetailContact.SpacingBefore = 5.0F
+        pageMainDetailContact.SpacingAfter = 5.0F
+
+        pageMainDetailContact.AddCell(New PdfPCell(New Phrase("Contact Name:", baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageMainDetailContact.AddCell(New PdfPCell(New Phrase("Home Phone:", baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageMainDetailContact.AddCell(New PdfPCell(New Phrase("Work Phone:", baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageMainDetailContact.AddCell(New PdfPCell(New Phrase("Mobile:", baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageMainDetailContact.AddCell(New PdfPCell(New Phrase("Fax:", baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageMainDetailContact.AddCell(New PdfPCell(New Phrase("Email:", baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageMainDetailContact.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageMainDetailContact.AddCell(New PdfPCell(New Phrase("Contact Type:", baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+
+        pageMainDetailContact.AddCell(New PdfPCell(New Phrase(vbCrLf, baseFontBold8)) With {.Colspan = 8, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageMainDetailContact.AddCell(New PdfPCell(New Phrase(vbCrLf, baseFontBold8)) With {.Colspan = 8, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageMainDetailContact.AddCell(New PdfPCell(New Phrase(vbCrLf, baseFontBold8)) With {.Colspan = 8, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+
+        'Contact 1
+        'pageMainDetailContact.AddCell(New PdfPCell(New Phrase("contact1Name", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        'pageMainDetailContact.AddCell(New PdfPCell(New Phrase("contact1HmPhone", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        'pageMainDetailContact.AddCell(New PdfPCell(New Phrase("contact1WkPhone", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        'pageMainDetailContact.AddCell(New PdfPCell(New Phrase("contact1Mob", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        'pageMainDetailContact.AddCell(New PdfPCell(New Phrase("contact1Fax", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        'pageMainDetailContact.AddCell(New PdfPCell(New Phrase("contact1Email", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        'pageMainDetailContact.AddCell(New PdfPCell(New Phrase("", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        'pageMainDetailContact.AddCell(New PdfPCell(New Phrase("contact1Type: ", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+
+        ''Contact 2
+        'pageMainDetailContact.AddCell(New PdfPCell(New Phrase("contact2Name", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        'pageMainDetailContact.AddCell(New PdfPCell(New Phrase("contact2HmPhone", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        'pageMainDetailContact.AddCell(New PdfPCell(New Phrase("contact2WkPhone", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        'pageMainDetailContact.AddCell(New PdfPCell(New Phrase("contact2Mob", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        'pageMainDetailContact.AddCell(New PdfPCell(New Phrase("contact2Fax", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        'pageMainDetailContact.AddCell(New PdfPCell(New Phrase("contact2Email", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        'pageMainDetailContact.AddCell(New PdfPCell(New Phrase("", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        'pageMainDetailContact.AddCell(New PdfPCell(New Phrase("contact2Type: ", baseFont8)) With {.BorderWidthBottom = 1, .BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+
+        ''Contact 3
+        'pageMainDetailContact.AddCell(New PdfPCell(New Phrase("contact3Name", baseFont8)) With {.BorderWidthBottom = 1, .BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        'pageMainDetailContact.AddCell(New PdfPCell(New Phrase("contact3HmPhone", baseFont8)) With {.BorderWidthBottom = 1, .BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        'pageMainDetailContact.AddCell(New PdfPCell(New Phrase("contact3WkPhone", baseFont8)) With {.BorderWidthBottom = 1, .BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        'pageMainDetailContact.AddCell(New PdfPCell(New Phrase("contact3Mob", baseFont8)) With {.BorderWidthBottom = 1, .BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        'pageMainDetailContact.AddCell(New PdfPCell(New Phrase("contact3Fax", baseFont8)) With {.BorderWidthBottom = 1, .BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        'pageMainDetailContact.AddCell(New PdfPCell(New Phrase("contact3Email", baseFont8)) With {.BorderWidthBottom = 1, .BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        'pageMainDetailContact.AddCell(New PdfPCell(New Phrase("", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        'pageMainDetailContact.AddCell(New PdfPCell(New Phrase("contact3Type: ", baseFont8)) With {.BorderWidthBottom = 1, .BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+
+        document.Add(pageMainDetailContact)
+
+
+        'MainDetail - Contact Total & Progress Claim 
+        Dim pageMainDetailProgressClaim As New PdfPTable({4.0F, 15.0F, 15.0F, 4.0F, 15.0F, 15.0F, 32.0F})
+        pageMainDetailProgressClaim.WidthPercentage = 100.0F
+        pageMainDetailProgressClaim.DefaultCell.Border = Rectangle.NO_BORDER
+        pageMainDetailProgressClaim.SpacingAfter = 4.0F
+
+        pageMainDetailProgressClaim.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageMainDetailProgressClaim.AddCell(New PdfPCell(New Phrase("Contact Total:", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageMainDetailProgressClaim.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageMainDetailProgressClaim.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageMainDetailProgressClaim.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        If cProductionSchedule.CostPrice <> Constants.DEFAULT_DECIMAL_VALUE Then
+            pageMainDetailProgressClaim.AddCell(New PdfPCell(New Phrase(Format(cProductionSchedule.CostPrice, "currency"), baseFontBold8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        Else
+            pageMainDetailProgressClaim.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        End If
+
+        pageMainDetailProgressClaim.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageMainDetailProgressClaim.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageMainDetailProgressClaim.AddCell(New PdfPCell(New Phrase("Deposit Date:", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageMainDetailProgressClaim.AddCell(New PdfPCell(New Phrase("", baseFontBold8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER}) 'deposit date
+        pageMainDetailProgressClaim.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageMainDetailProgressClaim.AddCell(New PdfPCell(New Phrase("Deposit:", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageMainDetailProgressClaim.AddCell(New PdfPCell(New Phrase("", baseFontBold8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT}) 'deposit amount
+        pageMainDetailProgressClaim.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+
+        pageMainDetailProgressClaim.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageMainDetailProgressClaim.AddCell(New PdfPCell(New Phrase("Progress Claim 1 Date:", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageMainDetailProgressClaim.AddCell(New PdfPCell(New Phrase("", baseFontBold8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER}) 'progress claim date 1
+        pageMainDetailProgressClaim.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageMainDetailProgressClaim.AddCell(New PdfPCell(New Phrase("Progress Claim 1:", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageMainDetailProgressClaim.AddCell(New PdfPCell(New Phrase("", baseFontBold8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT}) 'progress claim amount 1
+        pageMainDetailProgressClaim.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+
+        pageMainDetailProgressClaim.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageMainDetailProgressClaim.AddCell(New PdfPCell(New Phrase("Progress Claim 2 Date:", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageMainDetailProgressClaim.AddCell(New PdfPCell(New Phrase("", baseFontBold8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER}) 'progress claim date 2
+        pageMainDetailProgressClaim.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageMainDetailProgressClaim.AddCell(New PdfPCell(New Phrase("Progress Claim 2:", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageMainDetailProgressClaim.AddCell(New PdfPCell(New Phrase("", baseFontBold8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT}) 'progress claim amount 2
+        pageMainDetailProgressClaim.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+
+        pageMainDetailProgressClaim.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageMainDetailProgressClaim.AddCell(New PdfPCell(New Phrase("Progress Claim 3 Date:", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageMainDetailProgressClaim.AddCell(New PdfPCell(New Phrase("", baseFontBold8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER}) 'progress claim date 3
+        pageMainDetailProgressClaim.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageMainDetailProgressClaim.AddCell(New PdfPCell(New Phrase("Progress Claim 3:", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageMainDetailProgressClaim.AddCell(New PdfPCell(New Phrase("", baseFontBold8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT}) 'progress claim amount 3
+        pageMainDetailProgressClaim.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+
+        pageMainDetailProgressClaim.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageMainDetailProgressClaim.AddCell(New PdfPCell(New Phrase("Progress Claim 4 Date:", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageMainDetailProgressClaim.AddCell(New PdfPCell(New Phrase("", baseFontBold8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER}) 'progress claim date 4
+        pageMainDetailProgressClaim.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageMainDetailProgressClaim.AddCell(New PdfPCell(New Phrase("Progress Claim 4:", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT}) 'progress claim amount 4
+        pageMainDetailProgressClaim.AddCell(New PdfPCell(New Phrase("", baseFontBold8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageMainDetailProgressClaim.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+
+        pageMainDetailProgressClaim.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageMainDetailProgressClaim.AddCell(New PdfPCell(New Phrase("Balance:", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageMainDetailProgressClaim.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageMainDetailProgressClaim.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageMainDetailProgressClaim.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageMainDetailProgressClaim.AddCell(New PdfPCell(New Phrase("", baseFontBold8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT}) 'balance amount
+        pageMainDetailProgressClaim.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+
+        document.Add(pageMainDetailProgressClaim)
+
+        document.Add(line)
+
+        'Contract Checklist Title
+        Dim pageContractChecklistTitle As New PdfPTable({25.0F, 50.0F, 25.0F})
+        pageContractChecklistTitle.WidthPercentage = 100.0F
+        pageContractChecklistTitle.DefaultCell.Border = Rectangle.NO_BORDER
+
+        pageContractChecklistTitle.SpacingBefore = 5.0F
+        pageContractChecklistTitle.SpacingAfter = 5.0F
+
+        pageContractChecklistTitle.AddCell(String.Empty)
+        pageContractChecklistTitle.AddCell(New PdfPCell(New Phrase("Contract Checklist", baseFontBold12)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER, .VerticalAlignment = Element.ALIGN_TOP})
+        pageContractChecklistTitle.AddCell(String.Empty)
+
+        document.Add(pageContractChecklistTitle)
+
+
+        'Contract Checklist Main Content
+        Dim pageContractChecklistMain As New PdfPTable({35.0F, 10.0F, 55.0F})
+        pageContractChecklistMain.WidthPercentage = 100.0F
+        pageContractChecklistMain.DefaultCell.Border = Rectangle.NO_BORDER
+
+        'Contract Checklist Left
+        Dim pageContractChecklistLeft As New PdfPTable({25.0F, 10.0F})
+        pageContractChecklistLeft.WidthPercentage = 35.0F
+        pageContractChecklistLeft.DefaultCell.Border = Rectangle.NO_BORDER
+
+        pageContractChecklistLeft.AddCell(New PdfPCell(New Phrase("Warranty Items:", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageContractChecklistLeft.AddCell(New PdfPCell(New Phrase("Yes / No", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistLeft.AddCell(New PdfPCell(New Phrase("Warranty Terms (Mths):", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageContractChecklistLeft.AddCell(New PdfPCell(New Phrase("Yes / No", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistLeft.AddCell(New PdfPCell(New Phrase("Retentions:", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageContractChecklistLeft.AddCell(New PdfPCell(New Phrase("Yes / No", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistLeft.AddCell(New PdfPCell(New Phrase("Liquidated Damages:", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageContractChecklistLeft.AddCell(New PdfPCell(New Phrase("Yes / No", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistLeft.AddCell(New PdfPCell(New Phrase("Materials-Availability/Lead Time:", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageContractChecklistLeft.AddCell(New PdfPCell(New Phrase("Yes / No", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistLeft.AddCell(New PdfPCell(New Phrase("Equipment Required:", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageContractChecklistLeft.AddCell(New PdfPCell(New Phrase("Yes / No", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistLeft.AddCell(New PdfPCell(New Phrase("Finish:", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageContractChecklistLeft.AddCell(New PdfPCell(New Phrase("Yes / No", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistLeft.AddCell(New PdfPCell(New Phrase("Site Install / Supply Only:", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageContractChecklistLeft.AddCell(New PdfPCell(New Phrase("Yes / No", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistLeft.AddCell(New PdfPCell(New Phrase("Access Equipment Supplied:", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageContractChecklistLeft.AddCell(New PdfPCell(New Phrase("Yes / No", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistLeft.AddCell(New PdfPCell(New Phrase("Budget Attached:", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageContractChecklistLeft.AddCell(New PdfPCell(New Phrase("Yes / No", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        'Contract Checklist Center
+        Dim pageContractChecklistCenter As New PdfPTable({10.0F})
+        pageContractChecklistCenter.WidthPercentage = 10.0F
+        pageContractChecklistCenter.DefaultCell.Border = Rectangle.NO_BORDER
+
+        pageContractChecklistCenter.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        'Contract Checklist Right
+        Dim pageContractChecklistRight As New PdfPTable({17.0F, 17.0F, 17.0F, 4.0F})
+        pageContractChecklistRight.WidthPercentage = 55.0F
+        pageContractChecklistRight.DefaultCell.Border = Rectangle.NO_BORDER
+
+        pageContractChecklistRight.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageContractChecklistRight.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageContractChecklistRight.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageContractChecklistRight.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistRight.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageContractChecklistRight.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageContractChecklistRight.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageContractChecklistRight.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistRight.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageContractChecklistRight.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageContractChecklistRight.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageContractChecklistRight.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistRight.AddCell(New PdfPCell(New Phrase("Labour", baseFontBold8)) With {.BorderWidth = 2, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight.AddCell(New PdfPCell(New Phrase("Materials", baseFontBold8)) With {.BorderWidth = 2, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight.AddCell(New PdfPCell(New Phrase("Finish", baseFontBold8)) With {.BorderWidth = 2, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+
+        pageContractChecklistRight.AddCell(New PdfPCell(New Phrase("$", baseFontBold8)) With {.BorderWidth = 2, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageContractChecklistRight.AddCell(New PdfPCell(New Phrase("$", baseFontBold8)) With {.BorderWidth = 2, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageContractChecklistRight.AddCell(New PdfPCell(New Phrase("$", baseFontBold8)) With {.BorderWidth = 2, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageContractChecklistRight.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+
+        pageContractChecklistRight.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageContractChecklistRight.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageContractChecklistRight.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageContractChecklistRight.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistRight.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageContractChecklistRight.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageContractChecklistRight.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageContractChecklistRight.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistRight.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageContractChecklistRight.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageContractChecklistRight.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageContractChecklistRight.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistMain.AddCell(pageContractChecklistLeft)
+        pageContractChecklistMain.AddCell(pageContractChecklistCenter)
+        pageContractChecklistMain.AddCell(pageContractChecklistRight)
+        document.Add(pageContractChecklistMain)
+
+        'Bottom Gross Profit %
+        Dim pageContractChecklistBottom As New PdfPTable({25.0F, 15.0F, 60.0F})
+        pageContractChecklistBottom.WidthPercentage = 100.0F
+        pageContractChecklistBottom.DefaultCell.Border = Rectangle.NO_BORDER
+
+        pageContractChecklistBottom.SpacingBefore = 5.0F
+        pageContractChecklistBottom.SpacingAfter = 5.0F
+
+        pageContractChecklistBottom.AddCell(New PdfPCell(New Phrase("Margin At Sell (Gross Profit):", baseFontBold8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageContractChecklistBottom.AddCell(New PdfPCell(New Phrase("%", baseFont8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_RIGHT})
+        pageContractChecklistBottom.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_RIGHT})
+
+        document.Add(pageContractChecklistBottom)
+
+        document.Add(line)
+
+        'Account Info RCTI/Tax Invoice Title
+        Dim pageAccountInvoiceTitle As New PdfPTable({25.0F, 50.0F, 25.0F})
+        pageAccountInvoiceTitle.WidthPercentage = 100.0F
+        pageAccountInvoiceTitle.DefaultCell.Border = Rectangle.NO_BORDER
+
+        pageAccountInvoiceTitle.SpacingBefore = 5.0F
+        pageAccountInvoiceTitle.SpacingAfter = 5.0F
+
+        pageAccountInvoiceTitle.AddCell(String.Empty)
+        pageAccountInvoiceTitle.AddCell(New PdfPCell(New Phrase("Account Information", baseFontBold12)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER, .VerticalAlignment = Element.ALIGN_TOP})
+        pageAccountInvoiceTitle.AddCell(String.Empty)
+
+        pageAccountInvoiceTitle.AddCell(String.Empty)
+        pageAccountInvoiceTitle.AddCell(New PdfPCell(New Phrase("RCTI / Tax Invoice", baseFontBold12)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER, .VerticalAlignment = Element.ALIGN_TOP})
+        pageAccountInvoiceTitle.AddCell(String.Empty)
+
+        document.Add(pageAccountInvoiceTitle)
+
+
+        'Account Info Left Side
+        Dim pageAccountInvoiceLeft As New PdfPTable({25.0F, 10.0F, 25.0F, 10.0F, 30.0F})
+        pageAccountInvoiceLeft.WidthPercentage = 100.0F
+        pageAccountInvoiceLeft.DefaultCell.Border = Rectangle.NO_BORDER
+
+        pageAccountInvoiceLeft.AddCell(New PdfPCell(New Phrase("Subcontract / PO Number:", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageAccountInvoiceLeft.AddCell(New PdfPCell(New Phrase("", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT}) 'po number
+        pageAccountInvoiceLeft.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageAccountInvoiceLeft.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageAccountInvoiceLeft.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageAccountInvoiceLeft.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        document.Add(pageAccountInvoiceLeft)
+
+        Dim pageAccountInvoiceLeft2 As New PdfPTable({35.0F, 5.0F, 25.0F, 35.0F})
+        pageAccountInvoiceLeft2.WidthPercentage = 100.0F
+        pageAccountInvoiceLeft2.DefaultCell.Border = Rectangle.NO_BORDER
+
+        pageAccountInvoiceLeft2.AddCell(New PdfPCell(New Phrase("CLAIM DUE DATE (As per contract / purchase):", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageAccountInvoiceLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageAccountInvoiceLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 1, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageAccountInvoiceLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        document.Add(pageAccountInvoiceLeft2)
+
+        Dim pageAccountInvoiceLeft3 As New PdfPTable({50.0F, 50.0F})
+        pageAccountInvoiceLeft3.WidthPercentage = 100.0F
+        pageAccountInvoiceLeft3.DefaultCell.Border = Rectangle.NO_BORDER
+
+        pageAccountInvoiceLeft3.AddCell(New PdfPCell(New Phrase("CLAIM REQUIREMENTS (Please check each box that is required):", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageAccountInvoiceLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        document.Add(pageAccountInvoiceLeft3)
+
+        'Center Section
+        Dim pageAccountInvoiceCenter As New PdfPTable({25.0F, 20.0F, 15.0F, 15.0F, 25.0F})
+        pageAccountInvoiceCenter.WidthPercentage = 100.0F
+        pageAccountInvoiceCenter.DefaultCell.Border = Rectangle.NO_BORDER
+
+        pageAccountInvoiceCenter.SpacingBefore = 5.0F
+        pageAccountInvoiceCenter.SpacingAfter = 5.0F
+
+        pageAccountInvoiceCenter.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.Colspan = 2, .BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageAccountInvoiceCenter.AddCell(New PdfPCell(New Phrase("Statutory Declaration (Attach copy):", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageAccountInvoiceCenter.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageAccountInvoiceCenter.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageAccountInvoiceCenter.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.Colspan = 2, .BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageAccountInvoiceCenter.AddCell(New PdfPCell(New Phrase("Subcontractors Statement (Attach copy):", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageAccountInvoiceCenter.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageAccountInvoiceCenter.AddCell(New PdfPCell(New Phrase("", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageAccountInvoiceCenter.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.Colspan = 2, .BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageAccountInvoiceCenter.AddCell(New PdfPCell(New Phrase("Certificate of Currency for Workers Comp:", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageAccountInvoiceCenter.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageAccountInvoiceCenter.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageAccountInvoiceCenter.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.Colspan = 2, .BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageAccountInvoiceCenter.AddCell(New PdfPCell(New Phrase("Certificate of Currency for Public Liability:", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageAccountInvoiceCenter.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageAccountInvoiceCenter.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageAccountInvoiceCenter.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.Colspan = 2, .BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageAccountInvoiceCenter.AddCell(New PdfPCell(New Phrase("Claim Summary:", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageAccountInvoiceCenter.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageAccountInvoiceCenter.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        document.Add(pageAccountInvoiceCenter)
+
+        'Bottom Section
+        Dim pageAccountInvoiceBottom As New PdfPTable({20.0F, 35.0F, 10.0F, 25.0F, 10.0F})
+        pageAccountInvoiceBottom.WidthPercentage = 100.0F
+        pageAccountInvoiceBottom.DefaultCell.Border = Rectangle.NO_BORDER
+
+        pageAccountInvoiceBottom.SpacingBefore = 35.0F
+        pageAccountInvoiceBottom.SpacingAfter = 200.0F
+
+        pageAccountInvoiceBottom.AddCell(New PdfPCell(New Phrase("Authorised to Proceed", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageAccountInvoiceBottom.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 1, .BorderWidthTop = 0, .BorderWidthLeft = 0, .BorderWidthRight = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageAccountInvoiceBottom.AddCell(New PdfPCell(New Phrase("Date", baseFont8)) With {.BorderWidthBottom = 0, .BorderWidthTop = 0, .BorderWidthLeft = 0, .BorderWidthRight = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageAccountInvoiceBottom.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 1, .BorderWidthTop = 0, .BorderWidthLeft = 0, .BorderWidthRight = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageAccountInvoiceBottom.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidthBottom = 0, .BorderWidthTop = 0, .BorderWidthLeft = 0, .BorderWidthRight = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        document.Add(pageAccountInvoiceBottom)
+
+
+        'Contract Checklist Title - Continued
+        Dim pageContractChecklistTitle2 As New PdfPTable({25.0F, 50.0F, 25.0F})
+        pageContractChecklistTitle2.WidthPercentage = 100.0F
+        pageContractChecklistTitle2.DefaultCell.Border = Rectangle.NO_BORDER
+
+        pageContractChecklistTitle2.SpacingBefore = 5.0F
+        pageContractChecklistTitle2.SpacingAfter = 5.0F
+
+        pageContractChecklistTitle2.AddCell(String.Empty)
+        pageContractChecklistTitle2.AddCell(New PdfPCell(New Phrase("Contract Checklist", baseFontBold12)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER, .VerticalAlignment = Element.ALIGN_TOP})
+        pageContractChecklistTitle2.AddCell(String.Empty)
+
+        document.Add(pageContractChecklistTitle)
+
+        'Main 2
+        Dim pageContractChecklistMain2 As New PdfPTable({50.0F, 50.0F})
+        pageContractChecklistMain2.WidthPercentage = 100.0F
+        pageContractChecklistMain2.DefaultCell.Border = Rectangle.NO_BORDER
+
+        pageContractChecklistMain2.SpacingBefore = 5.0F
+        pageContractChecklistMain2.SpacingAfter = 5.0F
+
+        'Contract Checklist Left Hand Side 2
+        Dim pageContractChecklistLeft2 As New PdfPTable({2.0F, 2.0F, 2.0F, 44.0F})
+        pageContractChecklistLeft2.WidthPercentage = 50.0F
+        pageContractChecklistLeft2.DefaultCell.Border = Rectangle.NO_BORDER
+
+        pageContractChecklistLeft2.SpacingBefore = 5.0F
+        pageContractChecklistLeft2.SpacingAfter = 5.0F
+
+        Dim checkbox As New CheckBox()
+
+        'pageContractChecklistLeft2.AddCell(PdfFormField(checkbox.CheckField))
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0.5, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase("Entered to Job Database", baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0.5, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase("Entered to Sybiz by _____________________ (Inital)", baseFontBold8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0.5, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase("Job #_____________________", baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0.5, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase("Figures checked by _____________________", baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0.5, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase("Full Deposit Received _____________________", baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0.5, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase("Receipt Money on Bottom of Pink Copy", baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0.5, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase("Money to Accounts", baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0.5, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase("Progress Claim Received", baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0.5, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase("Green, Copy-Out, Claim and Summary sheets to Production", baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0.5, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase("Pink Copy, Lead and this Check List in WIP file", baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistMain2.AddCell(pageContractChecklistLeft2)
+
+        'Contract Checklist Right Hand Side 2
+        Dim pageContractChecklistRight2 As New PdfPTable({5.0F, 10.0F, 10.0F, 10.0F, 10.0F, 5.0F})
+        pageContractChecklistRight2.WidthPercentage = 50.0F
+        pageContractChecklistRight2.DefaultCell.Border = Rectangle.NO_BORDER
+
+        pageContractChecklistRight2.SpacingBefore = 5.0F
+        pageContractChecklistRight2.SpacingAfter = 5.0F
+
+        pageContractChecklistRight2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight2.AddCell(New PdfPCell(New Phrase("Contract Variation:", baseFontBold8)) With {.Colspan = 2, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight2.AddCell(New PdfPCell(New Phrase("Yes", baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight2.AddCell(New PdfPCell(New Phrase("No", baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+
+        pageContractChecklistRight2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.Colspan = 2, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+
+        pageContractChecklistRight2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.Colspan = 2, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight2.AddCell(New PdfPCell(New Phrase("Retail Value", baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight2.AddCell(New PdfPCell(New Phrase("Contract Value", baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight2.AddCell(New PdfPCell(New Phrase("% Differental", baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+
+        pageContractChecklistRight2.AddCell(New PdfPCell(New Phrase("Rollashields:", baseFontBold8)) With {.Colspan = 2, .BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+
+        pageContractChecklistRight2.AddCell(New PdfPCell(New Phrase("Louvres:", baseFontBold8)) With {.Colspan = 2, .BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+
+        pageContractChecklistRight2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.Colspan = 2, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+
+        pageContractChecklistRight2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.Colspan = 2, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight2.AddCell(New PdfPCell(New Phrase("Sales", baseFontBold8)) With {.Colspan = 3, .BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER, .BackgroundColor = Color.LIGHT_GRAY})
+        pageContractChecklistRight2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+
+        pageContractChecklistRight2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.Colspan = 2, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight2.AddCell(New PdfPCell(New Phrase("% Paid", baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight2.AddCell(New PdfPCell(New Phrase("Date", baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight2.AddCell(New PdfPCell(New Phrase("$", baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+
+        pageContractChecklistRight2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.Colspan = 2, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight2.AddCell(New PdfPCell(New Phrase("100% Paid", baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+
+        pageContractChecklistRight2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.Colspan = 2, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight2.AddCell(New PdfPCell(New Phrase("Salesperson", baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER, .BackgroundColor = Color.LIGHT_GRAY})
+        pageContractChecklistRight2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+
+        pageContractChecklistRight2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.Colspan = 2, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight2.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+
+        pageContractChecklistMain2.AddCell(pageContractChecklistRight2)
+
+        document.Add(pageContractChecklistMain2)
+
+
+        'Main3 
+        Dim pageContractChecklistMain3 As New PdfPTable({50.0F, 50.0F})
+        pageContractChecklistMain3.WidthPercentage = 100.0F
+        pageContractChecklistMain3.DefaultCell.Border = Rectangle.NO_BORDER
+
+        pageContractChecklistMain3.SpacingBefore = 5.0F
+        pageContractChecklistMain3.SpacingAfter = 5.0F
+
+        'Left3
+        Dim pageContractChecklistLeft3 As New PdfPTable({2.0F, 2.0F, 2.0F, 44.0F})
+        pageContractChecklistLeft3.WidthPercentage = 50.0F
+        pageContractChecklistLeft3.DefaultCell.Border = Rectangle.NO_BORDER
+
+        pageContractChecklistLeft3.SpacingBefore = 5.0F
+        pageContractChecklistLeft3.SpacingAfter = 5.0F
+
+
+        'pageContractChecklistLeft3.AddCell(PdfFormField(checkbox.CheckField))
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase("When paperwork comes back from the fitters - Pink Copy of Contract", baseFontBold8)) With {.Colspan = 2, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0.5, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase("Reciept final payment on Contract", baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0.5, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase("Invoice Customer / AGC Paperwork Sent - ___/___/______", baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0.5, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase("Payment Received from Customer/Certegy - ___/___/_____", baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0.5, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase("Sybiz Invoice Number _______________________", baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0.5, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase("Job Closed In Database", baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase("When all paperwork is return from Payroll Dept", baseFontBold8)) With {.Colspan = 2, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0.5, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase("Enter all details in computer", baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0.5, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase("Guarantee and Instructions Sent - _____/_____/_________", baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0.5, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase("File", baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont2)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistLeft3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageContractChecklistMain3.AddCell(pageContractChecklistLeft3)
+
+        'Right3
+
+        'Contract Checklist Right Hand Side 2
+        Dim pageContractChecklistRight3 As New PdfPTable({2.0F, 11.5F, 11.5F, 11.5F, 11.5F, 2.0F})
+        pageContractChecklistRight3.WidthPercentage = 50.0F
+        pageContractChecklistRight3.DefaultCell.Border = Rectangle.NO_BORDER
+
+        pageContractChecklistRight3.SpacingBefore = 5.0F
+        pageContractChecklistRight3.SpacingAfter = 5.0F
+
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase("Product", baseFontBold8)) With {.Colspan = 3, .BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER, .BackgroundColor = Color.LIGHT_GRAY})
+
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase("Qty", baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase("Rate", baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase("Amount", baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase("Rolashield", baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase("Window Rep", baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase("Curtain Rep", baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase("Winch to Motor", baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase("R/s Fixed Panel", baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase("Louvre (Less GST)", baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase("Total Due:", baseFontBold8)) With {.BorderWidth = 1, .Colspan = 2, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 0, .Colspan = 2, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistRight3.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+
+        pageContractChecklistMain3.AddCell(pageContractChecklistRight3)
+        document.Add(pageContractChecklistMain3)
+
+        'Very Bottom Table Fitter
+
+        Dim pageContractChecklistFitterMain As New PdfPTable({50.0F, 50.0F})
+        pageContractChecklistFitterMain.WidthPercentage = 100.0F
+        pageContractChecklistFitterMain.DefaultCell.Border = Rectangle.NO_BORDER
+
+        'Left
+        Dim pageContractChecklistFitterLeft As New PdfPTable({3.0F, 15.0F, 15.0F, 15.0F, 2.0F})
+        pageContractChecklistFitterLeft.WidthPercentage = 50.0F
+        pageContractChecklistFitterLeft.DefaultCell.Border = Rectangle.NO_BORDER
+
+        pageContractChecklistFitterLeft.SpacingBefore = 5.0F
+        pageContractChecklistFitterLeft.SpacingAfter = 5.0F
+
+        pageContractChecklistFitterLeft.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistFitterLeft.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistFitterLeft.AddCell(New PdfPCell(New Phrase(String.Empty, baseFontBold8)) With {.Colspan = 2, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistFitterLeft.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+
+
+        'Right
+        Dim pageContractChecklistFitterRight As New PdfPTable({3.0F, 15.0F, 15.0F, 15.0F, 2.0F})
+        pageContractChecklistFitterRight.WidthPercentage = 50.0F
+        pageContractChecklistFitterRight.DefaultCell.Border = Rectangle.NO_BORDER
+
+        pageContractChecklistFitterRight.SpacingBefore = 5.0F
+        pageContractChecklistFitterRight.SpacingAfter = 5.0F
+
+        pageContractChecklistFitterRight.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistFitterRight.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistFitterRight.AddCell(New PdfPCell(New Phrase("Fitter", baseFontBold8)) With {.Colspan = 2, .BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER, .BackgroundColor = Color.LIGHT_GRAY})
+        pageContractChecklistFitterRight.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+
+        pageContractChecklistFitterRight.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistFitterRight.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistFitterRight.AddCell(New PdfPCell(New Phrase("Name", baseFontBold8)) With {.Colspan = 2, .BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageContractChecklistFitterRight.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+
+        pageContractChecklistFitterRight.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistFitterRight.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistFitterRight.AddCell(New PdfPCell(New Phrase("Date", baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistFitterRight.AddCell(New PdfPCell(New Phrase("$", baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistFitterRight.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+
+        'pageContractChecklistFitterRight.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        'pageContractChecklistFitterRight.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        'pageContractChecklistFitterRight.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        'pageContractChecklistFitterRight.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        'pageContractChecklistFitterRight.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+
+        pageContractChecklistFitterRight.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistFitterRight.AddCell(New PdfPCell(New Phrase("Date Installed", baseFontBold8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageContractChecklistFitterRight.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistFitterRight.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageContractChecklistFitterRight.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+
+        'pageContractChecklistFitterRight.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        'pageContractChecklistFitterRight.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_LEFT})
+        'pageContractChecklistFitterRight.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        'pageContractChecklistFitterRight.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 1, .HorizontalAlignment = Element.ALIGN_CENTER})
+        'pageContractChecklistFitterRight.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont8)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+
+        pageContractChecklistFitterMain.AddCell(pageContractChecklistFitterLeft)
+        pageContractChecklistFitterMain.AddCell(pageContractChecklistFitterRight)
+
+        document.Add(pageContractChecklistFitterMain)
+
+        intTotalPages = writer.PageNumber
+
+        document.Close()
+
+        Return output
+
+    End Function
+
+    Public Class Footer
+        Inherits PdfPageEventHelper
+
+        Public Overrides Sub OnEndPage(ByVal writer As PdfWriter, ByVal document As Document)
+            Dim pageSize As Rectangle = document.PageSize
+
+            Dim baseFont2 As Font = New Font(Font.HELVETICA, 2.0F, Font.NORMAL)
+            Dim BaseFont As Font = New Font(Font.HELVETICA, 10.5F, Font.NORMAL)
+            Dim baseFont8 As Font = New Font(Font.HELVETICA, 8.0F, Font.NORMAL)
+
+            Dim baseFontBold12 As Font = New Font(Font.HELVETICA, 12.0F, Font.BOLD)
+            Dim baseFontBold As Font = New Font(Font.HELVETICA, 10.5F, Font.BOLD)
+            Dim baseFontBoldRed As Font = New Font(Font.HELVETICA, 10.5F, Font.BOLD, Color.RED)
+            Dim baseFontBold8 As Font = New Font(Font.HELVETICA, 8.0F, Font.BOLD)
+
+            'Dim intPageNumber As Integer = writer.PageNumber
+            'Dim strPageText As String = "Page " + intPageNumber.ToString() + " of "
+
+            'Dim total As Integer = (writer.PageNumber - 1)
+
+            'Dim footer As Paragraph = New Paragraph(strPageText + "" + CStr(intTotalPages), FontFactory.GetFont(FontFactory.TIMES, 10, iTextSharp.text.Font.NORMAL))
+            'footer.Alignment = Element.ALIGN_LEFT
+            'Dim footerTbl As PdfPTable = New PdfPTable(1)
+            'footerTbl.TotalWidth = 300
+            'footerTbl.HorizontalAlignment = Element.ALIGN_CENTER
+            'Dim cell As PdfPCell = New PdfPCell(footer)
+            'cell.Border = 0
+            'cell.PaddingRight = 100
+            'footerTbl.AddCell(cell)
+            'footerTbl.WriteSelectedRows(0, 425, pageSize.GetLeft(15), 30, writer.DirectContent)
+
+            'Footer Right
+            Dim dateValue As Date = DateTime.Now
+            Dim footerDate As Paragraph = New Paragraph(dateValue.ToString, FontFactory.GetFont(FontFactory.TIMES, 10, iTextSharp.text.Font.NORMAL))
+            footerDate.Alignment = Element.ALIGN_LEFT
+            Dim footerTblDate As PdfPTable = New PdfPTable(1)
+            footerTblDate.TotalWidth = 300
+            footerTblDate.HorizontalAlignment = Element.ALIGN_CENTER
+            Dim cell4 As PdfPCell = New PdfPCell(footerDate)
+            cell4.Border = 0
+            cell4.PaddingRight = 100
+            footerTblDate.AddCell(cell4)
+            footerTblDate.WriteSelectedRows(0, 425, pageSize.GetLeft(450), 30, writer.DirectContent)
+
+            'Header Text
+            Dim header As Paragraph = New Paragraph("Job Cover Sheet", FontFactory.GetFont(Font.HELVETICA, 20.0F, Font.BOLD, Color.GRAY))
+            header.Alignment = Element.ALIGN_CENTER
+            Dim headertblText As PdfPTable = New PdfPTable(1)
+            headertblText.TotalWidth = 300
+            headertblText.HorizontalAlignment = Element.ALIGN_CENTER
+            Dim cell2 As PdfPCell = New PdfPCell(header)
+            cell2.Border = 0
+            cell2.PaddingRight = 100
+            headertblText.AddCell(cell2)
+            headertblText.WriteSelectedRows(0, -1, pageSize.GetLeft(200), pageSize.GetTop(5), writer.DirectContent)
+
+
+            'Header Image
+            Dim headerImage As Image = Image.GetInstance(HttpContext.Current.Server.MapPath("~/images/logo.png"))
+            headerImage.ScaleAbsolute(90, 50)
+
+            headerImage.Alignment = Element.ALIGN_CENTER
+            Dim headertbl As PdfPTable = New PdfPTable(1)
+            headertbl.TotalWidth = 300
+            headertbl.HorizontalAlignment = Element.ALIGN_CENTER
+            Dim cell3 As PdfPCell = New PdfPCell(headerImage)
+            cell3.Border = 0
+            headertbl.AddCell(cell3)
+            headertbl.WriteSelectedRows(0, -1, pageSize.GetLeft(15), pageSize.GetTop(5), writer.DirectContent)
+
+
+
+
+        End Sub
+
+    End Class
+
+End Class

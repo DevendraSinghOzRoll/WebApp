@@ -1,0 +1,130 @@
+﻿Imports Microsoft.VisualBasic
+
+Public Class PlantationSpecs
+
+    Implements ICloneable
+
+    Private _ProductScheduleID As Integer
+    Private _PanelsLess700 As Integer
+    Private _PanelsMore700 As Integer
+    Private _QtyHinges As Integer
+    Private _QtySliding As Integer
+    Private _QtyBifold As Integer
+    Private _QtyFixed As Integer
+    Private _QtyZFrame As Integer
+    Private _QtyLFrame As Integer
+	Private _ColourID As Integer
+
+    Public Property ProductScheduleID() As Integer
+        Get
+            Return _ProductScheduleID
+        End Get
+        Set(value As Integer)
+            _ProductScheduleID = value
+        End Set
+    End Property
+
+    Public Property PanelsLess700() As Integer
+        Get
+            Return _PanelsLess700
+        End Get
+        Set(value As Integer)
+            _PanelsLess700 = value
+        End Set
+    End Property
+
+    Public Property PanelsMore700() As Integer
+        Get
+            Return _PanelsMore700
+        End Get
+        Set(value As Integer)
+            _PanelsMore700 = value
+        End Set
+    End Property
+
+    Public Property QtyHinges() As Integer
+        Get
+            Return _QtyHinges
+        End Get
+        Set(value As Integer)
+            _QtyHinges = value
+        End Set
+    End Property
+
+    Public Property QtySliding() As Integer
+        Get
+            Return _QtySliding
+        End Get
+        Set(value As Integer)
+            _QtySliding = value
+        End Set
+    End Property
+	
+	Public Property QtyBifold() As Integer
+        Get
+            Return _QtyBifold
+        End Get
+        Set(value As Integer)
+            _QtyBifold = value
+        End Set
+    End Property
+	
+	Public Property QtyFixed() As Integer
+        Get
+            Return _QtyFixed
+        End Get
+        Set(value As Integer)
+            _QtyFixed = value
+        End Set
+    End Property
+	
+    Public Property QtyZFrame() As Integer
+
+        Get
+            Return _QtyZFrame
+        End Get
+        Set(value As Integer)
+            _QtyZFrame = value
+        End Set
+    End Property
+	
+	Public Property QtyLFrame() As Integer
+        Get
+            Return _QtyLFrame
+        End Get
+        Set(value As Integer)
+            _QtyLFrame = value
+        End Set
+    End Property
+	
+	Public Property ColourID() As Integer
+        Get
+            Return _ColourID
+        End Get
+        Set(value As Integer)
+            _ColourID = value
+        End Set
+    End Property
+
+    Public Sub New()
+
+        _ProductScheduleID = Constants.DEFAULT_INTEGER_VALUE
+        _PanelsLess700 = Constants.DEFAULT_INTEGER_VALUE
+        _PanelsMore700 = Constants.DEFAULT_INTEGER_VALUE
+        _QtyHinges = Constants.DEFAULT_INTEGER_VALUE
+        _QtySliding = Constants.DEFAULT_INTEGER_VALUE
+        _QtyBifold = Constants.DEFAULT_INTEGER_VALUE
+        _QtyFixed = Constants.DEFAULT_INTEGER_VALUE
+        _QtyZFrame = Constants.DEFAULT_INTEGER_VALUE
+        _QtyLFrame = Constants.DEFAULT_INTEGER_VALUE				
+        _ColourID = Constants.DEFAULT_INTEGER_VALUE
+
+    End Sub
+
+    Public Function Clone() As Object Implements System.ICloneable.Clone
+
+        Return MyBase.MemberwiseClone
+
+    End Function
+
+End Class

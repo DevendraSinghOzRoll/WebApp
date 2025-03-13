@@ -1,0 +1,207 @@
+﻿Imports Microsoft.VisualBasic
+
+<Serializable()>
+Public Class QuoteLouvre
+    Implements ICloneable
+
+    Private _ID As Integer
+    Private _QuoteID As Integer
+    Private _SalePricePerUnit As Decimal
+    Private _CostPricePerUnit As Decimal
+    Private _CategoryID As Integer
+    Private _LouvreStyleID As Integer
+    Private _LouvreTypeID As Integer
+    Private _CoatingTypeID As Integer
+    Private _LouvrePriceID As Integer
+    Private _LouvreStyleName As String
+    Private _LouvreTypeName As String
+    Private _CoatingTypeName As String
+    Private _CreationDateTime As Date
+    Private _Width As Integer
+    Private _Height As Integer
+    Private _NumberOfPanels As Integer
+
+    Private _QuoteExtras As New List(Of QuoteExtra)
+
+    Public Property ID() As Integer
+        Get
+            Return _ID
+        End Get
+        Set(ByVal value As Integer)
+            _ID = value
+        End Set
+    End Property
+
+    Public Property QuoteID() As Integer
+        Get
+            Return _QuoteID
+        End Get
+        Set(ByVal value As Integer)
+            _QuoteID = value
+        End Set
+    End Property
+
+    Public Property SalePricePerUnit() As Decimal
+        Get
+            Return _SalePricePerUnit
+        End Get
+        Set(ByVal value As Decimal)
+            _SalePricePerUnit = value
+        End Set
+    End Property
+
+    Public Property CostPricePerUnit() As Decimal
+        Get
+            Return _CostPricePerUnit
+        End Get
+        Set(ByVal value As Decimal)
+            _CostPricePerUnit = value
+        End Set
+    End Property
+
+    Public Property CategoryID() As Integer
+        Get
+            Return _CategoryID
+        End Get
+        Set(ByVal value As Integer)
+            _CategoryID = value
+        End Set
+    End Property
+
+    Public Property LouvreStyleID() As Integer
+        Get
+            Return _LouvreStyleID
+        End Get
+        Set(ByVal value As Integer)
+            _LouvreStyleID = value
+        End Set
+    End Property
+
+    Public Property LouvreTypeID() As Integer
+        Get
+            Return _LouvreTypeID
+        End Get
+        Set(ByVal value As Integer)
+            _LouvreTypeID = value
+        End Set
+    End Property
+
+    Public Property CoatingTypeID() As Integer
+        Get
+            Return _CoatingTypeID
+        End Get
+        Set(ByVal value As Integer)
+            _CoatingTypeID = value
+        End Set
+    End Property
+
+    Public Property LouvrePriceID() As Integer
+        Get
+            Return _LouvrePriceID
+        End Get
+        Set(ByVal value As Integer)
+            _LouvrePriceID = value
+        End Set
+    End Property
+
+    Public Property LouvreStyleName() As String
+        Get
+            Return _LouvreStyleName
+        End Get
+        Set(ByVal value As String)
+            _LouvreStyleName = value
+        End Set
+    End Property
+
+    Public Property LouvreTypeName() As String
+        Get
+            Return _LouvreTypeName
+        End Get
+        Set(ByVal value As String)
+            _LouvreTypeName = value
+        End Set
+    End Property
+
+    Public Property CoatingTypeName() As String
+        Get
+            Return _CoatingTypeName
+        End Get
+        Set(ByVal value As String)
+            _CoatingTypeName = value
+        End Set
+    End Property
+
+    Public Property CreationDateTime() As Date
+        Get
+            Return _CreationDateTime
+        End Get
+        Set(ByVal value As Date)
+            _CreationDateTime = value
+        End Set
+    End Property
+
+    Public Property Width As Integer
+        Get
+            Return _Width
+        End Get
+        Set(value As Integer)
+            _Width = value
+        End Set
+    End Property
+
+    Public Property Height As Integer
+        Get
+            Return _Height
+        End Get
+        Set(value As Integer)
+            _Height = value
+        End Set
+    End Property
+
+    Public Property NumberOfPanels As Integer
+        Get
+            Return _NumberOfPanels
+        End Get
+        Set(value As Integer)
+            _NumberOfPanels = value
+        End Set
+    End Property
+
+    Public Property QuoteExtras As List(Of QuoteExtra)
+        Get
+            Return _QuoteExtras
+        End Get
+        Set(value As List(Of QuoteExtra))
+            _QuoteExtras = value
+        End Set
+    End Property
+
+    Public Function GetUniqueNegativeIDForQuoteExtras() As Integer
+        Dim intLowestID As Integer = -1
+
+        For Each l As QuoteExtra In QuoteExtras
+            If l.ID < intLowestID Then
+                intLowestID = l.ID
+            End If
+        Next l
+
+        Return intLowestID - 1
+    End Function
+
+    Public Function Clone() As Object Implements System.ICloneable.Clone
+        Dim cQuoteLouvreClone As QuoteLouvre
+        Dim cNewQuoteExtras As New List(Of QuoteExtra)
+
+        cQuoteLouvreClone = MyBase.MemberwiseClone
+
+        ' Deep copy list
+        For Each e As QuoteExtra In _QuoteExtras
+            cNewQuoteExtras.Add(e.Clone())
+        Next e
+
+        cQuoteLouvreClone.QuoteExtras = cNewQuoteExtras
+
+        Return cQuoteLouvreClone
+    End Function
+
+End Class

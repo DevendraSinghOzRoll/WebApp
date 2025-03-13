@@ -1,0 +1,1450 @@
+﻿Imports Microsoft.VisualBasic
+Imports System.Data.SqlClient
+
+Public Class PSLookupsDAO
+
+#Region "New Plantation Shutters 17Sept2014"
+
+    Function getPSAngleBay() As DataTable
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getPSAngleBay"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+            cnn.Close()
+            Return dt
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+    End Function
+
+    Function getPSBladeSize() As DataTable
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getPSBladeSize"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+            cnn.Close()
+            Return dt
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+    End Function
+
+    Function getPSColour() As DataTable
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getPSColour"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+            cnn.Close()
+            Return dt
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+    End Function
+
+    Function getPSControlType() As DataTable
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getPSControlType"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+            cnn.Close()
+            Return dt
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+    End Function
+
+    Function getPSFrameType(ByVal intMountID As Integer) As DataTable
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getPSFrameType"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            cmd.Parameters.AddWithValue("@MountId", intMountID)
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+            cnn.Close()
+            Return dt
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+    End Function
+
+    Function getPSHangStrip() As DataTable
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getPSHangStrip"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+            cnn.Close()
+            Return dt
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+    End Function
+
+    Function getPSHingeColour(ByVal intInstallatinAreaID As Integer) As DataTable
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getPSHingeColour"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            cmd.Parameters.AddWithValue("@InstallatinAreaID", intInstallatinAreaID)
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+            cnn.Close()
+            Return dt
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+    End Function
+
+    Function getPSInstallationArea() As DataTable
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getPSInstallationArea"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+            cnn.Close()
+            Return dt
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+    End Function
+
+    Function getPSLayoutByMountAndPanelQty(ByVal intMountID As Integer, ByVal intPanelQty As Integer) As DataTable
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getPSLayoutByMountAndPanelQty"
+            cmd.CommandType = CommandType.StoredProcedure
+
+
+            cmd.Parameters.AddWithValue("@MountId", intMountID)
+            cmd.Parameters.AddWithValue("@PanelQty", intPanelQty)
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+            cnn.Close()
+            Return dt
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+    End Function
+
+
+    Function getPSLightBlock() As DataTable
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getPSLightBlock"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+            cnn.Close()
+            Return dt
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+    End Function
+
+    Function getPSMaterial(ByVal intManufactureLocation As Integer) As DataTable
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getPSMaterial"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            cmd.Parameters.AddWithValue("@ManufactureLocationID", intManufactureLocation)
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+            cnn.Close()
+            Return dt
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+    End Function
+
+    Function getPSMountConfig() As DataTable
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getPSMountConfig"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+            cnn.Close()
+            Return dt
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+    End Function
+
+    Function getPSMountMethod() As DataTable
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getPSMountMethod"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+            cnn.Close()
+            Return dt
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+    End Function
+
+    Function getPSMountStyle() As DataTable
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getPSMountStyle"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+            cnn.Close()
+            Return dt
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+    End Function
+
+    Function getPSPanelQty() As DataTable
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getPSPanelQty"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+            cnn.Close()
+            Return dt
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+    End Function
+
+    Function getPSSides() As DataTable
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getPSSides"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+            cnn.Close()
+            Return dt
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+    End Function
+
+    Function getPSSlidingGuide() As DataTable
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getPSSlidingGuide"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+            cnn.Close()
+            Return dt
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+    End Function
+
+    Function getPSSlidingOpenClose() As DataTable
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getPSSlidingOpenClose"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+            cnn.Close()
+            Return dt
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+    End Function
+
+    Function getPSSplitBlade() As DataTable
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getPSSplitBlade"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+            cnn.Close()
+            Return dt
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+    End Function
+
+    Function getPSTPostQty() As DataTable
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getPSTPostQty"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+            cnn.Close()
+            Return dt
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+    End Function
+
+    Function getPSTrack() As DataTable
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getPSTrack"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+            cnn.Close()
+            Return dt
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+    End Function
+
+#End Region
+
+#Region "PS Lookups 1"
+
+    Public Function getPSRoomLocation() As DataTable
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getPSRoomLocation"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+            cnn.Close()
+            Return dt
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+    End Function
+
+    Public Function getPSInstallationMethod() As DataTable
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getPSInstallationMethod"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+            cnn.Close()
+            Return dt
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+    End Function
+
+    Public Function getPSColour(ByVal intMaterialID As Integer) As DataTable
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getPSColour"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            cmd.Parameters.Add("@MaterialID", SqlDbType.Int)
+            cmd.Parameters("@MaterialID").Value = intMaterialID
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+            cnn.Close()
+            Return dt
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+
+    End Function
+
+    Public Function getPSHingeColour(ByVal intMaterialID As Integer, ByVal intConcealed As Integer) As DataTable
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getPSHingeColour"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            cmd.Parameters.Add("@MaterialID", SqlDbType.Int)
+            cmd.Parameters("@MaterialID").Value = intMaterialID
+
+            cmd.Parameters.Add("@Concealed", SqlDbType.Int)
+            cmd.Parameters("@Concealed").Value = intConcealed
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+            cnn.Close()
+            Return dt
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+
+    End Function
+
+    Public Function getPSModuleColour() As DataTable
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getPSModuleColour"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+            cnn.Close()
+            Return dt
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+
+    End Function
+
+    Public Function getPSHingeType() As DataTable
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getPSHingeType"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+            cnn.Close()
+            Return dt
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+
+    End Function
+
+    Public Function getPSLouvre(ByVal intMaterialID As Integer, ByVal intMotorized As Integer) As DataTable
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getPSLouvre"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            cmd.Parameters.Add("@MaterialID", SqlDbType.Int)
+            cmd.Parameters("@MaterialID").Value = intMaterialID
+
+            cmd.Parameters.Add("@Motorized", SqlDbType.Int)
+            cmd.Parameters("@Motorized").Value = intMotorized
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+            cnn.Close()
+            Return dt
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+
+    End Function
+
+    Public Function getPSLouvreTypeWB() As DataTable
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getPSLouvreTypeWB"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+            cnn.Close()
+            Return dt
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+
+    End Function
+
+    Public Function getPSLouvreFixed() As DataTable
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getPSLouvreFixed"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+            cnn.Close()
+            Return dt
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+
+    End Function
+
+    Public Function getPSTiltRODPosition(ByVal intMotorized As Integer, ByVal intMaterialID As Integer) As DataTable
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getPSTiltRODPosition"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            cmd.Parameters.Add("@Motorized", SqlDbType.Int)
+            cmd.Parameters("@Motorized").Value = intMotorized
+
+            cmd.Parameters.Add("@MaterialID", SqlDbType.Int)
+            cmd.Parameters("@MaterialID").Value = intMaterialID
+
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+            cnn.Close()
+            Return dt
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+
+    End Function
+
+    Public Function getPSLayout(ByVal intInstallationMethodID As Integer) As DataTable
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getPSLayout"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            cmd.Parameters.Add("@InstallationMethodID", SqlDbType.Int)
+            cmd.Parameters("@InstallationMethodID").Value = intInstallationMethodID
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+            cnn.Close()
+            Return dt
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+
+    End Function
+
+    Public Function getPSStile(ByVal intMotorized As Integer, ByVal intMaterialID As Integer, ByVal intLayoutLen As Integer, ByVal intConceledHinge As Integer) As DataTable
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getPSStile"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            cmd.Parameters.Add("@Motorized", SqlDbType.Int)
+            cmd.Parameters("@Motorized").Value = intMotorized
+
+            cmd.Parameters.Add("@MaterialID", SqlDbType.Int)
+            cmd.Parameters("@MaterialID").Value = intMaterialID
+
+            cmd.Parameters.Add("@LayoutLen", SqlDbType.Int)
+            cmd.Parameters("@LayoutLen").Value = intLayoutLen
+
+            cmd.Parameters.Add("@ConceledHinge", SqlDbType.Int)
+            cmd.Parameters("@ConceledHinge").Value = intConceledHinge
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+            cnn.Close()
+            Return dt
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+
+    End Function
+
+    Public Function getPSFrameType(ByVal intInstallationMethodID As Integer, ByVal intMaterialID As Integer) As DataTable
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getPSFrameType"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            cmd.Parameters.Add("@InstallationMethodID", SqlDbType.Int)
+            cmd.Parameters("@InstallationMethodID").Value = intInstallationMethodID
+
+            cmd.Parameters.Add("@MaterialID", SqlDbType.Int)
+            cmd.Parameters("@MaterialID").Value = intMaterialID
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+            cnn.Close()
+            Return dt
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+
+    End Function
+
+    Public Function getPSSillPlate(ByVal intMaterialID As Integer, ByVal intFrameID As Integer) As DataTable
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getPSSillPlate"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            cmd.Parameters.Add("@MaterialID", SqlDbType.Int)
+            cmd.Parameters("@MaterialID").Value = intMaterialID
+
+            cmd.Parameters.Add("@FrameID", SqlDbType.Int)
+            cmd.Parameters("@FrameID").Value = intFrameID
+
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+            cnn.Close()
+            Return dt
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+
+    End Function
+
+    Public Function getPSInOut(ByVal intMaterialID As Integer, ByVal intInstallationMethodID As Integer, ByVal intHingeTypeID As Integer, ByVal intFrameTypeID As Integer) As DataTable
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getPSInOut"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            cmd.Parameters.Add("@MaterialID", SqlDbType.Int)
+            cmd.Parameters("@MaterialID").Value = intMaterialID
+
+            cmd.Parameters.Add("@InstallationMethodID", SqlDbType.Int)
+            cmd.Parameters("@InstallationMethodID").Value = intInstallationMethodID
+
+            cmd.Parameters.Add("@HingeTypeID", SqlDbType.Int)
+            cmd.Parameters("@HingeTypeID").Value = intHingeTypeID
+
+            cmd.Parameters.Add("@FrameTypeID", SqlDbType.Int)
+            cmd.Parameters("@FrameTypeID").Value = intFrameTypeID
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+            cnn.Close()
+            Return dt
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+
+    End Function
+
+    Public Function getPSHangingStrip(ByVal intInstallationMethodID As Integer) As DataTable
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getPSHangingStrip"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            cmd.Parameters.Add("@InstallationMethodID", SqlDbType.Int)
+            cmd.Parameters("@InstallationMethodID").Value = intInstallationMethodID
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+            cnn.Close()
+            Return dt
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+
+    End Function
+
+    Public Function getPSLightBlock(ByVal intInstallationMethodID As Integer) As DataTable
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getPSLightBlock"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            cmd.Parameters.Add("@InstallationMethodID", SqlDbType.Int)
+            cmd.Parameters("@InstallationMethodID").Value = intInstallationMethodID
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+            cnn.Close()
+            Return dt
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+
+    End Function
+
+    Public Function getPSTPos() As DataTable
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getPSTPos"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+            cnn.Close()
+            Return dt
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+
+    End Function
+
+    Public Function getPSSplitTiltRodLocation(ByVal strSplitLocation As String) As DataTable
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getPSSplitTiltRodLocation"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            cmd.Parameters.Add("@SplitLocation", SqlDbType.VarChar)
+            cmd.Parameters("@SplitLocation").Value = strSplitLocation
+
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+            cnn.Close()
+            Return dt
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+
+    End Function
+
+    Public Function getPSHandCarveStyle() As DataTable
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getPSHandCarveStyle"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+            cnn.Close()
+            Return dt
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+
+    End Function
+
+    Public Function getPSHandCarveLocation() As DataTable
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getPSHandCarveLocation"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+            cnn.Close()
+            Return dt
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+
+    End Function
+
+    Public Function getPSRingPullLocation() As DataTable
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getPSRingPullLocation"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+            cnn.Close()
+            Return dt
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+
+    End Function
+
+#End Region
+
+End Class

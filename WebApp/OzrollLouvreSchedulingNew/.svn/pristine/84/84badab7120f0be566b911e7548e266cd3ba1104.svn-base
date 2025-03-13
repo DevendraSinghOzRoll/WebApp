@@ -1,0 +1,48 @@
+﻿Imports Microsoft.VisualBasic
+Imports System.Data.SqlClient
+
+Public Class TempProdScheduleNotesDAO
+
+    Function addTempProdScheduleNotes(cNote As ProdScheduleNote, strGUID As String, bolNewNote As Boolean, cnn As SqlConnection, ByRef trans As SqlTransaction) As Boolean
+
+        Dim cmd As New SqlCommand
+
+        Try
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_addTempProdScheduleNotes"
+            cmd.CommandType = CommandType.StoredProcedure
+            cmd.Transaction = trans
+
+            SqlCommandBuilder.DeriveParameters(cmd)
+
+            cmd.Parameters("@TempGUID").Value = strGUID
+            cmd.Parameters("@ProdScheduleID").Value = cNote.ProdScheduleID
+            cmd.Parameters("@NoteTypeID").Value = cNote.NoteTypeID
+            cmd.Parameters("@NoteDetails").Value = cNote.NoteDetails
+            cmd.Parameters("@EntryDate").Value = cNote.EntryDate
+            cmd.Parameters("@UserID").Value = cNote.UserID
+            cmd.Parameters("@VisibleToCustomer").Value = cNote.VisibleToCustomer
+            If bolNewNote Then
+                cmd.Parameters("@NewNote").Value = 1
+            Else
+                cmd.Parameters("@NewNote").Value = 0
+            End If
+
+
+            cmd.ExecuteNonQuery()
+
+            Return True
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+            Return False
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+        End Try
+
+
+    End Function
+
+
+End Class

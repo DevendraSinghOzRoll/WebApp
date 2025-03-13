@@ -1,0 +1,1218 @@
+﻿Imports Microsoft.VisualBasic
+
+<Serializable>
+Public Class LouvreDetails
+
+    Implements ICloneable
+
+    Dim _LouvreDetailID As Integer
+    Dim _TempGUID As String
+    Dim _OriginalLVDetailID As Integer
+    Dim _ProductionScheduleID As Integer
+    Dim _ShutterID As Integer
+    Dim _LocationID As Integer
+    Dim _Location As String
+    Dim _Width As Integer
+    Dim _Height As Integer
+    Dim _MakeOrOpenSizesId As SharedEnums.MakeOpen
+    Dim _MakeOrOpenSizes As String
+    Dim _ProductId As Integer
+    Dim _Product As String
+    Dim _ShutterTypeId As SharedEnums.LouvreTypes
+    Dim _ShutterType As String
+    Dim _BiFoldHingedDoorInOutId As Integer
+    Dim _BiFoldHingedDoorInOut As String
+    Dim _NoOfPanels As Integer
+    Dim _NoOfOpenings As Integer
+    Dim _BladeSizeId As Integer
+    Dim _BladeSize As String
+    Dim _EndCapColourId As Integer
+    Dim _EndCapColour As String
+    Dim _BladeClipColourId As Integer
+    Dim _BladeClipColour As String
+    Dim _PileColourId As Integer
+    Dim _PileColour As String
+    Dim _MidRailHeight As Integer
+    Dim _PivotTypeId As Integer
+    Dim _PivotType As String
+    Dim _FlushBoltsTopId As Integer
+    Dim _FlushBoltsTop As String
+    Dim _FlushBoltsBottomId As Integer
+    Dim _FlushBoltsBottom As String
+    Dim _LockOptionsId As SharedEnums.LockOptions
+    Dim _LockOptions As String
+    Dim _BottomTrackTypeId As Integer
+    Dim _BottomTrackType As String
+    Dim _BladeLocks As Integer
+    Dim _CChannel As Integer
+    Dim _HChannel As Integer
+    Dim _LChannel As Integer
+    Dim _ZChannel As Integer
+    Dim _ColourId As Integer
+    Dim _Colour As String
+    Dim _CostPrice As Decimal
+    Dim _CostPriceGST As Decimal
+    Dim _ExtrasPrice As Decimal
+    Dim _ExtrasPriceGST As Decimal
+    Dim _SalePrice As Decimal
+    Dim _SalePriceGST As Decimal
+    Dim _Deleted As Boolean
+    Dim _ShutterNo As Integer
+    Dim _SlideId As Integer
+    Dim _Slide As String
+    Dim _StackerLocationId As Integer
+    Dim _StackerLocation As String
+    Dim _OtherColourCode As String
+    Dim _OtherColour As String
+    Dim _FinishTypeId As Integer
+    Dim _FinishType As String
+    Dim _InsertTopId As SharedEnums.InsertTypes
+    Dim _InsertTop As String
+    Dim _InsertBottomId As Integer
+    Dim _InsertBottom As String
+    Dim _BladeOperationId As Integer
+    Dim _BladeOperation As String
+
+    Dim _OtherLocation As String
+
+    Dim _CurvedTrack As Integer
+    Dim _ExtraTrack As Integer
+    Dim _BladeOperationBottomId As Integer
+    Dim _BladeOperationBottom As String
+    Dim _FlyScreen As Integer
+    Dim _Standoff As Integer
+    Dim _Winder As Integer
+    Dim _ControllerSideID As Integer
+    Dim _ControllerSide As String
+    Dim _HighsetAllowance As Integer
+
+    Dim _ExtrasCostPrice As Decimal
+    Dim _ExtrasCostPriceGST As Decimal
+
+    Dim _Track As Integer
+    Dim _Layout As String
+
+    Dim _RemakeTypeID As Integer
+
+    'Added by Michael 20/06/2017
+    Dim _SpecialRequirements As String
+
+    'Added by Michael 22/06/2017
+    Dim _TopTrack As String
+    Dim _TopTrackID As Integer
+    Dim _FixedPanelChannel As String
+    Dim _FixedPanelChannelID As Integer
+
+    'Added by Michael 23/06/2017
+    Dim _OpenVertical As Integer
+
+    Dim _LChannelString As String
+    Dim _ZChannelString As String
+    Dim _WinderString As String
+
+    'Add by Michael 25/10/2017
+    Dim _Accepted As Integer
+    Dim _AcceptedBy As Integer
+    Dim _AcceptedTime As DateTime
+
+    Dim _LouvrePriceID As Integer
+
+
+    Public Property LouvreDetailID() As Integer
+        Get
+            Return _LouvreDetailID
+        End Get
+        Set(ByVal Value As Integer)
+            _LouvreDetailID = Value
+        End Set
+    End Property
+
+    Public Property TempGUID() As String
+        Get
+            Return _TempGUID
+        End Get
+        Set(ByVal Value As String)
+            _TempGUID = Value
+        End Set
+    End Property
+
+    Public Property OriginalLVDetailID() As Integer
+        Get
+            Return _OriginalLVDetailID
+        End Get
+        Set(ByVal Value As Integer)
+            _OriginalLVDetailID = Value
+        End Set
+    End Property
+
+    Public Property ProductionScheduleID() As Integer
+        Get
+            Return _ProductionScheduleID
+        End Get
+        Set(ByVal Value As Integer)
+            _ProductionScheduleID = Value
+        End Set
+    End Property
+
+    Public Property ShutterID() As Integer
+        Get
+            Return _ShutterID
+        End Get
+        Set(ByVal Value As Integer)
+            _ShutterID = Value
+        End Set
+    End Property
+
+    Public Property LocationID() As Integer
+        Get
+            Return _LocationID
+        End Get
+        Set(ByVal Value As Integer)
+            _LocationID = Value
+        End Set
+    End Property
+
+    Public Property Location() As String
+        Get
+            Return _Location
+        End Get
+        Set(ByVal Value As String)
+            _Location = Value
+        End Set
+    End Property
+
+    Public Property Width() As Integer
+        Get
+            Return _Width
+        End Get
+        Set(ByVal Value As Integer)
+            _Width = Value
+        End Set
+    End Property
+
+    Public Property Height() As Integer
+        Get
+            Return _Height
+        End Get
+        Set(ByVal Value As Integer)
+            _Height = Value
+        End Set
+    End Property
+
+    Public Property MakeOrOpenSizesId() As SharedEnums.MakeOpen
+        Get
+            Return _MakeOrOpenSizesId
+        End Get
+        Set(ByVal Value As SharedEnums.MakeOpen)
+            _MakeOrOpenSizesId = Value
+        End Set
+    End Property
+
+    Public Property MakeOrOpenSizes() As String
+        Get
+            Return _MakeOrOpenSizes
+        End Get
+        Set(ByVal Value As String)
+            _MakeOrOpenSizes = Value
+        End Set
+    End Property
+
+    Public Property ProductId() As Integer
+        Get
+            Return _ProductId
+        End Get
+        Set(ByVal Value As Integer)
+            _ProductId = Value
+        End Set
+    End Property
+
+    Public Property Product() As String
+        Get
+            Return _Product
+        End Get
+        Set(ByVal Value As String)
+            _Product = Value
+        End Set
+    End Property
+
+    Public Property ShutterTypeId() As SharedEnums.LouvreTypes
+        Get
+            Return _ShutterTypeId
+        End Get
+        Set(ByVal Value As SharedEnums.LouvreTypes)
+            _ShutterTypeId = Value
+        End Set
+    End Property
+
+    Public Property ShutterType() As String
+        Get
+            Return _ShutterType
+        End Get
+        Set(ByVal Value As String)
+            _ShutterType = Value
+        End Set
+    End Property
+
+    Public Property BiFoldHingedDoorInOutId() As Integer
+        Get
+            Return _BiFoldHingedDoorInOutId
+        End Get
+        Set(ByVal Value As Integer)
+            _BiFoldHingedDoorInOutId = Value
+        End Set
+    End Property
+
+    Public Property BiFoldHingedDoorInOut() As String
+        Get
+            Return _BiFoldHingedDoorInOut
+        End Get
+        Set(ByVal Value As String)
+            _BiFoldHingedDoorInOut = Value
+        End Set
+    End Property
+
+    Public Property NoOfPanels() As Integer
+        Get
+            Return _NoOfPanels
+        End Get
+        Set(ByVal Value As Integer)
+            _NoOfPanels = Value
+        End Set
+    End Property
+
+    Public Property NoOfOpenings() As Integer
+        Get
+            Return _NoOfOpenings
+        End Get
+        Set(ByVal Value As Integer)
+            _NoOfOpenings = Value
+        End Set
+    End Property
+
+    Public Property BladeSizeId() As Integer
+        Get
+            Return _BladeSizeId
+        End Get
+        Set(ByVal Value As Integer)
+            _BladeSizeId = Value
+        End Set
+    End Property
+
+    Public Property BladeSize() As String
+        Get
+            Return _BladeSize
+        End Get
+        Set(ByVal Value As String)
+            _BladeSize = Value
+        End Set
+    End Property
+
+    Public Property EndCapColourId() As Integer
+        Get
+            Return _EndCapColourId
+        End Get
+        Set(ByVal Value As Integer)
+            _EndCapColourId = Value
+        End Set
+    End Property
+
+    Public Property EndCapColour() As String
+        Get
+            Return _EndCapColour
+        End Get
+        Set(ByVal Value As String)
+            _EndCapColour = Value
+        End Set
+    End Property
+
+    Public Property BladeClipColourId() As Integer
+        Get
+            Return _BladeClipColourId
+        End Get
+        Set(ByVal Value As Integer)
+            _BladeClipColourId = Value
+        End Set
+    End Property
+
+    Public Property BladeClipColour() As String
+        Get
+            Return _BladeClipColour
+        End Get
+        Set(ByVal Value As String)
+            _BladeClipColour = Value
+        End Set
+    End Property
+
+    Public Property PileColourId() As Integer
+        Get
+            Return _PileColourId
+        End Get
+        Set(ByVal Value As Integer)
+            _PileColourId = Value
+        End Set
+    End Property
+
+    Public Property PileColour() As String
+        Get
+            Return _PileColour
+        End Get
+        Set(ByVal Value As String)
+            _PileColour = Value
+        End Set
+    End Property
+
+    Public Property MidRailHeight() As Integer
+        Get
+            Return _MidRailHeight
+        End Get
+        Set(ByVal Value As Integer)
+            _MidRailHeight = Value
+        End Set
+    End Property
+
+    Public Property PivotTypeId() As Integer
+        Get
+            Return _PivotTypeId
+        End Get
+        Set(ByVal Value As Integer)
+            _PivotTypeId = Value
+        End Set
+    End Property
+
+    Public Property PivotType() As String
+        Get
+            Return _PivotType
+        End Get
+        Set(ByVal Value As String)
+            _PivotType = Value
+        End Set
+    End Property
+
+    Public Property FlushBoltsTopId() As Integer
+        Get
+            Return _FlushBoltsTopId
+        End Get
+        Set(ByVal Value As Integer)
+            _FlushBoltsTopId = Value
+        End Set
+    End Property
+
+    Public Property FlushBoltsTop() As String
+        Get
+            Return _FlushBoltsTop
+        End Get
+        Set(ByVal Value As String)
+            _FlushBoltsTop = Value
+        End Set
+    End Property
+
+    Public Property FlushBoltsBottomId() As Integer
+        Get
+            Return _FlushBoltsBottomId
+        End Get
+        Set(ByVal Value As Integer)
+            _FlushBoltsBottomId = Value
+        End Set
+    End Property
+
+    Public Property FlushBoltsBottom() As String
+        Get
+            Return _FlushBoltsBottom
+        End Get
+        Set(ByVal Value As String)
+            _FlushBoltsBottom = Value
+        End Set
+    End Property
+
+    Public Property LockOptionsId() As SharedEnums.LockOptions
+        Get
+            Return _LockOptionsId
+        End Get
+        Set(ByVal Value As SharedEnums.LockOptions)
+            _LockOptionsId = Value
+        End Set
+    End Property
+
+    Public Property LockOptions() As String
+        Get
+            Return _LockOptions
+        End Get
+        Set(ByVal Value As String)
+            _LockOptions = Value
+        End Set
+    End Property
+
+    Public Property BottomTrackTypeId() As Integer
+        Get
+            Return _BottomTrackTypeId
+        End Get
+        Set(ByVal Value As Integer)
+            _BottomTrackTypeId = Value
+        End Set
+    End Property
+
+    Public Property BottomTrackType() As String
+        Get
+            Return _BottomTrackType
+        End Get
+        Set(ByVal Value As String)
+            _BottomTrackType = Value
+        End Set
+    End Property
+
+    Public Property BladeLocks() As Integer
+        Get
+            Return _BladeLocks
+        End Get
+        Set(ByVal Value As Integer)
+            _BladeLocks = Value
+        End Set
+    End Property
+
+    Public Property CChannel() As Integer
+        Get
+            Return _CChannel
+        End Get
+        Set(ByVal Value As Integer)
+            _CChannel = Value
+        End Set
+    End Property
+
+    Public Property HChannel() As Integer
+        Get
+            Return _HChannel
+        End Get
+        Set(ByVal Value As Integer)
+            _HChannel = Value
+        End Set
+    End Property
+
+    Public Property LChannel() As Integer
+        Get
+            Return _LChannel
+        End Get
+        Set(ByVal Value As Integer)
+            _LChannel = Value
+        End Set
+    End Property
+
+    Public Property ZChannel() As Integer
+        Get
+            Return _ZChannel
+        End Get
+        Set(ByVal Value As Integer)
+            _ZChannel = Value
+        End Set
+    End Property
+
+    Public Property ColourId() As Integer
+        Get
+            Return _ColourId
+        End Get
+        Set(ByVal Value As Integer)
+            _ColourId = Value
+        End Set
+    End Property
+
+    Public Property Colour() As String
+        Get
+            Return _Colour
+        End Get
+        Set(ByVal Value As String)
+            _Colour = Value
+        End Set
+    End Property
+
+    Public Property CostPrice() As Decimal
+        Get
+            Return _CostPrice
+        End Get
+        Set(ByVal Value As Decimal)
+            _CostPrice = Value
+        End Set
+    End Property
+
+    Public Property CostPriceGST() As Decimal
+        Get
+            Return _CostPriceGST
+        End Get
+        Set(ByVal Value As Decimal)
+            _CostPriceGST = Value
+        End Set
+    End Property
+
+    Public Property ExtrasPrice() As Decimal
+        Get
+            Return _ExtrasPrice
+        End Get
+        Set(ByVal Value As Decimal)
+            _ExtrasPrice = Value
+        End Set
+    End Property
+
+    Public Property ExtrasPriceGST() As Decimal
+        Get
+            Return _ExtrasPriceGST
+        End Get
+        Set(ByVal Value As Decimal)
+            _ExtrasPriceGST = Value
+        End Set
+    End Property
+
+    Public Property SalePrice() As Decimal
+        Get
+            Return _SalePrice
+        End Get
+        Set(ByVal Value As Decimal)
+            _SalePrice = Value
+        End Set
+    End Property
+
+    Public Property SalePriceGST() As Decimal
+        Get
+            Return _SalePriceGST
+        End Get
+        Set(ByVal Value As Decimal)
+            _SalePriceGST = Value
+        End Set
+    End Property
+
+    Public Property Deleted() As Boolean
+        Get
+            Return _Deleted
+        End Get
+        Set(ByVal Value As Boolean)
+            _Deleted = Value
+        End Set
+    End Property
+
+    Public Property ShutterNo() As Integer
+        Get
+            Return _ShutterNo
+        End Get
+        Set(ByVal Value As Integer)
+            _ShutterNo = Value
+        End Set
+    End Property
+
+    Public Property SlideId() As Integer
+        Get
+            Return _SlideId
+        End Get
+        Set(ByVal Value As Integer)
+            _SlideId = Value
+        End Set
+    End Property
+
+    Public Property Slide() As String
+        Get
+            Return _Slide
+        End Get
+        Set(ByVal Value As String)
+            _Slide = Value
+        End Set
+    End Property
+
+    Public Property StackerLocationId() As Integer
+        Get
+            Return _StackerLocationId
+        End Get
+        Set(ByVal Value As Integer)
+            _StackerLocationId = Value
+        End Set
+    End Property
+
+    Public Property StackerLocation() As String
+        Get
+            Return _StackerLocation
+        End Get
+        Set(ByVal Value As String)
+            _StackerLocation = Value
+        End Set
+    End Property
+
+    Public Property OtherColourCode() As String
+        Get
+            Return _OtherColourCode
+        End Get
+        Set(ByVal Value As String)
+            _OtherColourCode = Value
+        End Set
+    End Property
+
+    Public Property OtherColour() As String
+        Get
+            Return _OtherColour
+        End Get
+        Set(ByVal Value As String)
+            _OtherColour = Value
+        End Set
+    End Property
+
+    Public Property FinishTypeId() As Integer
+        Get
+            Return _FinishTypeId
+        End Get
+        Set(ByVal Value As Integer)
+            _FinishTypeId = Value
+        End Set
+    End Property
+
+    Public Property FinishType() As String
+        Get
+            Return _FinishType
+        End Get
+        Set(ByVal Value As String)
+            _FinishType = Value
+        End Set
+    End Property
+
+    Public Property InsertTopId() As SharedEnums.InsertTypes
+        Get
+            Return _InsertTopId
+        End Get
+        Set(ByVal Value As SharedEnums.InsertTypes)
+            _InsertTopId = Value
+        End Set
+    End Property
+
+    Public Property InsertTop() As String
+        Get
+            Return _InsertTop
+        End Get
+        Set(ByVal Value As String)
+            _InsertTop = Value
+        End Set
+    End Property
+
+    Public Property InsertBottomId() As Integer
+        Get
+            Return _InsertBottomId
+        End Get
+        Set(ByVal Value As Integer)
+            _InsertBottomId = Value
+        End Set
+    End Property
+
+    Public Property InsertBottom() As String
+        Get
+            Return _InsertBottom
+        End Get
+        Set(ByVal Value As String)
+            _InsertBottom = Value
+        End Set
+    End Property
+
+    Public Property BladeOperationId() As Integer
+        Get
+            Return _BladeOperationId
+        End Get
+        Set(ByVal Value As Integer)
+            _BladeOperationId = Value
+        End Set
+    End Property
+
+    Public Property BladeOperation() As String
+        Get
+            Return _BladeOperation
+        End Get
+        Set(ByVal Value As String)
+            _BladeOperation = Value
+        End Set
+    End Property
+
+    Public Property OtherLocation() As String
+        Get
+            Return _OtherLocation
+        End Get
+        Set(ByVal Value As String)
+            _OtherLocation = Value
+        End Set
+    End Property
+
+    Public Property CurvedTrack() As Integer
+        Get
+            Return _CurvedTrack
+        End Get
+        Set(ByVal Value As Integer)
+            _CurvedTrack = Value
+        End Set
+    End Property
+
+    Public Property ExtraTrack() As Integer
+        Get
+            Return _ExtraTrack
+        End Get
+        Set(ByVal Value As Integer)
+            _ExtraTrack = Value
+        End Set
+    End Property
+
+    Public Property BladeOperationBottomId() As Integer
+        Get
+            Return _BladeOperationBottomId
+        End Get
+        Set(ByVal Value As Integer)
+            _BladeOperationBottomId = Value
+        End Set
+    End Property
+
+    Public Property BladeOperationBottom() As String
+        Get
+            Return _BladeOperationBottom
+        End Get
+        Set(ByVal Value As String)
+            _BladeOperationBottom = Value
+        End Set
+    End Property
+
+    Public Property FlyScreen() As Integer
+        Get
+            Return _FlyScreen
+        End Get
+        Set(ByVal Value As Integer)
+            _FlyScreen = Value
+        End Set
+    End Property
+
+    Public Property Standoff() As Integer
+        Get
+            Return _Standoff
+        End Get
+        Set(ByVal Value As Integer)
+            _Standoff = Value
+        End Set
+    End Property
+
+    Public Property Winder() As Integer
+        Get
+            Return _Winder
+        End Get
+        Set(ByVal Value As Integer)
+            _Winder = Value
+        End Set
+    End Property
+
+    Public Property ControllerSideID() As Integer
+        Get
+            Return _ControllerSideID
+        End Get
+        Set(ByVal Value As Integer)
+            _ControllerSideID = Value
+        End Set
+    End Property
+
+    Public Property ControllerSide() As String
+        Get
+            Return _ControllerSide
+        End Get
+        Set(ByVal Value As String)
+            _ControllerSide = Value
+        End Set
+    End Property
+
+    Public Property HighsetAllowance() As Integer
+        Get
+            Return _HighsetAllowance
+        End Get
+        Set(ByVal Value As Integer)
+            _HighsetAllowance = Value
+        End Set
+    End Property
+
+    Public Property ExtrasCostPrice() As Decimal
+        Get
+            Return _ExtrasCostPrice
+        End Get
+        Set(ByVal Value As Decimal)
+            _ExtrasCostPrice = Value
+        End Set
+    End Property
+
+    Public Property ExtrasCostPriceGST() As Decimal
+        Get
+            Return _ExtrasCostPriceGST
+        End Get
+        Set(ByVal Value As Decimal)
+            _ExtrasCostPriceGST = Value
+        End Set
+    End Property
+
+    Public Property Track() As Integer
+        Get
+            Return _Track
+        End Get
+        Set(ByVal value As Integer)
+            _Track = value
+        End Set
+    End Property
+
+    Public Property Layout() As String
+        Get
+            Return _Layout
+        End Get
+        Set(ByVal value As String)
+            _Layout = value
+        End Set
+    End Property
+
+    Public Property RemakeTypeID() As Integer
+        Get
+            Return _RemakeTypeID
+        End Get
+        Set(ByVal value As Integer)
+            _RemakeTypeID = value
+        End Set
+    End Property
+
+    'Added by Michael Behar 20/06/2017
+    Public Property SpecialRequirements() As String
+        Get
+            Return _SpecialRequirements
+        End Get
+        Set(ByVal value As String)
+            _SpecialRequirements = value
+        End Set
+    End Property
+
+    'Added by Michael Behar 22/06/2017
+    Public Property TopTrack() As String
+        Get
+            Return _TopTrack
+        End Get
+        Set(ByVal value As String)
+            _TopTrack = value
+        End Set
+    End Property
+
+    'Added by Michael Behar 22/06/2017
+    Public Property TopTrackID() As Integer
+        Get
+            Return _TopTrackID
+        End Get
+        Set(ByVal value As Integer)
+            _TopTrackID = value
+        End Set
+    End Property
+
+    'Added by Michael Behar 22/06/2017
+    Public Property FixedPanelChannel() As String
+        Get
+            Return _FixedPanelChannel
+        End Get
+        Set(ByVal value As String)
+            _FixedPanelChannel = value
+        End Set
+    End Property
+
+    'Added by Michael Behar 22/06/2017
+    Public Property FixedPanelChannelID() As Integer
+        Get
+            Return _FixedPanelChannelID
+        End Get
+        Set(ByVal value As Integer)
+            _FixedPanelChannelID = value
+        End Set
+    End Property
+
+    'Added by Michael Behar 23/06/2017
+    Public Property OpenVertical() As Integer
+        Get
+            Return _OpenVertical
+        End Get
+        Set(ByVal Value As Integer)
+            _OpenVertical = Value
+        End Set
+    End Property
+
+    Public Property LChannelString() As String
+        Get
+            Return _LChannelString
+        End Get
+        Set(ByVal value As String)
+            _LChannelString = value
+        End Set
+    End Property
+
+    Public Property ZChannelString() As String
+        Get
+            Return _ZChannelString
+        End Get
+        Set(ByVal value As String)
+            _ZChannelString = value
+        End Set
+    End Property
+
+    Public Property WinderString() As String
+        Get
+            Return _WinderString
+        End Get
+        Set(ByVal value As String)
+            _WinderString = value
+        End Set
+    End Property
+
+    'Added by Michael Behar 25/10/2017
+    Public Property Accepted() As Integer
+        Get
+            Return _Accepted
+        End Get
+        Set(ByVal Value As Integer)
+            _Accepted = Value
+        End Set
+    End Property
+
+    'Added by Michael Behar 07/03/2017
+    Public Property AcceptedBy() As Integer
+        Get
+            Return _AcceptedBy
+        End Get
+        Set(ByVal Value As Integer)
+            _AcceptedBy = Value
+        End Set
+    End Property
+
+    'Added by Michael Behar 07/03/2017
+    Public Property AcceptedTime() As DateTime
+        Get
+            Return _AcceptedTime
+        End Get
+        Set(ByVal Value As DateTime)
+            _AcceptedTime = Value
+        End Set
+    End Property
+
+    Public Property LouvrePriceID As Integer
+        Get
+            Return _LouvrePriceID
+        End Get
+        Set(value As Integer)
+            _LouvrePriceID = value
+        End Set
+    End Property
+
+    Public Function Clone() As Object Implements ICloneable.Clone
+
+        Return MyBase.MemberwiseClone
+
+    End Function
+
+    Sub New()
+
+        LouvreDetailID = Constants.DEFAULT_INTEGER_VALUE
+        TempGUID = String.Empty
+        OriginalLVDetailID = Constants.DEFAULT_INTEGER_VALUE
+        ProductionScheduleID = Constants.DEFAULT_INTEGER_VALUE
+        ShutterID = Constants.DEFAULT_INTEGER_VALUE
+        LocationID = Constants.DEFAULT_INTEGER_VALUE
+        Location = String.Empty
+        Width = 0
+        Height = 0
+        MakeOrOpenSizesId = Constants.DEFAULT_INTEGER_VALUE
+        MakeOrOpenSizes = String.Empty
+        ProductId = Constants.DEFAULT_INTEGER_VALUE
+        Product = String.Empty
+        ShutterTypeId = Constants.DEFAULT_INTEGER_VALUE
+        ShutterType = String.Empty
+        BiFoldHingedDoorInOutId = Constants.DEFAULT_INTEGER_VALUE
+        BiFoldHingedDoorInOut = String.Empty
+        NoOfPanels = 0
+        NoOfOpenings = 0
+        BladeSizeId = Constants.DEFAULT_INTEGER_VALUE
+        BladeSize = String.Empty
+        EndCapColourId = Constants.DEFAULT_INTEGER_VALUE
+        EndCapColour = String.Empty
+        BladeClipColourId = Constants.DEFAULT_INTEGER_VALUE
+        BladeClipColour = String.Empty
+        PileColourId = Constants.DEFAULT_INTEGER_VALUE
+        PileColour = String.Empty
+        MidRailHeight = Constants.DEFAULT_INTEGER_VALUE
+        PivotTypeId = Constants.DEFAULT_INTEGER_VALUE
+        PivotType = String.Empty
+        FlushBoltsTopId = Constants.DEFAULT_INTEGER_VALUE
+        FlushBoltsTop = String.Empty
+        FlushBoltsBottomId = Constants.DEFAULT_INTEGER_VALUE
+        FlushBoltsBottom = String.Empty
+        LockOptionsId = Constants.DEFAULT_INTEGER_VALUE
+        LockOptions = String.Empty
+        BottomTrackTypeId = Constants.DEFAULT_INTEGER_VALUE
+        BottomTrackType = String.Empty
+        BladeLocks = Constants.DEFAULT_INTEGER_VALUE
+        CChannel = Constants.DEFAULT_INTEGER_VALUE
+        HChannel = Constants.DEFAULT_INTEGER_VALUE
+        LChannel = Constants.DEFAULT_INTEGER_VALUE
+        ZChannel = Constants.DEFAULT_INTEGER_VALUE
+        ColourId = Constants.DEFAULT_INTEGER_VALUE
+        Colour = String.Empty
+        CostPrice = 0
+        CostPriceGST = 0
+        ExtrasPrice = 0
+        ExtrasPriceGST = 0
+        SalePrice = 0
+        SalePriceGST = 0
+        Deleted = Constants.DEFAULT_BOOLEAN_VALUE
+        ShutterNo = Constants.DEFAULT_INTEGER_VALUE
+        SlideId = Constants.DEFAULT_INTEGER_VALUE
+        Slide = String.Empty
+        StackerLocationId = Constants.DEFAULT_INTEGER_VALUE
+        StackerLocation = String.Empty
+        OtherColourCode = String.Empty
+        OtherColour = String.Empty
+        FinishTypeId = Constants.DEFAULT_INTEGER_VALUE
+        FinishType = String.Empty
+        InsertTopId = Constants.DEFAULT_INTEGER_VALUE
+        InsertTop = String.Empty
+        InsertBottomId = Constants.DEFAULT_INTEGER_VALUE
+        InsertBottom = String.Empty
+        BladeOperationId = Constants.DEFAULT_INTEGER_VALUE
+        BladeOperation = String.Empty
+        OtherLocation = String.Empty
+        CurvedTrack = Constants.DEFAULT_INTEGER_VALUE
+        ExtraTrack = Constants.DEFAULT_INTEGER_VALUE
+        BladeOperationBottomId = Constants.DEFAULT_INTEGER_VALUE
+        BladeOperationBottom = String.Empty
+        FlyScreen = Constants.DEFAULT_INTEGER_VALUE
+        Standoff = Constants.DEFAULT_INTEGER_VALUE
+        Winder = Constants.DEFAULT_INTEGER_VALUE
+        ControllerSideID = Constants.DEFAULT_INTEGER_VALUE
+        ControllerSide = String.Empty
+        HighsetAllowance = Constants.DEFAULT_INTEGER_VALUE
+        ExtrasCostPrice = 0
+        ExtrasCostPriceGST = 0
+        Track = Constants.DEFAULT_INTEGER_VALUE
+        Layout = String.Empty
+        RemakeTypeID = Constants.DEFAULT_INTEGER_VALUE
+
+        'Added by Michael Behar 20/06/2017
+        SpecialRequirements = String.Empty
+
+        'Added by Michael Behar 22/06/2017
+        TopTrack = String.Empty
+        TopTrackID = Constants.DEFAULT_INTEGER_VALUE
+        FixedPanelChannel = String.Empty
+        FixedPanelChannelID = Constants.DEFAULT_INTEGER_VALUE
+
+        'Added by Michael Behar 23/06/2017
+        OpenVertical = Constants.DEFAULT_INTEGER_VALUE
+
+        LChannelString = String.Empty
+        ZChannelString = String.Empty
+        WinderString = String.Empty
+
+        'Added by Michael Behar 25/10/2017
+        Accepted = Constants.DEFAULT_INTEGER_VALUE
+        AcceptedBy = Constants.DEFAULT_INTEGER_VALUE
+        AcceptedTime = Constants.DEFAULT_DATE_VALUE
+
+        LouvrePriceID = 0
+
+    End Sub
+
+    Public Overrides Function ToString() As String
+
+        Return "[LouvreDetails]" & Environment.NewLine &
+            "LouvreDetailID " & _LouvreDetailID & Environment.NewLine &
+            "TempGUID " & _TempGUID & Environment.NewLine &
+            "OriginalLVDetailID " & _OriginalLVDetailID & Environment.NewLine &
+            "ProductionScheduleID " & _ProductionScheduleID & Environment.NewLine &
+            "ShutterID " & _ShutterID & Environment.NewLine &
+            "LocationID " & _LocationID & Environment.NewLine &
+            "Location " & _Location & Environment.NewLine &
+            "Width " & _Width & Environment.NewLine &
+            "Height " & _Height & Environment.NewLine &
+            "MakeOrOpenSizesId " & _MakeOrOpenSizesId & Environment.NewLine &
+            "MakeOrOpenSizes " & _MakeOrOpenSizes & Environment.NewLine &
+            "ProductId " & _ProductId & Environment.NewLine &
+            "Product " & _Product & Environment.NewLine &
+            "ShutterTypeId " & _ShutterTypeId & Environment.NewLine &
+            "ShutterType " & _ShutterType & Environment.NewLine &
+            "BiFoldHingedDoorInOutId " & _BiFoldHingedDoorInOutId & Environment.NewLine &
+            "BiFoldHingedDoorInOut " & _BiFoldHingedDoorInOut & Environment.NewLine &
+            "NoOfPanels " & _NoOfPanels & Environment.NewLine &
+            "NoOfOpenings " & _NoOfOpenings & Environment.NewLine &
+            "BladeSizeId " & _BladeSizeId & Environment.NewLine &
+            "BladeSize " & _BladeSize & Environment.NewLine &
+            "EndCapColourId " & _EndCapColourId & Environment.NewLine &
+            "EndCapColour " & _EndCapColour & Environment.NewLine &
+            "BladeClipColourId " & _BladeClipColourId & Environment.NewLine &
+            "BladeClipColour " & _BladeClipColour & Environment.NewLine &
+            "PileColourId " & _PileColourId & Environment.NewLine &
+            "PileColour " & _PileColour & Environment.NewLine &
+            "MidRailHeight " & _MidRailHeight & Environment.NewLine &
+            "PivotTypeId " & _PivotTypeId & Environment.NewLine &
+            "PivotType " & _PivotType & Environment.NewLine &
+            "FlushBoltsTopId " & _FlushBoltsTopId & Environment.NewLine &
+            "FlushBoltsTop " & _FlushBoltsTop & Environment.NewLine &
+            "FlushBoltsBottomId " & _FlushBoltsBottomId & Environment.NewLine &
+            "FlushBoltsBottom " & _FlushBoltsBottom & Environment.NewLine &
+            "LockOptionsId " & _LockOptionsId & Environment.NewLine &
+            "LockOptions " & _LockOptions & Environment.NewLine &
+            "BottomTrackTypeId " & _BottomTrackTypeId & Environment.NewLine &
+            "BottomTrackType " & _BottomTrackType & Environment.NewLine &
+            "BladeLocks " & _BladeLocks & Environment.NewLine &
+            "CChannel " & _CChannel & Environment.NewLine &
+            "HChannel " & _HChannel & Environment.NewLine &
+            "LChannel " & _LChannel & Environment.NewLine &
+            "ZChannel " & _ZChannel & Environment.NewLine &
+            "ColourId " & _ColourId & Environment.NewLine &
+            "Colour " & _Colour & Environment.NewLine &
+            "CostPrice " & _CostPrice & Environment.NewLine &
+            "CostPriceGST " & _CostPriceGST & Environment.NewLine &
+            "ExtrasPrice " & _ExtrasPrice & Environment.NewLine &
+            "ExtrasPriceGST " & _ExtrasPriceGST & Environment.NewLine &
+            "SalePrice " & _SalePrice & Environment.NewLine &
+            "SalePriceGST " & _SalePriceGST & Environment.NewLine &
+            "Deleted " & _Deleted & Environment.NewLine &
+            "ShutterNo " & _ShutterNo & Environment.NewLine &
+            "Slide " & _Slide & Environment.NewLine &
+            "StackerLocationId " & _StackerLocationId & Environment.NewLine &
+            "StackerLocation " & _StackerLocation & Environment.NewLine &
+            "OtherColourCode " & _OtherColourCode & Environment.NewLine &
+            "OtherColour " & _OtherColour & Environment.NewLine &
+            "FinishTypeId " & _FinishTypeId & Environment.NewLine &
+            "FinishType " & _FinishType & Environment.NewLine &
+            "InsertTopId " & _InsertTopId & Environment.NewLine &
+            "InsertTop " & _InsertTop & Environment.NewLine &
+            "InsertBottomId " & _InsertBottomId & Environment.NewLine &
+            "InsertBottom " & _InsertBottom & Environment.NewLine &
+            "BladeOperationId " & _BladeOperationId & Environment.NewLine &
+            "BladeOperation " & _BladeOperation & Environment.NewLine &
+            "OtherLocation " & _OtherLocation & Environment.NewLine &
+            "CurvedTrack " & _CurvedTrack & Environment.NewLine &
+            "ExtraTrack " & _ExtraTrack & Environment.NewLine &
+            "BladeOperationBottomId " & _BladeOperationBottomId & Environment.NewLine &
+            "BladeOperationBottom " & _BladeOperationBottom & Environment.NewLine &
+            "FlyScreen " & _FlyScreen & Environment.NewLine &
+            "Standoff " & _Standoff & Environment.NewLine &
+            "Winder " & _Winder & Environment.NewLine &
+            "ControllerSideID " & _ControllerSideID & Environment.NewLine &
+            "ControllerSide " & _ControllerSide & Environment.NewLine &
+            "HighsetAllowance " & _HighsetAllowance & Environment.NewLine &
+            "ExtrasCostPrice " & _ExtrasCostPrice & Environment.NewLine &
+            "ExtrasCostPriceGST " & _ExtrasCostPriceGST & Environment.NewLine &
+            "Track " & _Track & Environment.NewLine &
+            "Layout " & _Layout & Environment.NewLine &
+            "RemakeTypeID " & _RemakeTypeID & Environment.NewLine &
+            "SpecialRequirements " & _SpecialRequirements & Environment.NewLine &
+            "TopTrack " & _TopTrack & Environment.NewLine &
+            "TopTrackID " & _TopTrackID & Environment.NewLine &
+            "FixedPanelChannel " & _FixedPanelChannel & Environment.NewLine &
+            "FixedPanelChannelID " & _FixedPanelChannelID & Environment.NewLine &
+            "OpenVertical  " & _OpenVertical & Environment.NewLine &
+            "LChannelString " & _LChannelString & Environment.NewLine &
+            "ZChannelString " & _ZChannelString & Environment.NewLine &
+            "WinderString " & _WinderString & Environment.NewLine &
+            "Accepted " & _Accepted & Environment.NewLine &
+            "AcceptedBy  " & _AcceptedBy & Environment.NewLine &
+            "AcceptedTime  " & _AcceptedTime & Environment.NewLine
+
+    End Function
+
+    Public Overloads Function Equals(ByVal obj As Object) As Boolean
+        If obj.ToString.Equals(Me.ToString) Then
+            Return True
+        Else : Return False
+        End If
+    End Function
+
+End Class

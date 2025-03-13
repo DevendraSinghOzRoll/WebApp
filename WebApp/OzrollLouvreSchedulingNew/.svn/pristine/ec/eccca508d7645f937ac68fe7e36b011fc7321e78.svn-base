@@ -1,0 +1,93 @@
+﻿Imports Microsoft.VisualBasic
+Public Class UpLoadFiles
+    Implements ICloneable
+
+    Private _ID As Integer
+    Private _ReferenceID As Integer
+    Private _ReferenceType As Integer
+    Private _FileName As String
+    Private _UpLoadBy As Integer
+    Private _deleted As Integer
+    Private _DelBy As String
+    Private _DelDate As DateTime
+    Property ID() As Integer
+        Get
+            Return _ID
+        End Get
+        Set(ByVal value As Integer)
+            _ID = value
+        End Set
+    End Property
+    Property ReferenceID() As Integer
+        Get
+            Return _ReferenceID
+        End Get
+        Set(ByVal value As Integer)
+            _ReferenceID = value
+        End Set
+    End Property
+    Property ReferenceType() As Integer
+        Get
+            Return _ReferenceType
+        End Get
+        Set(ByVal value As Integer)
+            _ReferenceType = value
+        End Set
+    End Property
+    Property FileName() As String
+        Get
+            Return _FileName
+        End Get
+        Set(ByVal value As String)
+            _FileName = value
+        End Set
+    End Property
+    Property UpLoadBy() As Integer
+        Get
+            Return _UpLoadBy
+        End Get
+        Set(ByVal value As Integer)
+            _UpLoadBy = value
+        End Set
+    End Property
+    Property Deleted() As Integer
+        Get
+            Return _deleted
+        End Get
+        Set(ByVal value As Integer)
+            _deleted = value
+        End Set
+    End Property
+    Property DelBy() As Integer
+        Get
+            Return _DelBy
+        End Get
+        Set(ByVal value As Integer)
+            _DelBy = value
+        End Set
+    End Property
+    Property DelDate() As DateTime
+        Get
+            Return _DelDate
+        End Get
+        Set(ByVal value As DateTime)
+            _DelDate = value
+        End Set
+    End Property
+    Public Sub New()
+        _ID = Constants.DEFAULT_INTEGER_VALUE
+        _ReferenceID = Constants.DEFAULT_INTEGER_VALUE
+        _ReferenceType = Constants.DEFAULT_INTEGER_VALUE
+        _FileName = String.Empty
+        _UpLoadBy = Constants.DEFAULT_INTEGER_VALUE
+        _deleted = Constants.DEFAULT_INTEGER_VALUE
+        _DelBy = String.Empty
+        _DelDate = Constants.DEFAULT_DATE_VALUE
+    End Sub
+
+    Public Function Clone() As Object Implements System.ICloneable.Clone
+
+        Return MyBase.MemberwiseClone
+
+    End Function
+End Class

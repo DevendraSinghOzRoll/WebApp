@@ -1,0 +1,86 @@
+﻿Imports Microsoft.VisualBasic
+
+Public Class Note
+    Implements ICloneable
+
+    Private _ID As Integer
+    Private _CustomerID As Integer
+    Private _NoteText As String
+    Private _CreationDateTime As Date
+    Private _UserID As Integer
+
+    Public Property ID() As Integer
+        Get
+            Return _ID
+        End Get
+        Set(ByVal value As Integer)
+            _ID = value
+        End Set
+    End Property
+
+    Public Property CustomerID() As Integer
+        Get
+            Return _CustomerID
+        End Get
+        Set(ByVal value As Integer)
+            _CustomerID = value
+        End Set
+    End Property
+
+    Public Property NoteText() As String
+        Get
+            Return _NoteText
+        End Get
+        Set(ByVal value As String)
+            _NoteText = value
+        End Set
+    End Property
+
+    Public Property CreationDateTime() As Date
+        Get
+            Return _CreationDateTime
+        End Get
+        Set(ByVal value As Date)
+            _CreationDateTime = value
+        End Set
+    End Property
+
+    Public Property UserID() As Integer
+        Get
+            Return _UserID
+        End Get
+        Set(ByVal value As Integer)
+            _UserID = value
+        End Set
+    End Property
+
+    Sub New()
+        _ID = Constants.DEFAULT_INTEGER_VALUE
+        _CustomerID = Constants.DEFAULT_INTEGER_VALUE
+        _NoteText = String.Empty
+        _CreationDateTime = Constants.DEFAULT_DATE_VALUE
+        _UserID = Constants.DEFAULT_INTEGER_VALUE
+    End Sub
+
+    Sub New(
+            intID As Integer,
+            intCustomerID As Integer,
+            strNoteText As String,
+            dteCreationDateTime As Date,
+            intUserID As Integer
+        )
+
+        _ID = intID
+        _CustomerID = intCustomerID
+        _NoteText = strNoteText
+        _CreationDateTime = dteCreationDateTime
+        _UserID = intUserID
+    End Sub
+
+    Public Function Clone() As Object Implements System.ICloneable.Clone
+
+        Return MyBase.MemberwiseClone
+
+    End Function
+
+End Class

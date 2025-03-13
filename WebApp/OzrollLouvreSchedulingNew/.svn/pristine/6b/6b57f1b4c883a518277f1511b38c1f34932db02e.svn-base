@@ -1,0 +1,427 @@
+﻿Imports Microsoft.VisualBasic
+Imports System.Data.SqlClient
+
+Public Class AddressDAO
+
+    ''' <summary>
+    ''' Gets the address for the given ID from the tblAdresses database table.
+    ''' </summary>
+    ''' <param name="intID">The ID of the address record to get.</param>
+    ''' <returns>A <see cref="DataTable"/> representing the database table.</returns>
+    Function getAddressRecordByID(ByVal intID As Integer) As DataTable
+
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getAddressByID"
+            cmd.CommandType = CommandType.StoredProcedure
+            SqlCommandBuilder.DeriveParameters(cmd)
+            cmd.Parameters("@ID").Value = intID
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Close()
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+
+        Return dt
+
+    End Function
+
+    ''' <summary>
+    ''' Gets the addresses for the given customer ID from the tblAdresses database table.
+    ''' </summary>
+    ''' <param name="intCustomerID">The customer ID of the address records to get.</param>
+    ''' <returns>A <see cref="DataTable"/> representing the database table.</returns>
+    Function getAddressesByCustomerID(ByVal intCustomerID As Integer) As DataTable
+
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getAddressesByCustomerID"
+            cmd.CommandType = CommandType.StoredProcedure
+            SqlCommandBuilder.DeriveParameters(cmd)
+            cmd.Parameters("@CustomerID").Value = intCustomerID
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Close()
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+
+        Return dt
+
+    End Function
+
+    ''' <summary>
+    ''' Gets the addresses for the given customer ID and type from the tblAdresses database table.
+    ''' </summary>
+    ''' <param name="intCustomerID">The customer ID of the address records to get.</param>
+    ''' <param name="intType">The type of the address records to get.</param>
+    ''' <returns>A <see cref="DataTable"/> representing the database table.</returns>
+    Function getAddressRecordsByCustomerIDAndAddressType(ByVal intCustomerID As Integer, ByVal intType As Integer) As DataTable
+
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getAddressesByCustomerIDAndAddressType"
+            cmd.CommandType = CommandType.StoredProcedure
+            SqlCommandBuilder.DeriveParameters(cmd)
+            cmd.Parameters("@CustomerID").Value = intCustomerID
+            cmd.Parameters("@AddressType").Value = intType
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Close()
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+
+        Return dt
+
+    End Function
+
+    Public Function getAddressesByCustomerIDAndAddressType(ByVal intCustomerID As Integer, ByVal intType As Integer) As List(Of Address)
+        Dim cAddress As Address
+        Dim lAddresses As New List(Of Address)
+
+        Dim dtAddresses As DataTable = getAddressRecordsByCustomerIDAndAddressType(intCustomerID, intType)
+
+        For Each r As DataRow In dtAddresses.Rows
+            cAddress = convertAddressRecordToObject(r)
+            lAddresses.Add(cAddress)
+        Next
+
+        Return lAddresses
+    End Function
+
+    Private Function convertAddressRecordToObject(cAddressRow As DataRow) As Address
+        Dim cAddress As New Address
+
+        With cAddress
+
+            .ID = cAddressRow("ID")
+
+            If Not IsDBNull(cAddressRow("State")) Then
+                .State = cAddressRow("State")
+            End If
+
+            If Not IsDBNull(cAddressRow("Street")) Then
+                .Street = cAddressRow("Street")
+            End If
+
+            If Not IsDBNull(cAddressRow("Suburb")) Then
+                .Suburb = cAddressRow("Suburb")
+            End If
+
+            If Not IsDBNull(cAddressRow("Postcode")) Then
+                .Postcode = cAddressRow("Postcode")
+            End If
+
+            If Not IsDBNull(cAddressRow("IsPrimary")) Then
+                .IsPrimary = cAddressRow("IsPrimary")
+            End If
+
+            If Not IsDBNull(cAddressRow("Discontinued")) Then
+                .Discontinued = cAddressRow("Discontinued")
+            End If
+
+            If Not IsDBNull(cAddressRow("DeliveryCode")) Then
+                .DeliveryCode = cAddressRow("DeliveryCode")
+            End If
+
+            If Not IsDBNull(cAddressRow("CustomerID")) Then
+                .CustomerID = cAddressRow("CustomerID")
+            End If
+
+        End With
+
+        Return cAddress
+    End Function
+
+    Public Function getAddressByID(intID As Integer) As Address
+        Dim cAddress As New Address
+        Dim dtAddress As DataTable = getAddressRecordByID(intID)
+
+        For Each r As DataRow In dtAddress.Rows
+            cAddress = convertAddressRecordToObject(r)
+        Next
+
+        Return cAddress
+    End Function
+
+    ''' <summary>
+    ''' Adds a new address record to the tblAddresses database table.
+    ''' </summary>
+    ''' <param name="aAddress">The <see cref="Address"/> object to add to the database.</param>
+    ''' <param name="cnn">The <see cref="SqlConnection"/> object.</param>
+    ''' <param name="trans">The <see cref="SqlTransaction"/> object.</param>
+    ''' <returns>The ID of the new address record in the database.</returns>
+    Function addAddressRecord(aAddress As Address, Optional cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As Integer
+
+        Dim bolAddOK As Boolean = True
+        Dim intRecordID As Integer = 0
+        Dim cmd As New SqlCommand
+
+        If IsNothing(cnn) Then
+            bolAddOK = False
+            Dim dbConn As New DBConnection
+            cnn = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+            dbConn = Nothing
+        End If
+
+        Try
+            If bolAddOK = False Then
+                cnn.Open()
+            End If
+
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_addAddress"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            If bolAddOK = True Then
+                cmd.Transaction = trans
+            End If
+
+            setupCommandParameters(aAddress, cmd, True)
+
+            Dim ra As Integer = cmd.ExecuteNonQuery
+
+            If ra < 1 Then
+                EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - add record failed" & Environment.NewLine)
+                bolAddOK = False
+            Else
+                intRecordID = cmd.Parameters("@ID").Value.ToString()
+            End If
+
+            If bolAddOK = False Then
+                cnn.Close()
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+            bolAddOK = False
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+            If bolAddOK = False Then
+                cnn.Dispose()
+                cnn = Nothing
+            End If
+        End Try
+
+        Return intRecordID
+    End Function
+
+    ''' <summary>
+    ''' Updates the given <see cref="Address"/> record in the tblAddresses database table.
+    ''' </summary>
+    ''' <param name="aAddress">The <see cref="Address"/> to update in the database table.</param>
+    ''' <param name="cnn">The <see cref="SqlConnection"/> object.</param>
+    ''' <param name="trans">The <see cref="SqlTransaction"/> object.</param>
+    ''' <returns>True is the record was updated, otherwise false.</returns>
+    Function updateAddressRecord(ByVal aAddress As Address, Optional cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As Boolean
+
+        Dim bolAddOK As Boolean = True
+        Dim SaveRecord As Boolean = False
+        Dim cmd As New SqlCommand
+
+        If IsNothing(cnn) Then
+            Dim dbConn As New DBConnection
+
+            bolAddOK = False
+
+            cnn = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+            dbConn = Nothing
+        End If
+
+        Try
+            If bolAddOK = False Then
+                cnn.Open()
+            End If
+
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_updateAddress"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            If bolAddOK = True Then
+                cmd.Transaction = trans
+            End If
+
+            setupCommandParameters(aAddress, cmd, False)
+
+            Dim ra As Integer = cmd.ExecuteNonQuery
+
+            If ra < 1 Then
+                EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - add record failed" & Environment.NewLine)
+                bolAddOK = False
+            Else
+                SaveRecord = True
+            End If
+
+            If bolAddOK = False Then
+                cnn.Close()
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+            bolAddOK = False
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+            If bolAddOK = False Then
+                cnn.Dispose()
+                cnn = Nothing
+            End If
+        End Try
+
+        Return SaveRecord
+    End Function
+
+    ''' <summary>
+    ''' Setup the command parameters for the given address.
+    ''' </summary>
+    ''' <param name="aAddress">The <see cref="Address"/> to use to configure the command parameters.</param>
+    ''' <param name="cmd">The <see cref="SqlCommand"/> object to configure.</param>
+    Protected Sub setupCommandParameters(aAddress As Address, ByRef cmd As SqlCommand, bIsAdd As Boolean)
+
+        SqlCommandBuilder.DeriveParameters(cmd)
+
+        If aAddress.ID <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@ID").Value = aAddress.ID
+        Else
+            If bIsAdd Then
+                cmd.Parameters("@ID").Direction = ParameterDirection.Output
+            End If
+
+            cmd.Parameters("@ID").Value = DBNull.Value
+        End If
+
+        If aAddress.CustomerID <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@CustomerID").Value = aAddress.CustomerID
+        Else
+            cmd.Parameters("@CustomerID").Value = DBNull.Value
+        End If
+
+        If aAddress.Street <> String.Empty Then
+            cmd.Parameters("@Street").Value = aAddress.Street
+        Else
+            cmd.Parameters("@Street").Value = DBNull.Value
+        End If
+
+        If aAddress.Suburb <> String.Empty Then
+            cmd.Parameters("@Suburb").Value = aAddress.Suburb
+        Else
+            cmd.Parameters("@Suburb").Value = DBNull.Value
+        End If
+
+        If aAddress.State <> String.Empty Then
+            cmd.Parameters("@State").Value = aAddress.State
+        Else
+            cmd.Parameters("@State").Value = DBNull.Value
+        End If
+
+        If aAddress.Postcode <> String.Empty Then
+            cmd.Parameters("@PostCode").Value = aAddress.Postcode
+        Else
+            cmd.Parameters("@PostCode").Value = DBNull.Value
+        End If
+
+        If aAddress.DeliveryCode <> String.Empty Then
+            cmd.Parameters("@DeliveryCode").Value = aAddress.DeliveryCode
+        Else
+            cmd.Parameters("@DeliveryCode").Value = DBNull.Value
+        End If
+
+        If aAddress.AddressType <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@AddressType").Value = aAddress.AddressType
+        Else
+            cmd.Parameters("@AddressType").Value = DBNull.Value
+        End If
+
+        If aAddress.IsPrimary <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@IsPrimary").Value = aAddress.IsPrimary
+        Else
+            cmd.Parameters("@IsPrimary").Value = DBNull.Value
+        End If
+
+        If aAddress.Discontinued <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@Discontinued").Value = aAddress.Discontinued
+        Else
+            cmd.Parameters("@Discontinued").Value = DBNull.Value
+        End If
+
+    End Sub
+
+    ''' <summary>
+    ''' Converts the given address row into a single address string.
+    ''' </summary>
+    ''' <param name="drAddressRow">The <see cref="Datarow"/> of the address to convert.</param>
+    ''' <param name="strFieldSeparator">The string to place in between address fields.</param>
+    ''' <returns>A formatted address string.> </returns>
+    Public Function convertAddressDataRowToString(drAddressRow As DataRow, strFieldSeparator As String) As String
+        Dim strAddress As String = String.Empty
+
+        If Not IsDBNull(drAddressRow("Street")) Then
+            strAddress &= drAddressRow("Street").ToString() & strFieldSeparator
+        End If
+
+        If Not IsDBNull(drAddressRow("Suburb")) Then
+            strAddress &= drAddressRow("Suburb").ToString() & strFieldSeparator
+        End If
+
+        If Not IsDBNull(drAddressRow("State")) Then
+            strAddress &= drAddressRow("State").ToString() & " "
+        End If
+
+        If Not IsDBNull(drAddressRow("Postcode")) Then
+            strAddress &= drAddressRow("Postcode").ToString()
+        End If
+
+        Return strAddress
+    End Function
+End Class

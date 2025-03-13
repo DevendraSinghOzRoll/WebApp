@@ -1,0 +1,267 @@
+﻿Imports Microsoft.VisualBasic
+Imports System.Data.SqlClient
+
+Public Class LouvreExtraProductDAO
+
+    ''' <summary>
+    ''' Add a LouvreExtraProduct record to the tblLouvreExtraProduct database table.
+    ''' </summary>
+    ''' <param name="cLouvreExtraProduct">The <see cref="LouvreExtraProduct"/> object to add to the database.</param>
+    ''' <param name="cnn">The <see cref="SqlConnection"/> object.</param>
+    ''' <param name="trans">The <see cref="SqlTransaction"/> object.</param>
+    ''' <returns>The ID of the new LouvreExtraProduct record in the database.</returns>
+    Public Function AddLouvreExtraProduct(cLouvreExtraProduct As LouvreExtraProduct, Optional cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As Integer
+        Dim bolAddOK As Boolean = True
+        Dim intRecordID As Integer = 0
+        Dim cmd As New SqlCommand
+
+        If IsNothing(cnn) Then
+            bolAddOK = False
+            Dim dbConn As New DBConnection
+            cnn = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+            dbConn = Nothing
+        End If
+
+        Try
+            If cnn.State = ConnectionState.Closed Then
+                cnn.Open()
+            End If
+
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_addLouvreExtraProduct"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            If bolAddOK = True Then
+                cmd.Transaction = trans
+            End If
+
+            setupCommandParameters(cLouvreExtraProduct, cmd, True)
+
+            Dim ra As Integer = cmd.ExecuteNonQuery
+
+            If ra < 1 Then
+                EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - add record failed" & Environment.NewLine)
+                bolAddOK = False
+            Else
+                intRecordID = cmd.Parameters("@ID").Value.ToString()
+            End If
+
+            If bolAddOK = False Then
+                cnn.Close()
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+            bolAddOK = False
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+            If bolAddOK = False Then
+                cnn.Dispose()
+                cnn = Nothing
+            End If
+        End Try
+
+        Return intRecordID
+    End Function
+
+    ''' <summary>
+    ''' Gets the louvre extra product from the database.
+    ''' </summary>
+    ''' <returns>A <see cref="DataTable"/>.</returns>
+    Public Function GetLouvreExtraProductsDataTableByLouvreDetailsID(intLouvreDetailsID As Integer) As DataTable
+
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getLouvreExtraProductsByLouvreDetailsID"
+            cmd.CommandType = CommandType.StoredProcedure
+            SqlCommandBuilder.DeriveParameters(cmd)
+
+            cmd.Parameters("@LouvreDetailsID").Value = intLouvreDetailsID
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Close()
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+
+        Return dt
+
+    End Function
+
+    ''' <summary>
+    ''' Gets the louvre extra product from the database.
+    ''' </summary>
+    ''' <returns>A <see cref="List(Of LouvreExtraProduct)"/>.</returns>
+    Public Function GetLouvreExtraProductsListByLouvreDetailsID(intLouvreDetailsID As Integer) As List(Of LouvreExtraProduct)
+        Dim dt As DataTable = GetLouvreExtraProductsDataTableByLouvreDetailsID(intLouvreDetailsID)
+        Dim extraProds As List(Of LouvreExtraProduct) = ConvertLouvreExtraProductDataTableToList(dt)
+
+        Return extraProds
+    End Function
+
+    Protected Sub setupCommandParameters(cLouvreExtraProduct As LouvreExtraProduct, ByRef cmd As SqlCommand, bIsAdd As Boolean)
+
+        SqlCommandBuilder.DeriveParameters(cmd)
+
+        cmd.Parameters("@ID").Direction = ParameterDirection.InputOutput
+
+        With cLouvreExtraProduct
+            cmd.Parameters("@ID").Value = .ID
+            cmd.Parameters("@CostPrice").Value = .CostPrice
+            cmd.Parameters("@CostPriceGST").Value = .CostPriceGST
+            cmd.Parameters("@CutLength").Value = .CutLength
+            cmd.Parameters("@ExtraProductID").Value = .ExtraProductID
+            cmd.Parameters("@LouvreDetailsID").Value = .LouvreDetailsID
+            cmd.Parameters("@Quantity").Value = .Quantity
+            cmd.Parameters("@SalePrice").Value = .SalePrice
+            cmd.Parameters("@SalePriceGST").Value = .SalePriceGST
+            cmd.Parameters("@PriceIsPercentage").Value = .PriceIsPercentage
+            cmd.Parameters("@LouvreExtraPriceID").Value = .LouvreExtraPriceID
+        End With
+    End Sub
+
+    Public Function ConvertLouvreExtraProductDataTableToList(dtLouvreExtraProducts As DataTable) As List(Of LouvreExtraProduct)
+        Dim lLouvreExtraProducts As List(Of LouvreExtraProduct) = New List(Of LouvreExtraProduct)
+
+        For Each r As DataRow In dtLouvreExtraProducts.Rows
+            Dim cLouvreExtraProduct As LouvreExtraProduct = ConvertLouvreExtraProductRecordToObject(r)
+
+            lLouvreExtraProducts.Add(cLouvreExtraProduct)
+        Next
+
+        Return lLouvreExtraProducts
+    End Function
+
+    ''' <summary>
+    ''' Deletes all LouvreExtraProduct records from the tblLouvreExtraProduct database table for the given LouvreDetailsID.
+    ''' </summary>
+    ''' <param name="cLouvreDetailsID">The LouvreDetailsID to remove all LouvreExtraProduct records from the database.</param>
+    ''' <param name="cnn">The <see cref="SqlConnection"/> object.</param>
+    ''' <param name="trans">The <see cref="SqlTransaction"/> object.</param>
+    ''' <returns>The number of removed records.</returns>
+    Public Function DeleteLouvreExtraProductsByLouvreDetailsID(cLouvreDetailsID As Integer, Optional cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As Integer
+        Dim bolAddOK As Boolean = True
+        Dim intNumRowsDeleted As Integer = 0
+        Dim cmd As New SqlCommand
+
+        If IsNothing(cnn) Then
+            bolAddOK = False
+            Dim dbConn As New DBConnection
+            cnn = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+            dbConn = Nothing
+        End If
+
+        Try
+            If cnn.State = ConnectionState.Closed Then
+                cnn.Open()
+            End If
+
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_deleteLouvreExtraProductsByLouvreDetailsID"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            If bolAddOK Then
+                cmd.Transaction = trans
+            End If
+
+            cmd.Parameters.Add("@LouvreDetailsID", SqlDbType.Int)
+            cmd.Parameters("@LouvreDetailsID").Value = cLouvreDetailsID
+
+            intNumRowsDeleted = cmd.ExecuteNonQuery
+
+            If bolAddOK = False Then
+                cnn.Close()
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+            bolAddOK = False
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+
+            If bolAddOK = False Then
+                cnn.Dispose()
+                cnn = Nothing
+            End If
+        End Try
+
+        Return intNumRowsDeleted
+    End Function
+
+    Private Function ConvertLouvreExtraProductRecordToObject(cLouvreExtraProduct As DataRow) As LouvreExtraProduct
+        Dim cExtra As New LouvreExtraProduct
+
+        If Not IsDBNull(cLouvreExtraProduct("Description")) Then
+            cExtra = New LouvreExtraProduct(cLouvreExtraProduct("Description"))
+        Else
+            cExtra = New LouvreExtraProduct
+        End If
+
+        With cExtra
+            If Not IsDBNull(cLouvreExtraProduct("CostPrice")) Then
+                .CostPrice = cLouvreExtraProduct("CostPrice")
+            End If
+
+            If Not IsDBNull(cLouvreExtraProduct("CostPriceGST")) Then
+                .CostPriceGST = cLouvreExtraProduct("CostPriceGST")
+            End If
+
+            If Not IsDBNull(cLouvreExtraProduct("CutLength")) Then
+                .CutLength = cLouvreExtraProduct("CutLength")
+            End If
+
+            If Not IsDBNull(cLouvreExtraProduct("ExtraProductID")) Then
+                .ExtraProductID = cLouvreExtraProduct("ExtraProductID")
+            End If
+
+            If Not IsDBNull(cLouvreExtraProduct("ID")) Then
+                .ID = cLouvreExtraProduct("ID")
+            End If
+
+            If Not IsDBNull(cLouvreExtraProduct("Quantity")) Then
+                .Quantity = cLouvreExtraProduct("Quantity")
+            End If
+
+            If Not IsDBNull(cLouvreExtraProduct("SalePrice")) Then
+                .SalePrice = cLouvreExtraProduct("SalePrice")
+            End If
+
+            If Not IsDBNull(cLouvreExtraProduct("SalePriceGST")) Then
+                .SalePriceGST = cLouvreExtraProduct("SalePriceGST")
+            End If
+
+            If Not IsDBNull(cLouvreExtraProduct("LouvreDetailsID")) Then
+                .LouvreDetailsID = cLouvreExtraProduct("LouvreDetailsID")
+            End If
+
+            If Not IsDBNull(cLouvreExtraProduct("PriceIsPercentage")) Then
+                .PriceIsPercentage = cLouvreExtraProduct("PriceIsPercentage")
+            End If
+
+            If Not IsDBNull(cLouvreExtraProduct("LouvreExtraPriceID")) Then
+                .LouvreExtraPriceID = cLouvreExtraProduct("LouvreExtraPriceID")
+            End If
+        End With
+
+        Return cExtra
+    End Function
+
+End Class

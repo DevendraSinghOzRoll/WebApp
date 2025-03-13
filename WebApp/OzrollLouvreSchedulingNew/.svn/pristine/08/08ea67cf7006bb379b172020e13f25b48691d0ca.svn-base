@@ -1,0 +1,1464 @@
+﻿Imports System.Data
+Imports System.IO
+Imports System.Configuration
+Imports System.Data.SqlClient
+Partial Class readExcel
+    Inherits System.Web.UI.Page
+
+    Dim dtLocation As New DataTable
+    Dim dtLouvColr As New DataTable
+    Dim dtCustomers As New DataTable
+
+    Dim arrShutterTypes() As String = {"", "BiFold", "Sliding", "Stacker", "Fixed", "Fixed Hinged"}
+    Dim arrEndCapColours() As String = {"", "Black", "White"}
+    Dim arrBladeClipColours() As String = {"", "Black", "White"}
+    Dim arrPileColours() As String = {"", "Black", "Grey"}
+    Dim arrFinishTypes() As String = {"", "Matt", "Satin", "Gloss", "Flat", "Other"}
+    Dim arrTracks() As String = {"", "1 Track", "2 Track", "3 Track"}
+    Dim arrBiFldHingedDrs() As String = {"", "In", "Out"}
+    Dim arrSlides() As String = {"", "Open", "Shut"}
+    Dim arrStackers() As String = {"", "Left", "Right"}
+    Dim arrInsertTops() As String = {"", "Horizontal Blade", "Vertical Blade", "Glass"}
+    Dim arrBladeOperations() As String = {"", "Standard", "Fixed 45 Degrees", "Fixed Closed"}
+    Dim arrBladeOpBtms() As String = {"", "Standard", "Fixed 45 Degrees", "Fixed Closed"}
+    Dim arrBladeLocks() As String = {"", "Yes", "No"}
+    Dim arrPivotTypes() As String = {"", "Standard", "Floating"}
+    Dim arrLockOptions() As String = {"", "Handle Lock", "Twin Flush Bolt Single", "Twin Flush Bolt Double", "Not Lockable"}
+    Dim srrBtmTrackTypes() As String = {"", "Standard 25mm", "Dli Low Profile"}
+    Dim arrFlyScreens() As String = {"", "Yes", "No"}
+    Dim arrChannels() As String = {"", "L Channel", "Z Channel", "Standard Frame", "C Channel"}
+    Dim arrStandOffs() As String = {"", "Yes", "No"}
+    Dim arrWinders() As String = {"", "Yes", "No"}
+    Dim arrControllerSides() As String = {"", "Left", "Right"}
+    Dim arrFixedBladeTypes() As String = {"", "Fixed Blade", "45 deg.", "Closed"}
+    Dim arrMakeOpenSizes() As String = {"", "Make Sizes", "Open Sizes"}
+    Dim arrBladeSizes() As String = {"", "90", "150"}
+    Dim arrFlushBoltsTps() As String = {"", "Std 235mm", "Long 430mm", "Ex Long 890mm", "Twin Flush Bolt"}
+    Dim arrFlushBoltsBtms() As String = {"", "Black", "Grey"}
+    Dim arrCChannels() As String = {"", "Yes", "No"}
+    Dim arrHChannels() As String = {"", "Yes", "No"}
+    Dim arrZChannels() As String = {"", "Yes", "No"}
+
+    Private Sub Page_Error(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.Error
+
+        Dim objErr1 As Exception = Server.GetLastError().GetBaseException()
+        Dim strErrorMessage As String = String.Empty
+
+        strErrorMessage &= "Error In: " & Request.Url.ToString() & Environment.NewLine & Environment.NewLine
+
+        strErrorMessage &= "Server.GetLastError().GetBaseException()" & Environment.NewLine & Environment.NewLine
+
+        strErrorMessage &= "Error Message: " & objErr1.Message & Environment.NewLine
+        strErrorMessage &= "Stack Trace:" & Environment.NewLine
+        strErrorMessage &= objErr1.StackTrace & Environment.NewLine & Environment.NewLine
+
+        Dim objErr2 As Exception = Server.GetLastError()
+
+        strErrorMessage &= "Server.GetLastError()" & Environment.NewLine & Environment.NewLine
+
+        strErrorMessage &= "Error Message: " & objErr2.Message & Environment.NewLine
+        strErrorMessage &= "Stack Trace:" & Environment.NewLine
+        strErrorMessage &= objErr2.StackTrace & Environment.NewLine
+
+        EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & strErrorMessage & " - " & getPageInfo())
+
+        Server.ClearError()
+        Response.Redirect("GenericErrorPage.aspx", False)
+
+    End Sub
+
+    Private Function getPageInfo() As String
+
+        Dim strPageInfo As String = String.Empty
+        Dim strName As String = String.Empty
+        If Session.Contents.Count > 0 Then
+            strPageInfo &= "Session Variables" & Environment.NewLine
+            For Each strName In Session.Contents
+                strPageInfo &= strName & ": " & CStr(Session.Contents(strName)) & Environment.NewLine
+            Next
+        Else
+            strPageInfo &= "No Session Variables" & Environment.NewLine
+        End If
+
+        strPageInfo &= Environment.NewLine
+
+        If Me.form1.HasControls Then
+            strPageInfo &= "Form Controls" & Environment.NewLine
+            getPageControls(Me.form1, strPageInfo)
+        Else
+            strPageInfo &= "No Form Controls" & Environment.NewLine
+        End If
+        Return strPageInfo
+
+    End Function
+
+    Private Sub getPageControls(ByVal ctrl As Control, ByRef strPageControls As String)
+
+        If ctrl.HasControls Then
+            For Each childCtrl As Control In ctrl.Controls
+                getPageControls(childCtrl, strPageControls)
+            Next
+        Else
+            Select Case ctrl.GetType.Name
+                Case "TextBox"
+                    Dim frmTxt As TextBox
+                    frmTxt = DirectCast(ctrl, TextBox)
+                    strPageControls &= frmTxt.ID & ": " & Left(frmTxt.Text, 100) & Environment.NewLine
+                Case "DropDownList"
+                    Dim frmCbo As DropDownList
+                    frmCbo = DirectCast(ctrl, DropDownList)
+                    If frmCbo.Items.Count > 0 Then
+                        strPageControls &= frmCbo.ID & ": " & frmCbo.SelectedItem.Text & " (" & frmCbo.SelectedValue & ")" & Environment.NewLine
+                    Else
+                        strPageControls &= frmCbo.ID & ": Not Populated" & Environment.NewLine
+                    End If
+                Case "CheckBox"
+                    Dim frmChk As CheckBox
+                    frmChk = DirectCast(ctrl, CheckBox)
+                    strPageControls &= frmChk.ID & ": " & frmChk.Checked & Environment.NewLine
+                Case "RadioButton"
+                    Dim frmRdo As RadioButton
+                    frmRdo = DirectCast(ctrl, RadioButton)
+                    strPageControls &= frmRdo.ID & ": " & frmRdo.Checked & Environment.NewLine
+            End Select
+        End If
+
+    End Sub
+
+    Private Sub Page_Load(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.Load
+
+        If Not IsPostBack Then
+
+            Me.txtProductTypeID.Text = Session("sessProductTypeID").ToString
+            lblChecklist.Text = String.Empty
+            lblChecklist.Text &= "<h2>File Loaded :</h2>"
+
+            Dim service As New AppService
+            If Me.txtProductTypeID.Text = "1" Then
+                dtCustomers = service.runSQLScheduling("Select CustomerID,CustomerName from tblCustomers where Plantations=1 Order By SortOrder")
+            Else
+                dtCustomers = service.runSQLScheduling("Select CustomerID,CustomerName from tblCustomers where WholesaleLouvres=1 Order By SortOrder")
+            End If
+            service = Nothing
+
+            Dim drow As DataRow = dtCustomers.NewRow
+            drow("CustomerID") = 0
+            drow("CustomerName") = ""
+            dtCustomers.Rows.InsertAt(drow, 0)
+            Me.cboCustomerName.DataSource = dtCustomers
+            Me.cboCustomerName.DataValueField = "CustomerID"
+            Me.cboCustomerName.DataTextField = "CustomerName"
+            Me.cboCustomerName.DataBind()
+            Me.cboCustomerName.SelectedIndex = -1
+
+        End If
+
+    End Sub
+
+    Private Sub btnHome_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles btnHome.Click
+
+        Response.Redirect("Home.aspx?", False)
+
+    End Sub
+
+    Private Sub btnLogout_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles btnLogout.Click
+
+        Response.Redirect("Logout.aspx", False)
+
+    End Sub
+
+    Private Sub btnUpload_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles btnUpload.Click
+
+        If FileUpload1.HasFile Then
+            Dim FileName As String = Path.GetFileName(FileUpload1.PostedFile.FileName)
+            Dim Extension As String = Path.GetExtension(FileUpload1.PostedFile.FileName)
+            Dim strPath As String = Server.MapPath("") & "\orderforms"
+            If Dir(strPath, vbDirectory) = "" Then
+                MkDir(strPath)
+            End If
+            Dim FilePath As String = strPath & "\" & FileName
+            FileUpload1.SaveAs(FilePath)
+            '
+            Dim dtLouvreDets As New DataTable
+            Dim arrLouvreDetCls As New List(Of LouvreDetails)
+            Dim strCompanyName, strLastName, strContractNo As String
+            Dim intNoOfPanels As Integer = 0
+            Dim dteReqDate As Date
+            arrLouvreDetCls = importLouvreOrderForm.readExcel(FilePath, strCompanyName, strLastName, strContractNo, dteReqDate, intNoOfPanels)
+            If arrLouvreDetCls.Count < 1 Then
+                Me.lblStatus.Text = "Total Rows read from Excel file : 0"
+            Else
+                Dim service As New AppService
+                dtLocation = service.getLouvreLocations
+                'dtLouvColr = service.getLouvreColours()
+                service = Nothing
+                '
+                Dim intCNT As Integer = 0
+                intCNT = 0
+                saveLouvreDetsToDB(intCNT, arrLouvreDetCls, strCompanyName, strLastName, strContractNo, dteReqDate, intNoOfPanels)
+                '
+                dtLouvreDets = createTMPLouvreDets()
+                intCNT = 0
+                covertClSsToTBL(intCNT, dtLouvreDets, arrLouvreDetCls)
+                '
+                dgvLouvreDet.DataSource = dtLouvreDets
+                dgvLouvreDet.DataBind()
+                Me.lblStatus.Text = "Total Rows read from Excel file : " & dtLouvreDets.Rows.Count
+            End If
+            '
+        End If
+
+    End Sub
+
+    Private Sub saveLouvreDetsToDB(ByRef intCNT As Integer, ByRef arrLouvreDetCls As List(Of LouvreDetails), ByVal strCompanyName As String, ByVal strLastName As String,
+                                                        ByVal strContractNo As String, ByVal dteReqDate As Date, ByRef intNoOfPanels As Integer)
+
+        Dim service As New AppService
+        Dim dtLouvreStyles As DataTable = service.runSQLScheduling("Select * From tblLouvreStyles")
+        Dim dtColours As DataTable = service.runSQLScheduling("Select * From tblColours Where ProductTypeID=" & Me.txtProductTypeID.Text & " Order By SortOrder ASC")
+        Dim dtStyles As DataTable = service.runSQLScheduling("Select * From tblLouvreStyles Where Discontinued=0 Order By SortOrder ASC")
+        Dim bolContinue As Boolean = True
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlClient.SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim trans As SqlClient.SqlTransaction = Nothing
+        Dim intProductScheduleID As Integer = Constants.DEFAULT_INTEGER_VALUE
+        Dim dwTMPs() As DataRow = Nothing
+        Try
+            '
+            cnn.Open()
+            trans = cnn.BeginTransaction
+
+            Dim clsProdSchedule As New ProductionSchedule
+            Dim clsLouvreSpecs As New LouvreSpecs
+            'Dim clsJobRegister As New OSCJobRegister
+            'clsJobRegister.DateRequired = dteReqDate
+            'clsJobRegister.Code = "LOUVRE"
+            '
+            clsProdSchedule.CustomerID = Me.cboCustomerName.SelectedValue
+            clsProdSchedule.CustomerName = Me.cboCustomerName.Items(Me.cboCustomerName.SelectedIndex).Text
+            clsProdSchedule.OrderReference = strContractNo
+            clsProdSchedule.ProductTypeID = 2
+            clsProdSchedule.OrderTypeID = 1
+            clsProdSchedule.OrderStatus = 1
+            clsProdSchedule.EnteredDatetime = Format(Now, "d/MMM/yyyy hh:mm:ss")
+            clsProdSchedule.OrderDate = CDate(Today)
+
+            Dim decShutterSqm As Decimal = 0
+            For i As Integer = 0 To arrLouvreDetCls.Count - 1
+                arrLouvreDetCls(i).ProductId = CInt(Me.txtProductTypeID.Text)
+                decShutterSqm += Decimal.Divide(CDec(arrLouvreDetCls(i).Width), 1000) * Decimal.Divide(CDec(arrLouvreDetCls(i).Height), 1000)
+            Next
+            clsProdSchedule.TotalSQM = decShutterSqm
+            clsProdSchedule.TotalPanels = intNoOfPanels
+            '
+            dwTMPs = dtLouvreStyles.Select("StyleName='" & arrLouvreDetCls(0).Product & "'")
+            If dwTMPs.Length > 0 Then
+                clsLouvreSpecs.StyleID = dwTMPs(0)("StyleID")
+            End If
+            dwTMPs = dtColours.Select("ColourName='" & arrLouvreDetCls(0).Colour & "'")
+            If dwTMPs.Length > 0 Then
+                clsLouvreSpecs.ColourID = dwTMPs(0)("ColourID")
+            End If
+            clsLouvreSpecs.LouvreJobTypeID = 3
+            '
+            intProductScheduleID = service.addProductionScheduleRecord(clsProdSchedule, cnn, trans)
+
+            If intProductScheduleID = Constants.DEFAULT_INTEGER_VALUE Then
+                bolContinue = False
+            End If
+
+            If bolContinue Then
+                '
+                clsLouvreSpecs.ProductScheduleID = intProductScheduleID
+                'bolContinue = service.AddLouvreSpecs(clsLouvreSpecs, cnn, trans)
+                Dim strSQL As String = "Insert Into tblLouvreSpecs (ProductScheduleID,LouvreJobTypeID,StyleID,ColourID) Values (" &
+                clsLouvreSpecs.ProductScheduleID & "," & clsLouvreSpecs.LouvreJobTypeID & "," & clsLouvreSpecs.StyleID & ","
+                If clsLouvreSpecs.ColourID <> Constants.DEFAULT_INTEGER_VALUE Then
+                    strSQL &= clsLouvreSpecs.ColourID
+                Else
+                    strSQL &= "NULL"
+                End If
+                strSQL &= ")"
+                bolContinue = service.executeSQLScheduling(strSQL, cnn, trans)
+            End If
+            '
+            If bolContinue Then
+                storeLouvreDetsToDBtbl(intCNT, intProductScheduleID, arrLouvreDetCls, bolContinue, dtColours, dtStyles, service, cnn, trans)
+            End If
+            '
+            If bolContinue Then
+                trans.Commit()
+            Else
+                EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - Store Louvre Details Failed - Transaction Rolled Back" & Environment.NewLine & getPageInfo())
+                trans.Rollback()
+            End If
+            '
+        Catch ex As Exception
+            If Not trans Is Nothing Then
+                trans.Rollback()
+            End If
+            If cnn.State = ConnectionState.Open Then
+                cnn.Close()
+            End If
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine & getPageInfo())
+            bolContinue = False
+        Finally
+            trans.Dispose()
+            trans = Nothing
+            If cnn.State = ConnectionState.Open Then
+                cnn.Close()
+            End If
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+        service = Nothing
+
+    End Sub
+
+    Private Sub storeLouvreDetsToDBtbl(ByRef intCNT As Integer, ByVal intProductScheduleID As Integer, ByRef arrLouvreDetCls As List(Of LouvreDetails),
+                                           ByRef bolContinue As Boolean, ByRef dtColours As DataTable, ByRef dtStyles As DataTable, ByRef service As AppService,
+                                           Optional ByVal cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing)
+
+        arrLouvreDetCls(intCNT).ProductionScheduleID = intProductScheduleID
+        '
+        If arrLouvreDetCls(intCNT).ShutterType <> String.Empty Then
+            Select Case arrLouvreDetCls(intCNT).ShutterType.ToLower
+                Case "bifold"
+                    arrLouvreDetCls(intCNT).ShutterTypeId = 1
+                Case "sliding 1 track"
+                    arrLouvreDetCls(intCNT).ShutterTypeId = 1
+                Case "sliding 2 tracks"
+                    arrLouvreDetCls(intCNT).ShutterTypeId = 1
+                Case "sliding 3 tracks"
+                    arrLouvreDetCls(intCNT).ShutterTypeId = 1
+                Case "sliding 4 tracks"
+                    arrLouvreDetCls(intCNT).ShutterTypeId = 1
+                Case "stacker"
+                    arrLouvreDetCls(intCNT).ShutterTypeId = 1
+                Case "fixed"
+                    arrLouvreDetCls(intCNT).ShutterTypeId = 1
+                Case "fixed blade fixed panel"
+                    arrLouvreDetCls(intCNT).ShutterTypeId = 1
+                Case "fixed blades in angle frame"
+                    arrLouvreDetCls(intCNT).ShutterTypeId = 1
+                Case "hinged panel left"
+                    arrLouvreDetCls(intCNT).ShutterTypeId = 1
+                Case "hinged panel right"
+                    arrLouvreDetCls(intCNT).ShutterTypeId = 1
+                Case "hinged 2 panels"
+                    arrLouvreDetCls(intCNT).ShutterTypeId = 1
+                Case "standoff"
+                    arrLouvreDetCls(intCNT).ShutterTypeId = 1
+            End Select
+        End If
+        '
+        Dim dwTMPs() As DataRow = dtStyles.Select("StyleID=" & arrLouvreDetCls(intCNT).ProductId)
+        If dwTMPs.Length > 0 Then
+            arrLouvreDetCls(intCNT).Product = dwTMPs(0)("StyleName")
+        End If
+        dwTMPs = Nothing
+        '
+        If arrLouvreDetCls(intCNT).BiFoldHingedDoorInOut <> String.Empty Then
+            Select Case arrLouvreDetCls(intCNT).BiFoldHingedDoorInOut.ToLower
+                Case "in-from inside"
+                    arrLouvreDetCls(intCNT).BiFoldHingedDoorInOutId = 1
+                Case "out-from outside"
+                    arrLouvreDetCls(intCNT).BiFoldHingedDoorInOutId = 2
+            End Select
+        End If
+        '
+        'arrLouvreDetCls(intCNT).NoOfOpenings=arrLouvreDetCls(intCNT).NoOfOpenings
+        '
+        If arrLouvreDetCls(intCNT).BladeSize <> String.Empty Then
+            Select Case arrLouvreDetCls(intCNT).BladeSize
+                Case 90
+                    arrLouvreDetCls(intCNT).BladeSizeId = 1
+                Case 150
+                    arrLouvreDetCls(intCNT).BladeSizeId = 2
+            End Select
+        End If
+        '
+        If arrLouvreDetCls(intCNT).EndCapColour <> String.Empty Then
+            Select Case arrLouvreDetCls(intCNT).EndCapColour.ToLower
+                Case "black"
+                    arrLouvreDetCls(intCNT).EndCapColourId = 1
+                Case "white"
+                    arrLouvreDetCls(intCNT).EndCapColourId = 2
+            End Select
+        End If
+        '
+        If arrLouvreDetCls(intCNT).BladeClipColour <> String.Empty Then
+            Select Case arrLouvreDetCls(intCNT).BladeClipColour.ToLower
+                Case "black"
+                    arrLouvreDetCls(intCNT).BladeClipColourId = 1
+                Case "white"
+                    arrLouvreDetCls(intCNT).BladeClipColourId = 2
+            End Select
+        End If
+        '
+        If arrLouvreDetCls(intCNT).PileColour <> String.Empty Then
+            Select Case arrLouvreDetCls(intCNT).PileColour.ToLower
+                Case "black"
+                    arrLouvreDetCls(intCNT).PileColourId = 1
+                Case "grey"
+                    arrLouvreDetCls(intCNT).PileColourId = 2
+            End Select
+        End If
+        '
+        If arrLouvreDetCls(intCNT).TopTrack <> String.Empty Then
+            Select Case arrLouvreDetCls(intCNT).TopTrack.ToLower
+                Case "cl"
+                    arrLouvreDetCls(intCNT).TopTrackID = 1
+                Case "dli with sub head"
+                    arrLouvreDetCls(intCNT).TopTrackID = 2
+                Case "dli without sub head"
+                    arrLouvreDetCls(intCNT).TopTrackID = 3
+                Case "60x40 box"
+                    arrLouvreDetCls(intCNT).TopTrackID = 4
+            End Select
+        End If
+        '
+        If arrLouvreDetCls(intCNT).BottomTrackType <> String.Empty Then
+            Select Case arrLouvreDetCls(intCNT).BottomTrackType.ToLower
+                Case "28mm dli"
+                    arrLouvreDetCls(intCNT).BottomTrackTypeId = 1
+                Case "64mm cl"
+                    arrLouvreDetCls(intCNT).BottomTrackTypeId = 2
+            End Select
+        End If
+        '
+        'arrLouvreDetCls(intCNT).CurvedTrack = arrLouvreDetCls(intCNT).CurvedTrack      
+        '
+        'arrLouvreDetCls(intCNT).ExtraTrack = arrLouvreDetCls(intCNT).ExtraTrack
+        '
+        'arrLouvreDetCls(intCNT).MidRailHeight = arrLouvreDetCls(intCNT).MidRailHeight
+        '
+        If arrLouvreDetCls(intCNT).FlushBoltsTop <> String.Empty Then
+            Select Case arrLouvreDetCls(intCNT).FlushBoltsTop.ToLower
+                Case "std 235mm"
+                    arrLouvreDetCls(intCNT).FlushBoltsTopId = 1
+                Case "long 430mm"
+                    arrLouvreDetCls(intCNT).FlushBoltsTopId = 2
+                Case "ex long 890mm"
+                    arrLouvreDetCls(intCNT).FlushBoltsTopId = 3
+                Case "twin flush bolt"
+                    arrLouvreDetCls(intCNT).FlushBoltsTopId = 4
+            End Select
+        End If
+        '
+        If arrLouvreDetCls(intCNT).FlushBoltsBottom <> String.Empty Then
+            Select Case arrLouvreDetCls(intCNT).FlushBoltsBottom.ToLower
+                Case "black"
+                    arrLouvreDetCls(intCNT).FlushBoltsBottomId = 1
+                Case "grey"
+                    arrLouvreDetCls(intCNT).FlushBoltsBottomId = 2
+            End Select
+        End If
+        '
+        If arrLouvreDetCls(intCNT).LockOptions <> String.Empty Then
+            Select Case arrLouvreDetCls(intCNT).LockOptions.ToLower
+                Case "none"
+                    arrLouvreDetCls(intCNT).LockOptionsId = 1
+                Case "handle lock inside & out"
+                    arrLouvreDetCls(intCNT).LockOptionsId = 2
+                Case "twin flush bolt non locking"
+                    arrLouvreDetCls(intCNT).LockOptionsId = 3
+                Case "twin flush bolt non locking handle inside only"
+                    arrLouvreDetCls(intCNT).LockOptionsId = 4
+                Case "twin flush bolt - handle & cyl inside only"
+                    arrLouvreDetCls(intCNT).LockOptionsId = 5
+                Case "twin flush bolt - handle & Cyl inside & outside"
+                    arrLouvreDetCls(intCNT).LockOptionsId = 6
+            End Select
+        End If
+        '
+        'arrLouvreDetCls(intCNT).BladeLocks = arrLouvreDetCls(intCNT).BladeLocks
+        '
+        'cchannel/fixed panel channel t & b
+        'arrLouvreDetCls(intCNT).CChannel = arrLouvreDetCls(intCNT).CChannel
+        '
+        'check value for fixed panel sides - new fields
+        If arrLouvreDetCls(intCNT).FixedPanelChannel <> String.Empty Then
+            Select Case arrLouvreDetCls(intCNT).FixedPanelChannel.ToLower
+                Case "angle sides"
+                    arrLouvreDetCls(intCNT).FixedPanelChannelID = 1
+                Case "25mm channel side"
+                    arrLouvreDetCls(intCNT).FixedPanelChannelID = 2
+                Case "50mm channel sides"
+                    arrLouvreDetCls(intCNT).FixedPanelChannelID = 3
+            End Select
+        End If
+        '
+        'arrLouvreDetCls(intCNT).HChannel=arrLouvreDetCls(intCNT).HChannel
+        'lrevela
+        If arrLouvreDetCls(intCNT).LChannelString <> String.Empty Then
+            'arrLouvreDetCls(intCNT).LChannel = arrLouvreDetCls(intCNT).LChannel
+            'arrLouvreDetCls(intCNT).OtherLocation.ToLower
+            Select Case arrLouvreDetCls(intCNT).LChannelString.ToLower
+                Case "reveal 3 sided"
+                    arrLouvreDetCls(intCNT).LChannel = 1
+                Case "reveal 4 sided"
+                    arrLouvreDetCls(intCNT).LChannel = 2
+                Case "facefit 3 sided"
+                    arrLouvreDetCls(intCNT).LChannel = 3
+                Case "facefit 4 sided"
+                    arrLouvreDetCls(intCNT).LChannel = 4
+                Case "door 3 sided"
+                    arrLouvreDetCls(intCNT).LChannel = 5
+            End Select
+        End If
+        'zreveal
+        If arrLouvreDetCls(intCNT).ZChannelString <> String.Empty Then
+            'arrLouvreDetCls(intCNT).ZChannel = arrLouvreDetCls(intCNT).ZChannel
+            'Select Case arrLouvreDetCls(intCNT).OtherLocation.ToLower
+            Select Case arrLouvreDetCls(intCNT).ZChannelString.ToLower
+                Case "reveal 3 sided"
+                    arrLouvreDetCls(intCNT).ZChannel = 1
+                Case "reveal 4 sided"
+                    arrLouvreDetCls(intCNT).ZChannel = 2
+                Case "door 3 sided"
+                    arrLouvreDetCls(intCNT).ZChannel = 3
+            End Select
+        End If
+        'operation top
+        If arrLouvreDetCls(intCNT).BladeOperation <> String.Empty Then
+            Select Case arrLouvreDetCls(intCNT).BladeOperation.ToLower
+                Case "standard"
+                    arrLouvreDetCls(intCNT).BladeOperationId = 1
+                Case "fixed open"
+                    arrLouvreDetCls(intCNT).BladeOperationId = 2
+                Case "fixed closed"
+                    arrLouvreDetCls(intCNT).BladeOperationId = 3
+            End Select
+        End If
+        'operation bottom
+        If arrLouvreDetCls(intCNT).BladeOperationBottom <> String.Empty Then
+            Select Case arrLouvreDetCls(intCNT).BladeOperationBottom.ToLower
+                Case "standard"
+                    arrLouvreDetCls(intCNT).BladeOperationBottomId = 1
+                Case "fixed open"
+                    arrLouvreDetCls(intCNT).BladeOperationBottomId = 2
+                Case "fixed closed"
+                    arrLouvreDetCls(intCNT).BladeOperationBottomId = 3
+            End Select
+        End If
+        'top insert
+        If arrLouvreDetCls(intCNT).InsertTop <> String.Empty Then
+            Select Case arrLouvreDetCls(intCNT).InsertTop.ToLower
+                Case "horizontal blade"
+                    arrLouvreDetCls(intCNT).InsertTopId = 1
+                Case "vertical blade"
+                    arrLouvreDetCls(intCNT).InsertTopId = 2
+                Case "clear glass"
+                    arrLouvreDetCls(intCNT).InsertTopId = 3
+                Case "grey glass"
+                    arrLouvreDetCls(intCNT).InsertTopId = 4
+            End Select
+        End If
+        'bottom insert
+        If arrLouvreDetCls(intCNT).InsertBottom <> String.Empty Then
+            Select Case arrLouvreDetCls(intCNT).InsertBottom.ToLower
+                Case "horizontal blade"
+                    arrLouvreDetCls(intCNT).InsertBottomId = 1
+                Case "vertical blade"
+                    arrLouvreDetCls(intCNT).InsertBottomId = 2
+                Case "clear glass"
+                    arrLouvreDetCls(intCNT).InsertBottomId = 3
+                Case "grey glass"
+                    arrLouvreDetCls(intCNT).InsertBottomId = 4
+            End Select
+        End If
+        'Winder
+        If arrLouvreDetCls(intCNT).WinderString <> String.Empty Then
+            Select Case arrLouvreDetCls(intCNT).WinderString.ToLower
+                Case "left"
+                    arrLouvreDetCls(intCNT).Winder = 1
+                Case "right"
+                    arrLouvreDetCls(intCNT).Winder = 2
+                Case "none"
+                    arrLouvreDetCls(intCNT).Winder = 3
+            End Select
+        End If
+        '
+        'clsTLouvreDet.FlyScreen=clsTLouvreDet.FlyScreen
+        '
+        If arrLouvreDetCls(intCNT).Slide <> String.Empty Then
+            Select Case arrLouvreDetCls(intCNT).Slide.ToLower
+                Case "yes"
+                    arrLouvreDetCls(intCNT).SlideId = 1
+                Case "no"
+                    arrLouvreDetCls(intCNT).SlideId = 2
+            End Select
+        End If
+        '
+        If arrLouvreDetCls(intCNT).StackerLocation <> String.Empty Then
+            Select Case arrLouvreDetCls(intCNT).StackerLocation.ToLower
+                Case "left"
+                    arrLouvreDetCls(intCNT).StackerLocationId = 1
+                Case "right"
+                    arrLouvreDetCls(intCNT).StackerLocationId = 2
+            End Select
+        End If
+        If arrLouvreDetCls(intCNT).PivotType <> String.Empty Then
+            Select Case arrLouvreDetCls(intCNT).PivotType.ToLower
+                Case "standard"
+                    arrLouvreDetCls(intCNT).PivotTypeId = 1
+                Case "floating"
+                    arrLouvreDetCls(intCNT).PivotTypeId = 2
+            End Select
+        End If
+        '
+        dwTMPs = dtColours.Select("ColourName='" & arrLouvreDetCls(intCNT).Colour & "'")
+        If dwTMPs.Length > 0 Then
+            arrLouvreDetCls(intCNT).ColourId = dwTMPs(0)("ColourID")
+        End If
+        dwTMPs = Nothing
+        '
+        Dim bolStoreOK As Boolean = service.addLouvreDetails(arrLouvreDetCls(intCNT), cnn, trans)
+        '
+        If intCNT + 1 <= arrLouvreDetCls.Count - 1 And bolStoreOK Then
+            storeLouvreDetsToDBtbl(intCNT + 1, intProductScheduleID, arrLouvreDetCls, bolContinue, dtColours, dtStyles, service, cnn, trans)
+        End If
+
+    End Sub
+
+    Private Sub covertClSsToTBL(ByRef intCNT As Integer, ByRef dtLouvreDets As DataTable, ByRef arrLouvreDetCls As List(Of LouvreDetails))
+
+        Dim dr As DataRow = dtLouvreDets.NewRow
+        '
+        If arrLouvreDetCls(intCNT).ProductionScheduleID <> Constants.DEFAULT_INTEGER_VALUE Then
+            dr("ProductionScheduleId") = arrLouvreDetCls(intCNT).ProductionScheduleID
+        End If
+        '
+        If arrLouvreDetCls(intCNT).ShutterID = Constants.DEFAULT_INTEGER_VALUE Then
+            dr("ShutterId") = intCNT + 1
+        Else
+            dr("ShutterId") = arrLouvreDetCls(intCNT).ShutterID
+        End If
+        '
+        If arrLouvreDetCls(intCNT).Location <> String.Empty Then
+            dr("Location") = arrLouvreDetCls(intCNT).Location
+            Dim dw() As DataRow = dtLocation.Select("Description='" & Trim(arrLouvreDetCls(intCNT).Location) & "'")
+            If dw.Length > 0 Then
+                dr("LocationId") = dw(0)("Id")
+            Else
+                dr("Location") = DBNull.Value
+                dr("LocationId") = Constants.DEFAULT_INTEGER_VALUE
+                dr("OtherLocation") = arrLouvreDetCls(intCNT).Location
+            End If
+        End If
+        '
+        If arrLouvreDetCls(intCNT).Width <> Constants.DEFAULT_INTEGER_VALUE Then
+            dr("Width") = arrLouvreDetCls(intCNT).Width
+        End If
+        If arrLouvreDetCls(intCNT).Height <> Constants.DEFAULT_INTEGER_VALUE Then
+            dr("Height") = arrLouvreDetCls(intCNT).Height
+        End If
+        If arrLouvreDetCls(intCNT).MakeOrOpenSizesId <> Constants.DEFAULT_INTEGER_VALUE Then
+            dr("MakeOrOpenSizesId") = arrLouvreDetCls(intCNT).MakeOrOpenSizesId
+        End If
+        If arrLouvreDetCls(intCNT).MakeOrOpenSizes <> String.Empty Then
+            dr("MakeOrOpenSizes") = arrLouvreDetCls(intCNT).MakeOrOpenSizes
+        End If
+        '
+        If arrLouvreDetCls(intCNT).Product <> String.Empty Then
+            dr("Product") = arrLouvreDetCls(intCNT).Product
+            Select Case dr("Product").ToLower
+                Case "cl" '1
+                    dr("ProductId") = 1
+                Case "dl" '2
+                    dr("ProductId") = 2
+                Case "dli" '3
+                    dr("ProductId") = 3
+            End Select
+        End If
+        '
+        If arrLouvreDetCls(intCNT).ShutterTypeId <> Constants.DEFAULT_INTEGER_VALUE Then
+            dr("ShutterTypeId") = arrLouvreDetCls(intCNT).ShutterTypeId
+            dr("ShutterType") = mapArrByName(arrShutterTypes, arrLouvreDetCls(intCNT).ShutterType)
+        End If
+        If arrLouvreDetCls(intCNT).ShutterType <> String.Empty Then
+        End If
+        If arrLouvreDetCls(intCNT).BiFoldHingedDoorInOutId <> Constants.DEFAULT_INTEGER_VALUE Then
+            dr("BiFoldHingedDoorInOutId") = arrLouvreDetCls(intCNT).BiFoldHingedDoorInOutId
+        End If
+        If arrLouvreDetCls(intCNT).BiFoldHingedDoorInOut <> String.Empty Then
+            dr("BiFoldHingedDoorInOut") = arrLouvreDetCls(intCNT).BiFoldHingedDoorInOut
+        End If
+        If arrLouvreDetCls(intCNT).NoOfPanels <> Constants.DEFAULT_INTEGER_VALUE Then
+            dr("NoOfPanels") = arrLouvreDetCls(intCNT).NoOfPanels
+        End If
+        If arrLouvreDetCls(intCNT).NoOfOpenings <> Constants.DEFAULT_INTEGER_VALUE Then
+            dr("NoOfOpenings") = arrLouvreDetCls(intCNT).NoOfOpenings
+        End If
+        If arrLouvreDetCls(intCNT).BladeSizeId <> Constants.DEFAULT_INTEGER_VALUE Then
+            dr("BladeSizeId") = arrLouvreDetCls(intCNT).BladeSizeId
+        End If
+        If arrLouvreDetCls(intCNT).BladeSize <> String.Empty Then
+            dr("BladeSize") = arrLouvreDetCls(intCNT).BladeSize
+        End If
+        If arrLouvreDetCls(intCNT).EndCapColourId <> Constants.DEFAULT_INTEGER_VALUE Then
+            dr("EndCapColourId") = arrLouvreDetCls(intCNT).EndCapColourId
+        End If
+        If arrLouvreDetCls(intCNT).EndCapColour <> String.Empty Then
+            dr("EndCapColour") = arrLouvreDetCls(intCNT).EndCapColour
+        End If
+        If arrLouvreDetCls(intCNT).BladeClipColourId <> Constants.DEFAULT_INTEGER_VALUE Then
+            dr("BladeClipColourId") = arrLouvreDetCls(intCNT).BladeClipColourId
+        End If
+        If arrLouvreDetCls(intCNT).BladeClipColour <> String.Empty Then
+            dr("BladeClipColour") = arrLouvreDetCls(intCNT).BladeClipColour
+        End If
+        If arrLouvreDetCls(intCNT).PileColourId <> Constants.DEFAULT_INTEGER_VALUE Then
+            dr("PileColourId") = arrLouvreDetCls(intCNT).PileColourId
+        End If
+        If arrLouvreDetCls(intCNT).PileColour <> String.Empty Then
+            dr("PileColour") = arrLouvreDetCls(intCNT).PileColour
+        End If
+        If arrLouvreDetCls(intCNT).MidRailHeight <> Constants.DEFAULT_INTEGER_VALUE Then
+            dr("MidRailHeight") = arrLouvreDetCls(intCNT).MidRailHeight
+        End If
+        If arrLouvreDetCls(intCNT).PivotTypeId <> Constants.DEFAULT_INTEGER_VALUE Then
+            dr("PivotTypeId") = arrLouvreDetCls(intCNT).PivotTypeId
+        End If
+        If arrLouvreDetCls(intCNT).PivotType <> String.Empty Then
+            dr("PivotType") = arrLouvreDetCls(intCNT).PivotType
+        End If
+        If arrLouvreDetCls(intCNT).FlushBoltsTopId <> Constants.DEFAULT_INTEGER_VALUE Then
+            dr("FlushBoltsTopId") = arrLouvreDetCls(intCNT).FlushBoltsTopId
+        End If
+        If arrLouvreDetCls(intCNT).FlushBoltsTop <> String.Empty Then
+            dr("FlushBoltsTop") = arrLouvreDetCls(intCNT).FlushBoltsTop
+        End If
+        If arrLouvreDetCls(intCNT).FlushBoltsBottomId <> Constants.DEFAULT_INTEGER_VALUE Then
+            dr("FlushBoltsBottomId") = arrLouvreDetCls(intCNT).FlushBoltsBottomId
+        End If
+        If arrLouvreDetCls(intCNT).FlushBoltsBottom <> String.Empty Then
+            dr("FlushBoltsBottom") = arrLouvreDetCls(intCNT).FlushBoltsBottom
+        End If
+        If arrLouvreDetCls(intCNT).LockOptionsId <> Constants.DEFAULT_INTEGER_VALUE Then
+            dr("LockOptionsId") = arrLouvreDetCls(intCNT).LockOptionsId
+        End If
+        If arrLouvreDetCls(intCNT).LockOptions <> String.Empty Then
+            dr("LockOptions") = arrLouvreDetCls(intCNT).LockOptions
+        End If
+        If arrLouvreDetCls(intCNT).BottomTrackTypeId <> Constants.DEFAULT_INTEGER_VALUE Then
+            dr("BottomTrackTypeId") = arrLouvreDetCls(intCNT).BottomTrackTypeId
+        End If
+        If arrLouvreDetCls(intCNT).BottomTrackType <> String.Empty Then
+            dr("BottomTrackType") = arrLouvreDetCls(intCNT).BottomTrackType
+        End If
+        If arrLouvreDetCls(intCNT).BladeLocks <> Constants.DEFAULT_INTEGER_VALUE Then
+            dr("BladeLocks") = arrLouvreDetCls(intCNT).BladeLocks
+        End If
+        If arrLouvreDetCls(intCNT).CChannel <> Constants.DEFAULT_INTEGER_VALUE Then
+            dr("CChannel") = arrLouvreDetCls(intCNT).CChannel
+        End If
+        If arrLouvreDetCls(intCNT).HChannel <> Constants.DEFAULT_INTEGER_VALUE Then
+            dr("HChannel") = arrLouvreDetCls(intCNT).HChannel
+        End If
+        If arrLouvreDetCls(intCNT).LChannel <> Constants.DEFAULT_INTEGER_VALUE Then
+            dr("LChannel") = arrLouvreDetCls(intCNT).LChannel
+        End If
+        If arrLouvreDetCls(intCNT).ZChannel <> Constants.DEFAULT_INTEGER_VALUE Then
+            dr("ZChannel") = arrLouvreDetCls(intCNT).ZChannel
+        End If
+        If arrLouvreDetCls(intCNT).ColourId <> Constants.DEFAULT_INTEGER_VALUE Then
+            dr("ColourID") = arrLouvreDetCls(intCNT).ColourId
+        End If
+        If arrLouvreDetCls(intCNT).Colour <> String.Empty Then
+            dr("Colour") = arrLouvreDetCls(intCNT).Colour
+        End If
+        If arrLouvreDetCls(intCNT).CostPrice <> Constants.DEFAULT_DECIMAL_VALUE Then
+            dr("CostPrice") = arrLouvreDetCls(intCNT).CostPrice
+        End If
+        If arrLouvreDetCls(intCNT).CostPriceGST <> Constants.DEFAULT_DECIMAL_VALUE Then
+            dr("CostPriceGST") = arrLouvreDetCls(intCNT).CostPriceGST
+        End If
+        If arrLouvreDetCls(intCNT).ExtrasPrice <> Constants.DEFAULT_DECIMAL_VALUE Then
+            dr("ExtrasPrice") = arrLouvreDetCls(intCNT).ExtrasPrice
+        End If
+        If arrLouvreDetCls(intCNT).ExtrasPriceGST <> Constants.DEFAULT_DECIMAL_VALUE Then
+            dr("ExtrasPriceGST") = arrLouvreDetCls(intCNT).ExtrasPriceGST
+        End If
+        If arrLouvreDetCls(intCNT).RetailPrice <> Constants.DEFAULT_DECIMAL_VALUE Then
+            dr("RetailPrice") = arrLouvreDetCls(intCNT).RetailPrice
+        End If
+        If arrLouvreDetCls(intCNT).RetailPriceGST <> Constants.DEFAULT_DECIMAL_VALUE Then
+            dr("RetailPriceGST") = arrLouvreDetCls(intCNT).RetailPriceGST
+        End If
+        '
+        dr("Deleted") = arrLouvreDetCls(intCNT).Deleted
+        '
+        If arrLouvreDetCls(intCNT).ShutterNo <> Constants.DEFAULT_INTEGER_VALUE Then
+            dr("ShutterNo") = arrLouvreDetCls(intCNT).ShutterNo
+        End If
+        If arrLouvreDetCls(intCNT).SlideId <> Constants.DEFAULT_INTEGER_VALUE Then
+            dr("SlideId") = arrLouvreDetCls(intCNT).SlideId
+        End If
+        If arrLouvreDetCls(intCNT).Slide <> String.Empty Then
+            dr("Slide") = arrLouvreDetCls(intCNT).Slide
+        End If
+        If arrLouvreDetCls(intCNT).StackerLocationId <> Constants.DEFAULT_INTEGER_VALUE Then
+            dr("StackerLocationID") = arrLouvreDetCls(intCNT).StackerLocationId
+        End If
+        If arrLouvreDetCls(intCNT).StackerLocation <> String.Empty Then
+            dr("StackerLocation") = arrLouvreDetCls(intCNT).StackerLocation
+        End If
+        If arrLouvreDetCls(intCNT).OtherColourCode <> String.Empty Then
+            dr("OtherColourCode") = arrLouvreDetCls(intCNT).OtherColourCode
+        End If
+        If arrLouvreDetCls(intCNT).OtherColour <> String.Empty Then
+            dr("OtherColour") = arrLouvreDetCls(intCNT).OtherColour
+        End If
+        If arrLouvreDetCls(intCNT).FinishTypeId <> Constants.DEFAULT_INTEGER_VALUE Then
+            dr("FinishTypeId") = arrLouvreDetCls(intCNT).FinishTypeId
+        End If
+        If arrLouvreDetCls(intCNT).FinishType <> String.Empty Then
+            dr("FinishType") = arrLouvreDetCls(intCNT).FinishType
+        End If
+        If arrLouvreDetCls(intCNT).InsertTopId <> Constants.DEFAULT_INTEGER_VALUE Then
+            dr("InsertTopId") = arrLouvreDetCls(intCNT).InsertTopId
+        End If
+        If arrLouvreDetCls(intCNT).InsertTop <> String.Empty Then
+            dr("InsertTop") = arrLouvreDetCls(intCNT).InsertTop
+        End If
+        If arrLouvreDetCls(intCNT).InsertBottomId <> Constants.DEFAULT_INTEGER_VALUE Then
+            dr("InsertBottomId") = arrLouvreDetCls(intCNT).InsertBottomId
+        End If
+        If arrLouvreDetCls(intCNT).InsertBottom <> String.Empty Then
+            dr("InsertBottom") = arrLouvreDetCls(intCNT).InsertBottom
+        End If
+        If arrLouvreDetCls(intCNT).BladeOperationId <> Constants.DEFAULT_INTEGER_VALUE Then
+            dr("BladeOperationId") = arrLouvreDetCls(intCNT).BladeOperationId
+        End If
+        If arrLouvreDetCls(intCNT).BladeOperation <> String.Empty Then
+            dr("BladeOperation") = arrLouvreDetCls(intCNT).BladeOperation
+        End If
+        If arrLouvreDetCls(intCNT).OtherLocation <> String.Empty Then
+            dr("OtherLocation") = arrLouvreDetCls(intCNT).OtherLocation
+        End If
+        If arrLouvreDetCls(intCNT).CurvedTrack <> Constants.DEFAULT_INTEGER_VALUE Then
+            dr("CurvedTrack") = arrLouvreDetCls(intCNT).CurvedTrack
+        End If
+        If arrLouvreDetCls(intCNT).ExtraTrack <> Constants.DEFAULT_INTEGER_VALUE Then
+            dr("ExtraTrack") = arrLouvreDetCls(intCNT).ExtraTrack
+        End If
+        If arrLouvreDetCls(intCNT).BladeOperationBottomId <> Constants.DEFAULT_INTEGER_VALUE Then
+            dr("BladeOperationBottomId") = arrLouvreDetCls(intCNT).BladeOperationBottomId
+        End If
+        If arrLouvreDetCls(intCNT).BladeOperationBottom <> String.Empty Then
+            dr("BladeOperationBottom") = arrLouvreDetCls(intCNT).BladeOperationBottom
+        End If
+        If arrLouvreDetCls(intCNT).FlyScreen <> Constants.DEFAULT_INTEGER_VALUE Then
+            dr("FlyScreen") = arrLouvreDetCls(intCNT).FlyScreen
+        End If
+        If arrLouvreDetCls(intCNT).Standoff <> Constants.DEFAULT_INTEGER_VALUE Then
+            dr("Standoff") = arrLouvreDetCls(intCNT).Standoff
+        End If
+        If arrLouvreDetCls(intCNT).Winder <> Constants.DEFAULT_INTEGER_VALUE Then
+            dr("Winder") = arrLouvreDetCls(intCNT).Winder
+        End If
+        If arrLouvreDetCls(intCNT).ControllerSideID <> Constants.DEFAULT_INTEGER_VALUE Then
+            dr("ControllerSideID") = arrLouvreDetCls(intCNT).ControllerSideID
+        End If
+        If arrLouvreDetCls(intCNT).ControllerSide <> String.Empty Then
+            dr("ControllerSide") = arrLouvreDetCls(intCNT).ControllerSide
+        End If
+        If arrLouvreDetCls(intCNT).HighsetAllowance <> Constants.DEFAULT_INTEGER_VALUE Then
+            dr("HighsetAllowance") = arrLouvreDetCls(intCNT).HighsetAllowance
+        End If
+        If arrLouvreDetCls(intCNT).ExtrasCostPrice <> Constants.DEFAULT_DECIMAL_VALUE Then
+            dr("ExtrasCostPrice") = arrLouvreDetCls(intCNT).ExtrasCostPrice
+        End If
+        If arrLouvreDetCls(intCNT).ExtrasCostPriceGST <> Constants.DEFAULT_DECIMAL_VALUE Then
+            dr("ExtrasCostPriceGST") = arrLouvreDetCls(intCNT).ExtrasCostPriceGST
+        End If
+        If arrLouvreDetCls(intCNT).Track <> Constants.DEFAULT_INTEGER_VALUE Then
+            dr("Track") = arrLouvreDetCls(intCNT).Track
+        End If
+        If arrLouvreDetCls(intCNT).Layout <> String.Empty Then
+            dr("Layout") = arrLouvreDetCls(intCNT).Layout
+        End If
+        If arrLouvreDetCls(intCNT).RemakeTypeID <> Constants.DEFAULT_INTEGER_VALUE Then
+            dr("RemakeTypeID") = arrLouvreDetCls(intCNT).RemakeTypeID
+        End If
+        If arrLouvreDetCls(intCNT).SpecialRequirements <> String.Empty Then
+            dr("SpecialRequirements") = arrLouvreDetCls(intCNT).SpecialRequirements
+        End If
+        If arrLouvreDetCls(intCNT).TopTrack <> String.Empty Then
+            dr("TopTrack") = arrLouvreDetCls(intCNT).TopTrack
+        End If
+        If arrLouvreDetCls(intCNT).TopTrackID <> Constants.DEFAULT_INTEGER_VALUE Then
+            dr("TopTrackID") = arrLouvreDetCls(intCNT).TopTrackID
+        End If
+        If arrLouvreDetCls(intCNT).FixedPanelChannel <> String.Empty Then
+            dr("FixedPanelChannel") = arrLouvreDetCls(intCNT).FixedPanelChannel
+        End If
+        If arrLouvreDetCls(intCNT).FixedPanelChannelID <> Constants.DEFAULT_INTEGER_VALUE Then
+            dr("FixedPanelChannelID") = arrLouvreDetCls(intCNT).FixedPanelChannelID
+        End If
+        If arrLouvreDetCls(intCNT).OpenVertical <> Constants.DEFAULT_INTEGER_VALUE Then
+            dr("OpenVertical") = arrLouvreDetCls(intCNT).OpenVertical
+        End If
+        '
+        dtLouvreDets.Rows.Add(dr)
+        If intCNT + 1 <= arrLouvreDetCls.Count - 1 Then
+            covertClSsToTBL(intCNT + 1, dtLouvreDets, arrLouvreDetCls)
+        End If
+
+    End Sub
+
+    Private Function mapArrByName(ByRef arrTMPs() As String, ByVal strMapVaue As String) As Integer
+
+        Dim intMatchedID As Integer = Constants.DEFAULT_INTEGER_VALUE
+        For i As Integer = 0 To arrTMPs.Length - 1
+            If arrTMPs(i) = strMapVaue Then
+                intMatchedID = i
+                Exit For
+            End If
+        Next
+        Return intMatchedID
+
+    End Function
+
+    Private Function createTMPLouvreDets() As DataTable
+
+        Dim dtLouvreDets As New DataTable
+        Dim col As DataColumn = New DataColumn
+
+        col = New DataColumn
+        col.ColumnName = "AutoId"
+        col.DataType = System.Type.GetType("System.Int32")
+        col.AutoIncrement = True
+        col.AutoIncrementStep = 1
+        dtLouvreDets.Columns.Add(col)
+
+        col = New DataColumn
+        col.ColumnName = "LouvreDetailId"
+        col.DataType = System.Type.GetType("System.Int32")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "ProductionScheduleId"
+        col.DataType = System.Type.GetType("System.Int32")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "ShutterId"
+        col.DataType = System.Type.GetType("System.Int32")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "LocationId"
+        col.DataType = System.Type.GetType("System.Int32")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "Location"
+        col.DataType = System.Type.GetType("System.String")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "Width"
+        col.DataType = System.Type.GetType("System.Int32")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "Height"
+        col.DataType = System.Type.GetType("System.Int32")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "MakeOrOpenSizesId"
+        col.DataType = System.Type.GetType("System.Int32")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "MakeOrOpenSizes"
+        col.DataType = System.Type.GetType("System.String")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "ProductId"
+        col.DataType = System.Type.GetType("System.Int32")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "Product"
+        col.DataType = System.Type.GetType("System.String")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "ShutterTypeId"
+        col.DataType = System.Type.GetType("System.Int32")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "ShutterType"
+        col.DataType = System.Type.GetType("System.String")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "BiFoldHingedDoorInOutId"
+        col.DataType = System.Type.GetType("System.Int32")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "BiFoldHingedDoorInOut"
+        col.DataType = System.Type.GetType("System.String")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "NoOfPanels"
+        col.DataType = System.Type.GetType("System.Int32")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "NoOfOpenings"
+        col.DataType = System.Type.GetType("System.Int32")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "BladeSizeId"
+        col.DataType = System.Type.GetType("System.Int32")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "BladeSize"
+        col.DataType = System.Type.GetType("System.String")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "EndCapColourId"
+        col.DataType = System.Type.GetType("System.Int32")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "EndCapColour"
+        col.DataType = System.Type.GetType("System.String")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "BladeClipColourId"
+        col.DataType = System.Type.GetType("System.Int32")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "BladeClipColour"
+        col.DataType = System.Type.GetType("System.String")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "PileColourId"
+        col.DataType = System.Type.GetType("System.Int32")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "PileColour"
+        col.DataType = System.Type.GetType("System.String")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "MidRailHeight"
+        col.DataType = System.Type.GetType("System.Int32")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "PivotTypeId"
+        col.DataType = System.Type.GetType("System.Int32")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "PivotType"
+        col.DataType = System.Type.GetType("System.String")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "FlushBoltsTopId"
+        col.DataType = System.Type.GetType("System.Int32")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "FlushBoltsTop"
+        col.DataType = System.Type.GetType("System.String")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "FlushBoltsBottomId"
+        col.DataType = System.Type.GetType("System.Int32")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "FlushBoltsBottom"
+        col.DataType = System.Type.GetType("System.String")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "LockOptionsId"
+        col.DataType = System.Type.GetType("System.Int32")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "LockOptions"
+        col.DataType = System.Type.GetType("System.String")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "BottomTrackTypeId"
+        col.DataType = System.Type.GetType("System.Int32")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "BottomTrackType"
+        col.DataType = System.Type.GetType("System.String")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "BladeLocks"
+        col.DataType = System.Type.GetType("System.Int32")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "CChannel"
+        col.DataType = System.Type.GetType("System.Int32")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "HChannel"
+        col.DataType = System.Type.GetType("System.Int32")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "LChannel"
+        col.DataType = System.Type.GetType("System.Int32")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "ZChannel"
+        col.DataType = System.Type.GetType("System.Int32")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "ColourId"
+        col.DataType = System.Type.GetType("System.Int32")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "Colour"
+        col.DataType = System.Type.GetType("System.String")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "CostPrice"
+        col.DataType = System.Type.GetType("System.Decimal")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "CostPriceGST"
+        col.DataType = System.Type.GetType("System.Decimal")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "ExtrasPrice"
+        col.DataType = System.Type.GetType("System.Decimal")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "ExtrasPriceGST"
+        col.DataType = System.Type.GetType("System.Decimal")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "RetailPrice"
+        col.DataType = System.Type.GetType("System.Decimal")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "RetailPriceGST"
+        col.DataType = System.Type.GetType("System.Decimal")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "Deleted"
+        col.DataType = System.Type.GetType("System.Boolean")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "ShutterNo"
+        col.DataType = System.Type.GetType("System.Int32")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "SlideId"
+        col.DataType = System.Type.GetType("System.Int32")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "Slide"
+        col.DataType = System.Type.GetType("System.String")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "StackerLocationID"
+        col.DataType = System.Type.GetType("System.Int32")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "StackerLocation"
+        col.DataType = System.Type.GetType("System.String")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "OtherColourCode"
+        col.DataType = System.Type.GetType("System.String")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "OtherColour"
+        col.DataType = System.Type.GetType("System.String")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "FinishTypeId"
+        col.DataType = System.Type.GetType("System.Int32")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "FinishType"
+        col.DataType = System.Type.GetType("System.String")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "InsertTopId"
+        col.DataType = System.Type.GetType("System.Int32")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "InsertTop"
+        col.DataType = System.Type.GetType("System.String")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "InsertBottomId"
+        col.DataType = System.Type.GetType("System.Int32")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "InsertBottom"
+        col.DataType = System.Type.GetType("System.String")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "BladeOperationId"
+        col.DataType = System.Type.GetType("System.Int32")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "BladeOperation"
+        col.DataType = System.Type.GetType("System.String")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "OtherLocation"
+        col.DataType = System.Type.GetType("System.String")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "CurvedTrack"
+        col.DataType = System.Type.GetType("System.Int32")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "ExtraTrack"
+        col.DataType = System.Type.GetType("System.Int32")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "BladeOperationBottomId"
+        col.DataType = System.Type.GetType("System.Int32")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "BladeOperationBottom"
+        col.DataType = System.Type.GetType("System.String")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "FlyScreen"
+        col.DataType = System.Type.GetType("System.Int32")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "Standoff"
+        col.DataType = System.Type.GetType("System.Int32")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "Winder"
+        col.DataType = System.Type.GetType("System.Int32")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "ControllerSideId"
+        col.DataType = System.Type.GetType("System.Int32")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "ControllerSide"
+        col.DataType = System.Type.GetType("System.String")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "HighsetAllowance"
+        col.DataType = System.Type.GetType("System.Int32")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "ExtrasCostPrice"
+        col.DataType = System.Type.GetType("System.Decimal")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "ExtrasCostPriceGST"
+        col.DataType = System.Type.GetType("System.Decimal")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "Track"
+        col.DataType = System.Type.GetType("System.Int32")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "Layout"
+        col.DataType = System.Type.GetType("System.String")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "RemakeTypeId"
+        col.DataType = System.Type.GetType("System.Int32")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "SpecialRequirements"
+        col.DataType = System.Type.GetType("System.String")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "TopTrack"
+        col.DataType = System.Type.GetType("System.String")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "TopTrackId"
+        col.DataType = System.Type.GetType("System.Int32")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "FixedPanelChannel"
+        col.DataType = System.Type.GetType("System.String")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "FixedPanelChannelId"
+        col.DataType = System.Type.GetType("System.Int32")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "OpenVertical"
+        col.DataType = System.Type.GetType("System.Int32")
+        dtLouvreDets.Columns.Add(col)
+        col = Nothing
+        '
+        Return dtLouvreDets
+
+    End Function
+
+
+End Class

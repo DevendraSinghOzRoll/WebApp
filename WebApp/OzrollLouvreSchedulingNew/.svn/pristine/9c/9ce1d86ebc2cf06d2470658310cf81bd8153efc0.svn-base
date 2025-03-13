@@ -1,0 +1,142 @@
+﻿Imports Microsoft.VisualBasic
+Imports System.Data.SqlClient
+
+Public Class JobStagesDAO
+
+    Function addJobStages(cJobStages As JobStages, cnn As SqlConnection, ByRef trans As SqlTransaction) As Integer
+
+        Dim cmd As New SqlCommand
+
+        Try
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_addJobStages"
+            cmd.CommandType = CommandType.StoredProcedure
+            cmd.Transaction = trans
+
+            setupCommandParameters(cmd, cJobStages, True)
+
+            Dim intRetVal As Integer = cmd.ExecuteNonQuery
+
+            If intRetVal = 0 Then
+                Return Constants.DEFAULT_INTEGER_VALUE
+            Else
+                Return CInt(cmd.Parameters("@JobStagesID").Value)
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+            Return Constants.DEFAULT_INTEGER_VALUE
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+        End Try
+
+    End Function
+
+    Function updateJobStages(cJobStages As JobStages, cnn As SqlConnection, ByRef trans As SqlTransaction) As Boolean
+
+        Dim cmd As New SqlCommand
+
+        Try
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_updateJobStages"
+            cmd.CommandType = CommandType.StoredProcedure
+            cmd.Transaction = trans
+
+            setupCommandParameters(cmd, cJobStages, False)
+
+            Dim intRetVal As Integer = cmd.ExecuteNonQuery
+
+            If intRetVal = 0 Then
+                Return False
+            Else
+                Return True
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+            Return False
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+        End Try
+
+    End Function
+
+    Protected Sub setupCommandParameters(ByRef cmd As SqlCommand, cJobStages As JobStages, bolAdd As Boolean)
+
+        SqlCommandBuilder.DeriveParameters(cmd)
+
+        If bolAdd Then
+            cmd.Parameters("@JobStagesID").Direction = ParameterDirection.Output
+        Else
+            If cJobStages.JobStagesID <> Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@JobStagesID").Value = cJobStages.JobStagesID
+            Else
+                cmd.Parameters("@JobStagesID").Value = DBNull.Value
+            End If
+        End If
+
+        If cJobStages.ScheduleID <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@ScheduleID").Value = cJobStages.ScheduleID
+        Else
+            cmd.Parameters("@ScheduleID").Value = DBNull.Value
+        End If
+
+        If cJobStages.StageID <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@StageID").Value = cJobStages.StageID
+        Else
+            cmd.Parameters("@StageID").Value = DBNull.Value
+        End If
+
+        If cJobStages.StageStatus <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@StageStatus").Value = cJobStages.StageStatus
+        Else
+            cmd.Parameters("@StageStatus").Value = DBNull.Value
+        End If
+
+        If cJobStages.CompletedDateTime <> Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@CompletedDateTime").Value = cJobStages.CompletedDateTime
+        Else
+            cmd.Parameters("@CompletedDateTime").Value = DBNull.Value
+        End If
+
+        If cJobStages.CompletedByID <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@CompletedByID").Value = cJobStages.CompletedByID
+        Else
+            cmd.Parameters("@CompletedByID").Value = DBNull.Value
+        End If
+
+    End Sub
+
+    Function addJobStagesHistoryRecord(cJobStages As JobStages, intUserID As Integer, cnn As SqlConnection, ByRef trans As SqlTransaction) As Boolean
+
+        Dim cmd As New SqlCommand
+
+        Try
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_addJobStagesHistory"
+            cmd.CommandType = CommandType.StoredProcedure
+            cmd.Transaction = trans
+
+            setupCommandParameters(cmd, cJobStages, False) 'set false here as we are adding a history record so don't want to return the jobstagesid value
+
+            cmd.Parameters("@ChangedByID").Value = intUserID
+            cmd.Parameters("@ChangedDateTime").Value = DateTime.Now
+
+            cmd.ExecuteNonQuery()
+
+            Return True
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+            Return False
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+        End Try
+
+    End Function
+
+
+End Class

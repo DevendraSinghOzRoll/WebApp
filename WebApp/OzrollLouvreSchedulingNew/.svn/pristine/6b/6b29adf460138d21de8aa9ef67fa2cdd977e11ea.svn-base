@@ -1,0 +1,1641 @@
+﻿Imports Microsoft.VisualBasic
+Imports System.Data.SqlClient
+
+Public Class LouvreDetailsDAO
+
+
+    Public Function addLouvreDetails(ByVal cLouvreDetails As LouvreDetails, Optional ByVal cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As Integer
+
+        Dim dbcon As New DBConnection
+        Dim bolCnnOpen As Boolean = True
+        Dim cmd As New SqlCommand
+
+        If IsNothing(cnn) Then
+            bolCnnOpen = False
+            cnn = dbcon.getSQLConnection_To_OzRollPlantationScheduling
+        End If
+        Try
+            If bolCnnOpen = False Then
+                cnn.Open()
+            End If
+            cmd.Connection = cnn
+            If bolCnnOpen = True Then
+                cmd.Transaction = trans
+            End If
+
+            cmd.CommandText = "sp_addLouvreDetails"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            populateSQLCMD(cmd, cLouvreDetails)
+
+            Dim ra As Integer = cmd.ExecuteNonQuery()
+
+            Return CInt(cmd.Parameters("@LouvreDetailID").Value)
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & Environment.NewLine & ex.Message)
+            Return Constants.DEFAULT_INTEGER_VALUE
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+            If bolCnnOpen = False Then
+                cnn.Close()
+                cnn.Dispose()
+                cnn = Nothing
+            End If
+        End Try
+        dbcon = Nothing
+
+    End Function
+
+    Public Function DeleteLouvreDetailByID(intLouvreDetailID As Integer, Optional ByVal cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As Integer
+
+        Dim dbcon As New DBConnection
+        Dim newCnn As Boolean = False
+        Dim cmd As New SqlCommand
+        Dim rowsDeleted As Integer = 0
+
+        If IsNothing(cnn) Then
+            newCnn = True
+            cnn = dbcon.getSQLConnection_To_OzRollPlantationScheduling
+        End If
+        Try
+            If cnn.State = ConnectionState.Closed Then
+                cnn.Open()
+            End If
+
+            cmd.Connection = cnn
+
+            If Not newCnn Then
+                cmd.Transaction = trans
+            End If
+
+            cmd.CommandText = "sp_deleteLouvreDetailByID"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            cmd.Parameters.Add("@LouvreDetailID", SqlDbType.Int)
+            cmd.Parameters("@LouvreDetailID").Value = intLouvreDetailID
+
+            rowsDeleted = cmd.ExecuteNonQuery()
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & Environment.NewLine & ex.Message)
+            Return Constants.DEFAULT_INTEGER_VALUE
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+
+            If newCnn Then
+                cnn.Close()
+                cnn.Dispose()
+                cnn = Nothing
+            End If
+        End Try
+
+        Return rowsDeleted
+
+    End Function
+
+    Public Function updateLouvreDetails(ByVal cLouvreDetails As LouvreDetails, Optional ByVal cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As Boolean
+
+        Dim dbcon As New DBConnection
+        Dim bolCnnOpen As Boolean = True
+        Dim cmd As New SqlCommand
+
+        If IsNothing(cnn) Then
+            bolCnnOpen = False
+            cnn = dbcon.getSQLConnection_To_OzRollPlantationScheduling
+        End If
+        Try
+            If bolCnnOpen = False Then
+                cnn.Open()
+            End If
+            cmd.Connection = cnn
+            If bolCnnOpen = True Then
+                cmd.Transaction = trans
+            End If
+
+            cmd.CommandText = "sp_updateLouvreDetails"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            populateSQLCMD(cmd, cLouvreDetails)
+
+            Dim ra As Integer = cmd.ExecuteNonQuery()
+
+            Return True
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & Environment.NewLine & ex.Message)
+            Return False
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+            If bolCnnOpen = False Then
+                cnn.Close()
+                cnn.Dispose()
+                cnn = Nothing
+            End If
+        End Try
+        dbcon = Nothing
+
+
+    End Function
+
+    Private Sub populateSQLCMD(ByRef cmd As SqlCommand, ByVal cLouvreDetails As LouvreDetails)
+
+        Dim bolOtherLocation As Boolean = False
+        Dim bolCurvedTrack As Boolean = False
+        Dim bolExtrasCostPrice As Boolean = False
+        Dim bolTrack As Boolean = False
+
+        SqlCommandBuilder.DeriveParameters(cmd)
+
+        For Each param As SqlParameter In cmd.Parameters
+            If param.ParameterName = "@OtherLocation" Then
+                bolOtherLocation = True
+            End If
+
+            If param.ParameterName = "@CurvedTrack" Then
+                bolCurvedTrack = True
+            End If
+
+            If param.ParameterName = "@ExtrasCostPrice" Then
+                bolExtrasCostPrice = True
+            End If
+
+            If param.ParameterName = "@Track" Then
+                bolTrack = True
+            End If
+        Next
+
+        'cmd.Parameters.Add("@JobNumber", SqlDbType.Int)
+        If cLouvreDetails.LouvreDetailID <= 0 Then
+            cmd.Parameters("@LouvreDetailID").Direction = ParameterDirection.Output
+            cmd.Parameters("@LouvreDetailID").Value = DBNull.Value
+        Else
+            cmd.Parameters("@LouvreDetailID").Value = cLouvreDetails.LouvreDetailID
+        End If
+
+        If cLouvreDetails.ProductionScheduleID = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@ProductionScheduleID").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ProductionScheduleID").Value = cLouvreDetails.ProductionScheduleID
+        End If
+
+        'cmd.Parameters.Add("@ShutterID", SqlDbType.Int)
+        If cLouvreDetails.ShutterID = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@ShutterID").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ShutterID").Value = cLouvreDetails.ShutterID
+        End If
+        'cmd.Parameters.Add("@LocationID", SqlDbType.Int)
+        If cLouvreDetails.LocationID = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@LocationID").Value = DBNull.Value
+        Else
+            cmd.Parameters("@LocationID").Value = cLouvreDetails.LocationID
+        End If
+        'cmd.Parameters.Add("@Location", SqlDbType.VarChar)
+        If cLouvreDetails.Location = String.Empty Then
+            cmd.Parameters("@Location").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Location").Value = cLouvreDetails.Location
+        End If
+        'cmd.Parameters.Add("@Width", SqlDbType.Int)
+        If cLouvreDetails.Width = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@Width").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Width").Value = cLouvreDetails.Width
+        End If
+        'cmd.Parameters.Add("@Height", SqlDbType.Int)
+        If cLouvreDetails.Height = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@Height").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Height").Value = cLouvreDetails.Height
+        End If
+        'cmd.Parameters.Add("@MakeOrOpenSizesId", SqlDbType.Int)
+        If cLouvreDetails.MakeOrOpenSizesId = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@MakeOrOpenSizesId").Value = DBNull.Value
+        Else
+            cmd.Parameters("@MakeOrOpenSizesId").Value = cLouvreDetails.MakeOrOpenSizesId
+        End If
+
+        'cmd.Parameters.Add("@MakeOrOpenSizes", SqlDbType.VarChar)
+        If cLouvreDetails.MakeOrOpenSizes = String.Empty Then
+            cmd.Parameters("@MakeOrOpenSizes").Value = DBNull.Value
+        Else
+            cmd.Parameters("@MakeOrOpenSizes").Value = cLouvreDetails.MakeOrOpenSizes
+        End If
+
+        'cmd.Parameters.Add("@ProductId", SqlDbType.Int)
+        If cLouvreDetails.ProductId = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@ProductId").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ProductId").Value = cLouvreDetails.ProductId
+        End If
+        'cmd.Parameters.Add("@Product", SqlDbType.VarChar)
+        If cLouvreDetails.Product = String.Empty Then
+            cmd.Parameters("@Product").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Product").Value = cLouvreDetails.Product
+        End If
+        'cmd.Parameters.Add("@ShutterTypeId", SqlDbType.Int)
+        If cLouvreDetails.ShutterTypeId = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@ShutterTypeId").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ShutterTypeId").Value = cLouvreDetails.ShutterTypeId
+        End If
+        'cmd.Parameters.Add("@ShutterType", SqlDbType.VarChar)
+        If cLouvreDetails.ShutterType = String.Empty Then
+            cmd.Parameters("@ShutterType").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ShutterType").Value = cLouvreDetails.ShutterType
+        End If
+        'cmd.Parameters.Add("@BiFoldHingedDoorInOutId", SqlDbType.Int)
+        If cLouvreDetails.BiFoldHingedDoorInOutId = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@BiFoldHingedDoorInOutId").Value = DBNull.Value
+        Else
+            cmd.Parameters("@BiFoldHingedDoorInOutId").Value = cLouvreDetails.BiFoldHingedDoorInOutId
+        End If
+        'cmd.Parameters.Add("@BiFoldHingedDoorInOut", SqlDbType.VarChar)
+        If cLouvreDetails.BiFoldHingedDoorInOut = String.Empty Then
+            cmd.Parameters("@BiFoldHingedDoorInOut").Value = DBNull.Value
+        Else
+            cmd.Parameters("@BiFoldHingedDoorInOut").Value = cLouvreDetails.BiFoldHingedDoorInOut
+        End If
+        'cmd.Parameters.Add("@NoOfPanels", SqlDbType.Int)
+        If cLouvreDetails.NoOfPanels = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@NoOfPanels").Value = DBNull.Value
+        Else
+            cmd.Parameters("@NoOfPanels").Value = cLouvreDetails.NoOfPanels
+        End If
+        'cmd.Parameters.Add("@NoOfOpenings", SqlDbType.Int)
+        If cLouvreDetails.NoOfOpenings = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@NoOfOpenings").Value = DBNull.Value
+        Else
+            cmd.Parameters("@NoOfOpenings").Value = cLouvreDetails.NoOfOpenings
+        End If
+        'cmd.Parameters.Add("@BladeSizeId", SqlDbType.Int)
+        If cLouvreDetails.BladeSizeId = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@BladeSizeId").Value = DBNull.Value
+        Else
+            cmd.Parameters("@BladeSizeId").Value = cLouvreDetails.BladeSizeId
+        End If
+        'cmd.Parameters.Add("@BladeSize", SqlDbType.VarChar)
+        If cLouvreDetails.BladeSize = String.Empty Then
+            cmd.Parameters("@BladeSize").Value = DBNull.Value
+        Else
+            cmd.Parameters("@BladeSize").Value = cLouvreDetails.BladeSize
+        End If
+        'cmd.Parameters.Add("@EndCapColourId", SqlDbType.Int)
+        If cLouvreDetails.EndCapColourId = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@EndCapColourId").Value = DBNull.Value
+        Else
+            cmd.Parameters("@EndCapColourId").Value = cLouvreDetails.EndCapColourId
+        End If
+        'cmd.Parameters.Add("@EndCapColour", SqlDbType.VarChar)
+        If cLouvreDetails.EndCapColour = String.Empty Then
+            cmd.Parameters("@EndCapColour").Value = DBNull.Value
+        Else
+            cmd.Parameters("@EndCapColour").Value = cLouvreDetails.EndCapColour
+        End If
+        'cmd.Parameters.Add("@BladeClipColourId", SqlDbType.Int)
+        If cLouvreDetails.BladeClipColourId = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@BladeClipColourId").Value = DBNull.Value
+        Else
+            cmd.Parameters("@BladeClipColourId").Value = cLouvreDetails.BladeClipColourId
+        End If
+        'cmd.Parameters.Add("@BladeClipColour", SqlDbType.VarChar)
+        If cLouvreDetails.BladeClipColour = String.Empty Then
+            cmd.Parameters("@BladeClipColour").Value = DBNull.Value
+        Else
+            cmd.Parameters("@BladeClipColour").Value = cLouvreDetails.BladeClipColour
+        End If
+        'cmd.Parameters.Add("@PileColourId", SqlDbType.Int)
+        If cLouvreDetails.PileColourId = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@PileColourId").Value = DBNull.Value
+        Else
+            cmd.Parameters("@PileColourId").Value = cLouvreDetails.PileColourId
+        End If
+        'cmd.Parameters.Add("@PileColour", SqlDbType.VarChar)
+        If cLouvreDetails.PileColour = String.Empty Then
+            cmd.Parameters("@PileColour").Value = DBNull.Value
+        Else
+            cmd.Parameters("@PileColour").Value = cLouvreDetails.PileColour
+        End If
+        'cmd.Parameters.Add("@MidRailHeight", SqlDbType.Int)
+        If cLouvreDetails.MidRailHeight = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@MidRailHeight").Value = DBNull.Value
+        Else
+            cmd.Parameters("@MidRailHeight").Value = cLouvreDetails.MidRailHeight
+        End If
+        'cmd.Parameters.Add("@PivotTypeId", SqlDbType.Int)
+        If cLouvreDetails.PivotTypeId = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@PivotTypeId").Value = DBNull.Value
+        Else
+            cmd.Parameters("@PivotTypeId").Value = cLouvreDetails.PivotTypeId
+        End If
+        'cmd.Parameters.Add("@PivotType", SqlDbType.VarChar)
+        If cLouvreDetails.PivotType = String.Empty Then
+            cmd.Parameters("@PivotType").Value = DBNull.Value
+        Else
+            cmd.Parameters("@PivotType").Value = cLouvreDetails.PivotType
+        End If
+        'cmd.Parameters.Add("@FlushBoltsTopId", SqlDbType.Int)
+        If cLouvreDetails.FlushBoltsTopId = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@FlushBoltsTopId").Value = DBNull.Value
+        Else
+            cmd.Parameters("@FlushBoltsTopId").Value = cLouvreDetails.FlushBoltsTopId
+        End If
+        'cmd.Parameters.Add("@FlushBoltsTop", SqlDbType.VarChar)
+        If cLouvreDetails.FlushBoltsTop = String.Empty Then
+            cmd.Parameters("@FlushBoltsTop").Value = DBNull.Value
+        Else
+            cmd.Parameters("@FlushBoltsTop").Value = cLouvreDetails.FlushBoltsTop
+        End If
+        'cmd.Parameters.Add("@FlushBoltsBottomId", SqlDbType.Int)
+        If cLouvreDetails.FlushBoltsBottomId = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@FlushBoltsBottomId").Value = DBNull.Value
+        Else
+            cmd.Parameters("@FlushBoltsBottomId").Value = cLouvreDetails.FlushBoltsBottomId
+        End If
+        'cmd.Parameters.Add("@FlushBoltsBottom", SqlDbType.VarChar)
+        If cLouvreDetails.FlushBoltsBottom = String.Empty Then
+            cmd.Parameters("@FlushBoltsBottom").Value = DBNull.Value
+        Else
+            cmd.Parameters("@FlushBoltsBottom").Value = cLouvreDetails.FlushBoltsBottom
+        End If
+        'cmd.Parameters.Add("@LockOptionsId", SqlDbType.Int)
+        If cLouvreDetails.LockOptionsId = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@LockOptionsId").Value = DBNull.Value
+        Else
+            cmd.Parameters("@LockOptionsId").Value = cLouvreDetails.LockOptionsId
+        End If
+        'cmd.Parameters.Add("@LockOptions", SqlDbType.VarChar)
+        If cLouvreDetails.LockOptions = String.Empty Then
+            cmd.Parameters("@LockOptions").Value = DBNull.Value
+        Else
+            cmd.Parameters("@LockOptions").Value = cLouvreDetails.LockOptions
+        End If
+        'cmd.Parameters.Add("@BottomTrackTypeId", SqlDbType.Int)
+        If cLouvreDetails.BottomTrackTypeId = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@BottomTrackTypeId").Value = DBNull.Value
+        Else
+            cmd.Parameters("@BottomTrackTypeId").Value = cLouvreDetails.BottomTrackTypeId
+        End If
+        'cmd.Parameters.Add("@BottomTrackType", SqlDbType.VarChar)
+        If cLouvreDetails.BottomTrackType = String.Empty Then
+            cmd.Parameters("@BottomTrackType").Value = DBNull.Value
+        Else
+            cmd.Parameters("@BottomTrackType").Value = cLouvreDetails.BottomTrackType
+        End If
+        'cmd.Parameters.Add("@BladeLocks", SqlDbType.Int)
+        If cLouvreDetails.BladeLocks = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@BladeLocks").Value = DBNull.Value
+        Else
+            cmd.Parameters("@BladeLocks").Value = cLouvreDetails.BladeLocks
+        End If
+        'cmd.Parameters.Add("@CChannel", SqlDbType.Int)
+        If cLouvreDetails.CChannel = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@CChannel").Value = DBNull.Value
+        Else
+            cmd.Parameters("@CChannel").Value = cLouvreDetails.CChannel
+        End If
+        'cmd.Parameters.Add("@HChannel", SqlDbType.Int)
+        If cLouvreDetails.HChannel = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@HChannel").Value = DBNull.Value
+        Else
+            cmd.Parameters("@HChannel").Value = cLouvreDetails.HChannel
+        End If
+        'cmd.Parameters.Add("@LChannel", SqlDbType.Int)
+        If cLouvreDetails.LChannel = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@LChannel").Value = DBNull.Value
+        Else
+            cmd.Parameters("@LChannel").Value = cLouvreDetails.LChannel
+        End If
+        'cmd.Parameters.Add("@ZChannel", SqlDbType.Int)
+        If cLouvreDetails.ZChannel = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@ZChannel").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ZChannel").Value = cLouvreDetails.ZChannel
+        End If
+        'cmd.Parameters.Add("@ColourId", SqlDbType.Int)
+        If cLouvreDetails.ColourId = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@ColourId").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ColourId").Value = cLouvreDetails.ColourId
+        End If
+        'cmd.Parameters.Add("@Colour", SqlDbType.VarChar)
+        If cLouvreDetails.Colour = String.Empty Then
+            cmd.Parameters("@Colour").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Colour").Value = cLouvreDetails.Colour
+        End If
+        'cmd.Parameters.Add("@CostPrice", SqlDbType.Decimal)
+        If cLouvreDetails.CostPrice = Constants.DEFAULT_DECIMAL_VALUE Then
+            cmd.Parameters("@CostPrice").Value = DBNull.Value
+        Else
+            cmd.Parameters("@CostPrice").Value = cLouvreDetails.CostPrice
+        End If
+        'cmd.Parameters.Add("@CostPriceGST", SqlDbType.Decimal)
+        If cLouvreDetails.CostPriceGST = Constants.DEFAULT_DECIMAL_VALUE Then
+            cmd.Parameters("@CostPriceGST").Value = DBNull.Value
+        Else
+            cmd.Parameters("@CostPriceGST").Value = cLouvreDetails.CostPriceGST
+        End If
+        'cmd.Parameters.Add("@ExtrasPrice", SqlDbType.Decimal)
+        If cLouvreDetails.ExtrasPrice = Constants.DEFAULT_DECIMAL_VALUE Then
+            cmd.Parameters("@ExtrasPrice").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ExtrasPrice").Value = cLouvreDetails.ExtrasPrice
+        End If
+        'cmd.Parameters.Add("@ExtrasPriceGST", SqlDbType.Decimal)
+        If cLouvreDetails.ExtrasPriceGST = Constants.DEFAULT_DECIMAL_VALUE Then
+            cmd.Parameters("@ExtrasPriceGST").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ExtrasPriceGST").Value = cLouvreDetails.ExtrasPriceGST
+        End If
+        'cmd.Parameters.Add("@SalePrice", SqlDbType.Decimal)
+        If cLouvreDetails.SalePrice = Constants.DEFAULT_DECIMAL_VALUE Then
+            cmd.Parameters("@SalePrice").Value = DBNull.Value
+        Else
+            cmd.Parameters("@SalePrice").Value = cLouvreDetails.SalePrice
+        End If
+        'cmd.Parameters.Add("@SalePriceGST", SqlDbType.Decimal)
+        If cLouvreDetails.SalePriceGST = Constants.DEFAULT_DECIMAL_VALUE Then
+            cmd.Parameters("@SalePriceGST").Value = DBNull.Value
+        Else
+            cmd.Parameters("@SalePriceGST").Value = cLouvreDetails.SalePriceGST
+        End If
+        'cmd.Parameters.Add("@Deleted", SqlDbType.Bit)
+
+        cmd.Parameters("@Deleted").Value = cLouvreDetails.Deleted
+
+        'cmd.Parameters.Add("@ShutterNo", SqlDbType.Int)
+        If cLouvreDetails.ShutterNo = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@ShutterNo").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ShutterNo").Value = cLouvreDetails.ShutterNo
+        End If
+
+        'cmd.Parameters.Add("@SlideId", SqlDbType.Int)
+        If cLouvreDetails.SlideId = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@SlideId").Value = DBNull.Value
+        Else
+            cmd.Parameters("@SlideId").Value = cLouvreDetails.SlideId
+        End If
+        'cmd.Parameters.Add("@Slide", SqlDbType.VarChar)
+        If cLouvreDetails.Slide = String.Empty Then
+            cmd.Parameters("@Slide").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Slide").Value = cLouvreDetails.Slide
+        End If
+
+        'cmd.Parameters.Add("@StackerLocationID", SqlDbType.Int)
+        If cLouvreDetails.StackerLocationId = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@StackerLocationID").Value = DBNull.Value
+        Else
+            cmd.Parameters("@StackerLocationID").Value = cLouvreDetails.StackerLocationId
+        End If
+        'cmd.Parameters.Add("@StackerLocation", SqlDbType.VarChar)
+        If cLouvreDetails.StackerLocation = String.Empty Then
+            cmd.Parameters("@StackerLocation").Value = DBNull.Value
+        Else
+            cmd.Parameters("@StackerLocation").Value = cLouvreDetails.StackerLocation
+        End If
+
+        'cmd.Parameters.Add("@OtherColourCode", SqlDbType.VarChar)
+        If cLouvreDetails.OtherColourCode = String.Empty Then
+            cmd.Parameters("@OtherColourCode").Value = DBNull.Value
+        Else
+            cmd.Parameters("@OtherColourCode").Value = cLouvreDetails.OtherColourCode
+        End If
+
+        'cmd.Parameters.Add("@OtherColour", SqlDbType.VarChar)
+        If cLouvreDetails.OtherColour = String.Empty Then
+            cmd.Parameters("@OtherColour").Value = DBNull.Value
+        Else
+            cmd.Parameters("@OtherColour").Value = cLouvreDetails.OtherColour
+        End If
+
+        'cmd.Parameters.Add("@FinishTypeId", SqlDbType.Int)
+        If cLouvreDetails.FinishTypeId = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@FinishTypeId").Value = DBNull.Value
+        Else
+            cmd.Parameters("@FinishTypeId").Value = cLouvreDetails.FinishTypeId
+        End If
+
+        'cmd.Parameters.Add("@FinishType", SqlDbType.VarChar)
+        If cLouvreDetails.FinishType = String.Empty Then
+            cmd.Parameters("@FinishType").Value = DBNull.Value
+        Else
+            cmd.Parameters("@FinishType").Value = cLouvreDetails.FinishType
+        End If
+
+        'cmd.Parameters.Add("@InsertTopId", SqlDbType.Int)
+        If cLouvreDetails.InsertTopId = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@InsertTopId").Value = DBNull.Value
+        Else
+            cmd.Parameters("@InsertTopId").Value = cLouvreDetails.InsertTopId
+        End If
+
+        'cmd.Parameters.Add("@InsertTop", SqlDbType.VarChar)
+        If cLouvreDetails.InsertTop = String.Empty Then
+            cmd.Parameters("@InsertTop").Value = DBNull.Value
+        Else
+            cmd.Parameters("@InsertTop").Value = cLouvreDetails.InsertTop
+        End If
+
+        'cmd.Parameters.Add("@InsertBottomId", SqlDbType.Int)
+        If cLouvreDetails.InsertBottomId = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@InsertBottomId").Value = DBNull.Value
+        Else
+            cmd.Parameters("@InsertBottomId").Value = cLouvreDetails.InsertBottomId
+        End If
+
+        'cmd.Parameters.Add("@InsertBottom", SqlDbType.VarChar)
+        If cLouvreDetails.InsertBottom = String.Empty Then
+            cmd.Parameters("@InsertBottom").Value = DBNull.Value
+        Else
+            cmd.Parameters("@InsertBottom").Value = cLouvreDetails.InsertBottom
+        End If
+
+        'cmd.Parameters.Add("@BladeOperationId", SqlDbType.Int)
+        If cLouvreDetails.BladeOperationId = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@BladeOperationId").Value = DBNull.Value
+        Else
+            cmd.Parameters("@BladeOperationId").Value = cLouvreDetails.BladeOperationId
+        End If
+
+        'cmd.Parameters.Add("@BladeOperation", SqlDbType.VarChar)
+        If cLouvreDetails.BladeOperation = String.Empty Then
+            cmd.Parameters("@BladeOperation").Value = DBNull.Value
+        Else
+            cmd.Parameters("@BladeOperation").Value = cLouvreDetails.BladeOperation
+        End If
+
+        If bolOtherLocation Then
+            If cLouvreDetails.OtherLocation = String.Empty Then
+                cmd.Parameters("@OtherLocation").Value = DBNull.Value
+            Else
+                cmd.Parameters("@OtherLocation").Value = cLouvreDetails.OtherLocation
+            End If
+        End If
+
+        If bolCurvedTrack Then
+            If cLouvreDetails.CurvedTrack = Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@CurvedTrack").Value = DBNull.Value
+            Else
+                cmd.Parameters("@CurvedTrack").Value = cLouvreDetails.CurvedTrack
+            End If
+
+            If cLouvreDetails.ExtraTrack = Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@ExtraTrack").Value = DBNull.Value
+            Else
+                cmd.Parameters("@ExtraTrack").Value = cLouvreDetails.ExtraTrack
+            End If
+
+            If cLouvreDetails.BladeOperationBottomId = Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@BladeOperationBottomId").Value = DBNull.Value
+            Else
+                cmd.Parameters("@BladeOperationBottomId").Value = cLouvreDetails.BladeOperationBottomId
+            End If
+
+            If cLouvreDetails.BladeOperationBottom = String.Empty Then
+                cmd.Parameters("@BladeOperationBottom").Value = DBNull.Value
+            Else
+                cmd.Parameters("@BladeOperationBottom").Value = cLouvreDetails.BladeOperationBottom
+            End If
+
+            If cLouvreDetails.FlyScreen = Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@FlyScreen").Value = DBNull.Value
+            Else
+                cmd.Parameters("@FlyScreen").Value = cLouvreDetails.FlyScreen
+            End If
+
+            If cLouvreDetails.Standoff = Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@Standoff").Value = DBNull.Value
+            Else
+                cmd.Parameters("@Standoff").Value = cLouvreDetails.Standoff
+            End If
+
+            If cLouvreDetails.Winder = Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@Winder").Value = DBNull.Value
+            Else
+                cmd.Parameters("@Winder").Value = cLouvreDetails.Winder
+            End If
+
+            If cLouvreDetails.ControllerSideID = Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@ControllerSideID").Value = DBNull.Value
+            Else
+                cmd.Parameters("@ControllerSideID").Value = cLouvreDetails.ControllerSideID
+            End If
+
+            If cLouvreDetails.ControllerSide = String.Empty Then
+                cmd.Parameters("@ControllerSide").Value = DBNull.Value
+            Else
+                cmd.Parameters("@ControllerSide").Value = cLouvreDetails.ControllerSide
+            End If
+
+            If cLouvreDetails.HighsetAllowance = Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@HighsetAllowance").Value = DBNull.Value
+            Else
+                cmd.Parameters("@HighsetAllowance").Value = cLouvreDetails.HighsetAllowance
+            End If
+
+        End If
+
+        If bolExtrasCostPrice Then
+            If cLouvreDetails.ExtrasCostPrice = Constants.DEFAULT_DECIMAL_VALUE Then
+                cmd.Parameters("@ExtrasCostPrice").Value = DBNull.Value
+            Else
+                cmd.Parameters("@ExtrasCostPrice").Value = cLouvreDetails.ExtrasCostPrice
+            End If
+
+            If cLouvreDetails.ExtrasCostPriceGST = Constants.DEFAULT_DECIMAL_VALUE Then
+                cmd.Parameters("@ExtrasCostPriceGST").Value = DBNull.Value
+            Else
+                cmd.Parameters("@ExtrasCostPriceGST").Value = cLouvreDetails.ExtrasCostPriceGST
+            End If
+        End If
+
+        If bolTrack Then
+            If cLouvreDetails.Track = Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@Track").Value = DBNull.Value
+            Else
+                cmd.Parameters("@Track").Value = cLouvreDetails.Track
+            End If
+
+            If cLouvreDetails.Layout = String.Empty Then
+                cmd.Parameters("@Layout").Value = DBNull.Value
+            Else
+                cmd.Parameters("@Layout").Value = cLouvreDetails.Layout
+            End If
+        End If
+
+        If cLouvreDetails.RemakeTypeID = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@RemakeTypeID").Value = DBNull.Value
+        Else
+            cmd.Parameters("@RemakeTypeID").Value = cLouvreDetails.RemakeTypeID
+        End If
+
+        If cLouvreDetails.SpecialRequirements = String.Empty Then
+            cmd.Parameters("@SpecialRequirements").Value = DBNull.Value
+        Else
+            cmd.Parameters("@SpecialRequirements").Value = cLouvreDetails.SpecialRequirements
+        End If
+
+        'Added by Michael Behar 22/06/2017
+        If cLouvreDetails.TopTrack = String.Empty Then
+            cmd.Parameters("@TopTrack").Value = DBNull.Value
+        Else
+            cmd.Parameters("@TopTrack").Value = cLouvreDetails.TopTrack
+        End If
+
+        'Added by Michael Behar 22/06/2017
+        If cLouvreDetails.TopTrackID = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@TopTrackID").Value = DBNull.Value
+        Else
+            cmd.Parameters("@TopTrackID").Value = cLouvreDetails.TopTrackID
+        End If
+
+        'Added by Michael Behar 22/06/2017
+        If cLouvreDetails.FixedPanelChannel = String.Empty Then
+            cmd.Parameters("@FixedPanelChannel").Value = DBNull.Value
+        Else
+            cmd.Parameters("@FixedPanelChannel").Value = cLouvreDetails.FixedPanelChannel
+        End If
+
+        'Added by Michael Behar 22/06/2017
+        If cLouvreDetails.FixedPanelChannelID = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@FixedPanelChannelID").Value = DBNull.Value
+        Else
+            cmd.Parameters("@FixedPanelChannelID").Value = cLouvreDetails.FixedPanelChannelID
+        End If
+
+        'Added by Michael Behar 23/06/2017
+        If cLouvreDetails.OpenVertical = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@OpenVertical").Value = DBNull.Value
+        Else
+            cmd.Parameters("@OpenVertical").Value = cLouvreDetails.OpenVertical
+        End If
+
+        'Added by Michael Behar 15/03/2018
+        If cLouvreDetails.Accepted = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@Accepted").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Accepted").Value = cLouvreDetails.Accepted
+        End If
+
+        'Added by Michael Behar 15/03/2018
+        If cLouvreDetails.AcceptedBy = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@AcceptedBy").Value = DBNull.Value
+        Else
+            cmd.Parameters("@AcceptedBy").Value = cLouvreDetails.AcceptedBy
+        End If
+
+        'Added by Michael Behar 15/03/2018
+        If cLouvreDetails.AcceptedTime = Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@AcceptedTime").Value = DBNull.Value
+        Else
+            cmd.Parameters("@AcceptedTime").Value = cLouvreDetails.AcceptedTime
+        End If
+
+        cmd.Parameters("@LouvrePriceID").Value = cLouvreDetails.LouvrePriceID
+
+    End Sub
+
+    Public Function getLouvreDetailsByProductionScheduleID(ByVal intScheduleID As Integer, Optional ByVal cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As DataTable
+
+        Dim dbcon As New DBConnection
+        Dim bolCnnOpen As Boolean = True
+        Dim da As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        If IsNothing(cnn) Then
+            bolCnnOpen = False
+            cnn = dbcon.getSQLConnection_To_OzRollPlantationScheduling
+        End If
+
+        Dim cmd As New SqlCommand
+        Try
+            If bolCnnOpen = False Then
+                cnn.Open()
+            End If
+            cmd.Connection = cnn
+            cmd.CommandText = "select * from dbo.tblLouvreDetails where ProductionScheduleID = " & intScheduleID.ToString
+            cmd.CommandType = CommandType.Text
+            If bolCnnOpen = True Then
+                cmd.Transaction = trans
+            End If
+
+
+            da.SelectCommand = cmd
+            da.Fill(dt)
+
+        Catch ex As Exception
+            If cnn.State = ConnectionState.Open Then
+                If bolCnnOpen = False Then
+                    cnn.Close()
+                End If
+            End If
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+        Finally
+            da.Dispose()
+            da = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            If bolCnnOpen = False Then
+                cnn.Close()
+                cnn.Dispose()
+                cnn = Nothing
+            End If
+        End Try
+        dbcon = Nothing
+        Return dt
+
+    End Function
+
+    Public Function getLouvreDetailsCollectionByProductionScheduleID(intProductionScheduleID As Integer) As LouvreDetailsCollection
+        Dim lLouvreDetails As New LouvreDetailsCollection
+        Dim dtLouvreDetails As DataTable = getLouvreDetailsByProductionScheduleID(intProductionScheduleID)
+        Dim cLouvreDetails As LouvreDetails
+
+
+        For Each r As DataRow In dtLouvreDetails.Rows
+            cLouvreDetails = setLouvreDetailsObjectFromDataRow(r)
+            lLouvreDetails.Add(cLouvreDetails)
+        Next r
+
+        Return lLouvreDetails
+    End Function
+
+    Public Function getLouvreDetailsByLouvreDetailID(ByVal intLouvreDetailID As Integer, Optional ByVal cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As DataTable
+
+        Dim dbcon As New DBConnection
+        Dim bolCnnOpen As Boolean = True
+        Dim da As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        If IsNothing(cnn) Then
+            bolCnnOpen = False
+            cnn = dbcon.getSQLConnection_To_OzRollPlantationScheduling
+        End If
+
+        Dim cmd As New SqlCommand
+        Try
+            If bolCnnOpen = False Then
+                cnn.Open()
+            End If
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getLouvreDetails"
+            cmd.CommandType = CommandType.StoredProcedure
+            If bolCnnOpen = True Then
+                cmd.Transaction = trans
+            End If
+
+            cmd.Parameters.Add("@LouvreDetailID", Data.SqlDbType.Int)
+            If intLouvreDetailID = Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@LouvreDetailID").Value = System.DBNull.Value
+            Else : cmd.Parameters("@LouvreDetailID").Value = intLouvreDetailID
+            End If
+
+            da.SelectCommand = cmd
+            da.Fill(dt)
+
+        Catch ex As Exception
+            If cnn.State = ConnectionState.Open Then
+                If bolCnnOpen = False Then
+                    cnn.Close()
+                End If
+            End If
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+        Finally
+            da.Dispose()
+            da = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            If bolCnnOpen = False Then
+                cnn.Close()
+                cnn.Dispose()
+                cnn = Nothing
+            End If
+        End Try
+        dbcon = Nothing
+        Return dt
+
+    End Function
+
+    Public Function getLouvreDetailsRecord(ByVal intLouvreDetailID As Integer, Optional ByVal cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As LouvreDetails
+
+        Dim cLouvreDetails As New LouvreDetails
+        Dim dt As DataTable = getLouvreDetailsByLouvreDetailID(intLouvreDetailID, cnn, trans)
+        If dt.Rows.Count > 0 Then
+            If Not IsDBNull(dt.Rows(0)("ProductionScheduleID")) Then
+                cLouvreDetails.ProductionScheduleID = CInt(dt.Rows(0)("ProductionScheduleID"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("ShutterID")) Then
+                cLouvreDetails.ShutterID = CInt(dt.Rows(0)("ShutterID"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("LocationID")) Then
+                cLouvreDetails.LocationID = CInt(dt.Rows(0)("LocationID"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("Location")) Then
+                cLouvreDetails.Location = CStr(dt.Rows(0)("Location"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("Width")) Then
+                cLouvreDetails.Width = CInt(dt.Rows(0)("Width"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("Height")) Then
+                cLouvreDetails.Height = CInt(dt.Rows(0)("Height"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("MakeOrOpenSizesId")) Then
+                cLouvreDetails.MakeOrOpenSizesId = CInt(dt.Rows(0)("MakeOrOpenSizesId"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("MakeOrOpenSizes")) Then
+                cLouvreDetails.MakeOrOpenSizes = dt.Rows(0)("MakeOrOpenSizes")
+            End If
+            If Not IsDBNull(dt.Rows(0)("ProductId")) Then
+                cLouvreDetails.ProductId = CInt(dt.Rows(0)("ProductId"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("Product")) Then
+                cLouvreDetails.Product = CStr(dt.Rows(0)("Product"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("ShutterTypeId")) Then
+                cLouvreDetails.ShutterTypeId = CInt(dt.Rows(0)("ShutterTypeId"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("ShutterType")) Then
+                cLouvreDetails.ShutterType = CStr(dt.Rows(0)("ShutterType"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("BiFoldHingedDoorInOutId")) Then
+                cLouvreDetails.BiFoldHingedDoorInOutId = CInt(dt.Rows(0)("BiFoldHingedDoorInOutId"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("BiFoldHingedDoorInOut")) Then
+                cLouvreDetails.BiFoldHingedDoorInOut = CStr(dt.Rows(0)("BiFoldHingedDoorInOut"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("NoOfPanels")) Then
+                cLouvreDetails.NoOfPanels = CStr(dt.Rows(0)("NoOfPanels"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("NoOfOpenings")) Then
+                cLouvreDetails.NoOfOpenings = CStr(dt.Rows(0)("NoOfOpenings"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("BladeSizeId")) Then
+                cLouvreDetails.BladeSizeId = CInt(dt.Rows(0)("BladeSizeId"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("BladeSize")) Then
+                cLouvreDetails.BladeSize = CStr(dt.Rows(0)("BladeSize"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("EndCapColourId")) Then
+                cLouvreDetails.EndCapColourId = CInt(dt.Rows(0)("EndCapColourId"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("EndCapColour")) Then
+                cLouvreDetails.EndCapColour = CStr(dt.Rows(0)("EndCapColour"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("BladeClipColourId")) Then
+                cLouvreDetails.BladeClipColourId = CInt(dt.Rows(0)("BladeClipColourId"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("BladeClipColour")) Then
+                cLouvreDetails.BladeClipColour = CStr(dt.Rows(0)("BladeClipColour"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("PileColourId")) Then
+                cLouvreDetails.PileColourId = CInt(dt.Rows(0)("PileColourId"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("PileColour")) Then
+                cLouvreDetails.PileColour = CStr(dt.Rows(0)("PileColour"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("MidRailHeight")) Then
+                cLouvreDetails.MidRailHeight = CInt(dt.Rows(0)("MidRailHeight"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("PivotTypeId")) Then
+                cLouvreDetails.PivotTypeId = CInt(dt.Rows(0)("PivotTypeId"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("PivotType")) Then
+                cLouvreDetails.PivotType = CStr(dt.Rows(0)("PivotType"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("FlushBoltsTopId")) Then
+                cLouvreDetails.FlushBoltsTopId = CInt(dt.Rows(0)("FlushBoltsTopId"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("FlushBoltsTop")) Then
+                cLouvreDetails.FlushBoltsTop = CStr(dt.Rows(0)("FlushBoltsTop"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("FlushBoltsBottomId")) Then
+                cLouvreDetails.FlushBoltsBottomId = CInt(dt.Rows(0)("FlushBoltsBottomId"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("FlushBoltsBottom")) Then
+                cLouvreDetails.FlushBoltsBottom = CStr(dt.Rows(0)("FlushBoltsBottom"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("LockOptionsId")) Then
+                cLouvreDetails.LockOptionsId = CInt(dt.Rows(0)("LockOptionsId"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("LockOptions")) Then
+                cLouvreDetails.LockOptions = CStr(dt.Rows(0)("LockOptions"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("BottomTrackTypeId")) Then
+                cLouvreDetails.BottomTrackTypeId = CInt(dt.Rows(0)("BottomTrackTypeId"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("BottomTrackType")) Then
+                cLouvreDetails.BottomTrackType = CStr(dt.Rows(0)("BottomTrackType"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("BladeLocks")) Then
+                cLouvreDetails.BladeLocks = CInt(dt.Rows(0)("BladeLocks"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("CChannel")) Then
+                cLouvreDetails.CChannel = CInt(dt.Rows(0)("CChannel"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("HChannel")) Then
+                cLouvreDetails.HChannel = CInt(dt.Rows(0)("HChannel"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("LChannel")) Then
+                cLouvreDetails.LChannel = CInt(dt.Rows(0)("LChannel"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("ZChannel")) Then
+                cLouvreDetails.ZChannel = CInt(dt.Rows(0)("ZChannel"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("ColourId")) Then
+                cLouvreDetails.ColourId = CInt(dt.Rows(0)("ColourId"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("Colour")) Then
+                cLouvreDetails.Colour = CStr(dt.Rows(0)("Colour"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("CostPrice")) Then
+                cLouvreDetails.CostPrice = CDec(dt.Rows(0)("CostPrice"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("CostPriceGST")) Then
+                cLouvreDetails.CostPriceGST = CDec(dt.Rows(0)("CostPriceGST"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("ExtrasPrice")) Then
+                cLouvreDetails.ExtrasPrice = CDec(dt.Rows(0)("ExtrasPrice"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("ExtrasPriceGST")) Then
+                cLouvreDetails.ExtrasPriceGST = CDec(dt.Rows(0)("ExtrasPriceGST"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("SalePrice")) Then
+                cLouvreDetails.SalePrice = CDec(dt.Rows(0)("SalePrice"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("SalePriceGST")) Then
+                cLouvreDetails.SalePriceGST = CDec(dt.Rows(0)("SalePriceGST"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("Deleted")) Then
+                cLouvreDetails.Deleted = CBool(dt.Rows(0)("Deleted"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("ShutterNo")) Then
+                cLouvreDetails.ShutterNo = CInt(dt.Rows(0)("ShutterNo"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("SlideId")) Then
+                cLouvreDetails.SlideId = CInt(dt.Rows(0)("SlideId"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("Slide")) Then
+                cLouvreDetails.Slide = CStr(dt.Rows(0)("Slide"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("StackerLocationId")) Then
+                cLouvreDetails.StackerLocationId = CInt(dt.Rows(0)("StackerLocationId"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("StackerLocation")) Then
+                cLouvreDetails.StackerLocation = CStr(dt.Rows(0)("StackerLocation"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("OtherColourCode")) Then
+                cLouvreDetails.OtherColourCode = CStr(dt.Rows(0)("OtherColourCode"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("OtherColour")) Then
+                cLouvreDetails.OtherColour = CStr(dt.Rows(0)("OtherColour"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("FinishTypeId")) Then
+                cLouvreDetails.FinishTypeId = CInt(dt.Rows(0)("FinishTypeId"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("FinishType")) Then
+                cLouvreDetails.FinishType = CStr(dt.Rows(0)("FinishType"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("InsertTopId")) Then
+                cLouvreDetails.InsertTopId = CInt(dt.Rows(0)("InsertTopId"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("InsertTop")) Then
+                cLouvreDetails.InsertTop = CStr(dt.Rows(0)("InsertTop"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("InsertBottomId")) Then
+                cLouvreDetails.InsertBottomId = CInt(dt.Rows(0)("InsertBottomId"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("InsertBottom")) Then
+                cLouvreDetails.InsertBottom = CStr(dt.Rows(0)("InsertBottom"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("BladeOperationId")) Then
+                cLouvreDetails.BladeOperationId = CInt(dt.Rows(0)("BladeOperationId"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("BladeOperation")) Then
+                cLouvreDetails.BladeOperation = CStr(dt.Rows(0)("BladeOperation"))
+            End If
+            If Not IsDBNull(dt.Rows(0)("OtherLocation")) Then
+                cLouvreDetails.OtherLocation = CStr(dt.Rows(0)("OtherLocation"))
+            End If
+
+            If dt.Columns.Contains("CurvedTrack") Then
+                If Not IsDBNull(dt.Rows(0)("CurvedTrack")) Then
+                    cLouvreDetails.CurvedTrack = CInt(dt.Rows(0)("CurvedTrack"))
+                End If
+            End If
+
+            If dt.Columns.Contains("ExtraTrack") Then
+                If Not IsDBNull(dt.Rows(0)("ExtraTrack")) Then
+                    cLouvreDetails.ExtraTrack = CInt(dt.Rows(0)("ExtraTrack"))
+                End If
+            End If
+
+            If dt.Columns.Contains("BladeOperationBottomId") Then
+                If Not IsDBNull(dt.Rows(0)("BladeOperationBottomId")) Then
+                    cLouvreDetails.BladeOperationBottomId = CInt(dt.Rows(0)("BladeOperationBottomId"))
+                End If
+            End If
+
+            If dt.Columns.Contains("BladeOperationBottom") Then
+                If Not IsDBNull(dt.Rows(0)("BladeOperationBottom")) Then
+                    cLouvreDetails.BladeOperationBottom = CStr(dt.Rows(0)("BladeOperationBottom"))
+                End If
+            End If
+
+            If dt.Columns.Contains("FlyScreen") Then
+                If Not IsDBNull(dt.Rows(0)("FlyScreen")) Then
+                    cLouvreDetails.FlyScreen = CInt(dt.Rows(0)("FlyScreen"))
+                End If
+            End If
+
+            If dt.Columns.Contains("Standoff") Then
+                If Not IsDBNull(dt.Rows(0)("Standoff")) Then
+                    cLouvreDetails.Standoff = CInt(dt.Rows(0)("Standoff"))
+                End If
+            End If
+
+            If dt.Columns.Contains("Winder") Then
+                If Not IsDBNull(dt.Rows(0)("Winder")) Then
+                    cLouvreDetails.Winder = CInt(dt.Rows(0)("Winder"))
+                End If
+            End If
+
+            If dt.Columns.Contains("ControllerSideID") Then
+                If Not IsDBNull(dt.Rows(0)("ControllerSideID")) Then
+                    cLouvreDetails.ControllerSideID = CInt(dt.Rows(0)("ControllerSideID"))
+                End If
+            End If
+
+            If dt.Columns.Contains("ControllerSide") Then
+                If Not IsDBNull(dt.Rows(0)("ControllerSide")) Then
+                    cLouvreDetails.ControllerSide = CStr(dt.Rows(0)("ControllerSide"))
+                End If
+            End If
+
+            If dt.Columns.Contains("HighsetAllowance") Then
+                If Not IsDBNull(dt.Rows(0)("HighsetAllowance")) Then
+                    cLouvreDetails.HighsetAllowance = CInt(dt.Rows(0)("HighsetAllowance"))
+                End If
+            End If
+
+            If dt.Columns.Contains("ExtrasCostPrice") Then
+                If Not IsDBNull(dt.Rows(0)("ExtrasCostPrice")) Then
+                    cLouvreDetails.ExtrasCostPrice = CDec(dt.Rows(0)("ExtrasCostPrice"))
+                End If
+            End If
+
+            If dt.Columns.Contains("ExtrasCostPriceGST") Then
+                If Not IsDBNull(dt.Rows(0)("ExtrasCostPriceGST")) Then
+                    cLouvreDetails.ExtrasCostPriceGST = CDec(dt.Rows(0)("ExtrasCostPriceGST"))
+                End If
+            End If
+
+            If dt.Columns.Contains("Track") Then
+                If Not IsDBNull(dt.Rows(0)("Track")) Then
+                    cLouvreDetails.Track = CInt(dt.Rows(0)("Track"))
+                End If
+            End If
+
+            If dt.Columns.Contains("Layout") Then
+                If Not IsDBNull(dt.Rows(0)("Layout")) Then
+                    cLouvreDetails.Layout = dt.Rows(0)("Layout").ToString
+                End If
+            End If
+
+            If dt.Columns.Contains("RemakeTypeID") Then
+                If Not IsDBNull(dt.Rows(0)("RemakeTypeID")) Then
+                    cLouvreDetails.RemakeTypeID = dt.Rows(0)("RemakeTypeID").ToString
+                End If
+            End If
+
+            'Added by Michael Behar 20/06/2017
+            If dt.Columns.Contains("SpecialRequirements") Then
+                If Not IsDBNull(dt.Rows(0)("SpecialRequirements")) Then
+                    cLouvreDetails.SpecialRequirements = dt.Rows(0)("SpecialRequirements").ToString
+                End If
+            End If
+
+            'Added by Michael Behar 20/06/2017
+            If dt.Columns.Contains("OtherLocation") Then
+                If Not IsDBNull(dt.Rows(0)("OtherLocation")) Then
+                    cLouvreDetails.OtherLocation = dt.Rows(0)("OtherLocation").ToString
+                End If
+            End If
+
+            'Added by Michael Behar 22/06/2017
+            If dt.Columns.Contains("TopTrack") Then
+                If Not IsDBNull(dt.Rows(0)("TopTrack")) Then
+                    cLouvreDetails.TopTrack = dt.Rows(0)("TopTrack").ToString
+                End If
+            End If
+
+            'Added by Michael Behar 22/06/2017
+            If dt.Columns.Contains("TopTrackID") Then
+                If Not IsDBNull(dt.Rows(0)("TopTrackID")) Then
+                    cLouvreDetails.TopTrackID = dt.Rows(0)("TopTrackID").ToString
+                End If
+            End If
+
+            'Added by Michael Behar 22/06/2017
+            If dt.Columns.Contains("FixedPanelChannel") Then
+                If Not IsDBNull(dt.Rows(0)("FixedPanelChannel")) Then
+                    cLouvreDetails.FixedPanelChannel = dt.Rows(0)("FixedPanelChannel").ToString
+                End If
+            End If
+
+            'Added by Michael Behar 22/06/2017
+            If dt.Columns.Contains("FixedPanelChannelID") Then
+                If Not IsDBNull(dt.Rows(0)("FixedPanelChannelID")) Then
+                    cLouvreDetails.FixedPanelChannelID = dt.Rows(0)("FixedPanelChannelID").ToString
+                End If
+            End If
+
+            'Added by Michael Behar 23/06/2017
+            If dt.Columns.Contains("OpenVertical") Then
+                If Not IsDBNull(dt.Rows(0)("OpenVertical")) Then
+                    cLouvreDetails.OpenVertical = dt.Rows(0)("OpenVertical").ToString
+                End If
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("LouvrePriceID")) Then
+                cLouvreDetails.LouvrePriceID = dt.Rows(0)("LouvrePriceID")
+            End If
+        End If
+
+        Return cLouvreDetails
+
+    End Function
+
+    Public Function setLouvreDetailsObjectFromDataRow(ByVal drow As DataRow) As LouvreDetails
+
+        Dim cLouvreDetails As New LouvreDetails
+
+        If Not IsDBNull(drow("LouvreDetailID")) Then
+            cLouvreDetails.LouvreDetailID = CInt(drow("LouvreDetailID"))
+        End If
+
+        If drow.Table.Columns.Contains("TempGUID") Then
+            If Not IsDBNull(drow("TempGUID")) Then
+                cLouvreDetails.TempGUID = drow("TempGUID").ToString
+            End If
+        End If
+
+        If drow.Table.Columns.Contains("OriginalLVDetailID") Then
+            If Not IsDBNull(drow("OriginalLVDetailID")) Then
+                cLouvreDetails.OriginalLVDetailID = CInt(drow("OriginalLVDetailID"))
+            End If
+        End If
+
+        If Not IsDBNull(drow("ProductionScheduleID")) Then
+            cLouvreDetails.ProductionScheduleID = CInt(drow("ProductionScheduleID"))
+        End If
+        If Not IsDBNull(drow("ShutterID")) Then
+            cLouvreDetails.ShutterID = CInt(drow("ShutterID"))
+        End If
+        If Not IsDBNull(drow("LocationID")) Then
+            cLouvreDetails.LocationID = CInt(drow("LocationID"))
+        End If
+        If Not IsDBNull(drow("Location")) Then
+            cLouvreDetails.Location = CStr(drow("Location"))
+        End If
+        If Not IsDBNull(drow("Width")) Then
+            cLouvreDetails.Width = CInt(drow("Width"))
+        End If
+        If Not IsDBNull(drow("Height")) Then
+            cLouvreDetails.Height = CInt(drow("Height"))
+        End If
+        If Not IsDBNull(drow("MakeOrOpenSizesId")) Then
+            cLouvreDetails.MakeOrOpenSizesId = CInt(drow("MakeOrOpenSizesId"))
+        End If
+        If Not IsDBNull(drow("MakeOrOpenSizes")) Then
+            cLouvreDetails.MakeOrOpenSizes = drow("MakeOrOpenSizes")
+        End If
+        If Not IsDBNull(drow("ProductId")) Then
+            cLouvreDetails.ProductId = CInt(drow("ProductId"))
+        End If
+        If Not IsDBNull(drow("Product")) Then
+            cLouvreDetails.Product = CStr(drow("Product"))
+        End If
+        If Not IsDBNull(drow("ShutterTypeId")) Then
+            cLouvreDetails.ShutterTypeId = CInt(drow("ShutterTypeId"))
+        End If
+        If Not IsDBNull(drow("ShutterType")) Then
+            cLouvreDetails.ShutterType = CStr(drow("ShutterType"))
+        End If
+        If Not IsDBNull(drow("BiFoldHingedDoorInOutId")) Then
+            cLouvreDetails.BiFoldHingedDoorInOutId = CInt(drow("BiFoldHingedDoorInOutId"))
+        End If
+        If Not IsDBNull(drow("BiFoldHingedDoorInOut")) Then
+            cLouvreDetails.BiFoldHingedDoorInOut = CStr(drow("BiFoldHingedDoorInOut"))
+        End If
+        If Not IsDBNull(drow("NoOfPanels")) Then
+            cLouvreDetails.NoOfPanels = CStr(drow("NoOfPanels"))
+        End If
+        If Not IsDBNull(drow("NoOfOpenings")) Then
+            cLouvreDetails.NoOfOpenings = CStr(drow("NoOfOpenings"))
+        End If
+        If Not IsDBNull(drow("BladeSizeId")) Then
+            cLouvreDetails.BladeSizeId = CInt(drow("BladeSizeId"))
+        End If
+        If Not IsDBNull(drow("BladeSize")) Then
+            cLouvreDetails.BladeSize = CStr(drow("BladeSize"))
+        End If
+        If Not IsDBNull(drow("EndCapColourId")) Then
+            cLouvreDetails.EndCapColourId = CInt(drow("EndCapColourId"))
+        End If
+        If Not IsDBNull(drow("EndCapColour")) Then
+            cLouvreDetails.EndCapColour = CStr(drow("EndCapColour"))
+        End If
+        If Not IsDBNull(drow("BladeClipColourId")) Then
+            cLouvreDetails.BladeClipColourId = CInt(drow("BladeClipColourId"))
+        End If
+        If Not IsDBNull(drow("BladeClipColour")) Then
+            cLouvreDetails.BladeClipColour = CStr(drow("BladeClipColour"))
+        End If
+        If Not IsDBNull(drow("PileColourId")) Then
+            cLouvreDetails.PileColourId = CInt(drow("PileColourId"))
+        End If
+        If Not IsDBNull(drow("PileColour")) Then
+            cLouvreDetails.PileColour = CStr(drow("PileColour"))
+        End If
+        If Not IsDBNull(drow("MidRailHeight")) Then
+            cLouvreDetails.MidRailHeight = CInt(drow("MidRailHeight"))
+        End If
+        If Not IsDBNull(drow("PivotTypeId")) Then
+            cLouvreDetails.PivotTypeId = CInt(drow("PivotTypeId"))
+        End If
+        If Not IsDBNull(drow("PivotType")) Then
+            cLouvreDetails.PivotType = CStr(drow("PivotType"))
+        End If
+        If Not IsDBNull(drow("FlushBoltsTopId")) Then
+            cLouvreDetails.FlushBoltsTopId = CInt(drow("FlushBoltsTopId"))
+        End If
+        If Not IsDBNull(drow("FlushBoltsTop")) Then
+            cLouvreDetails.FlushBoltsTop = CStr(drow("FlushBoltsTop"))
+        End If
+        If Not IsDBNull(drow("FlushBoltsBottomId")) Then
+            cLouvreDetails.FlushBoltsBottomId = CInt(drow("FlushBoltsBottomId"))
+        End If
+        If Not IsDBNull(drow("FlushBoltsBottom")) Then
+            cLouvreDetails.FlushBoltsBottom = CStr(drow("FlushBoltsBottom"))
+        End If
+        If Not IsDBNull(drow("LockOptionsId")) Then
+            cLouvreDetails.LockOptionsId = CInt(drow("LockOptionsId"))
+        End If
+        If Not IsDBNull(drow("LockOptions")) Then
+            cLouvreDetails.LockOptions = CStr(drow("LockOptions"))
+        End If
+        If Not IsDBNull(drow("BottomTrackTypeId")) Then
+            cLouvreDetails.BottomTrackTypeId = CInt(drow("BottomTrackTypeId"))
+        End If
+        If Not IsDBNull(drow("BottomTrackType")) Then
+            cLouvreDetails.BottomTrackType = CStr(drow("BottomTrackType"))
+        End If
+        If Not IsDBNull(drow("BladeLocks")) Then
+            cLouvreDetails.BladeLocks = CInt(drow("BladeLocks"))
+        End If
+        If Not IsDBNull(drow("CChannel")) Then
+            cLouvreDetails.CChannel = CInt(drow("CChannel"))
+        End If
+        If Not IsDBNull(drow("HChannel")) Then
+            cLouvreDetails.HChannel = CInt(drow("HChannel"))
+        End If
+        If Not IsDBNull(drow("LChannel")) Then
+            cLouvreDetails.LChannel = CInt(drow("LChannel"))
+        End If
+        If Not IsDBNull(drow("ZChannel")) Then
+            cLouvreDetails.ZChannel = CInt(drow("ZChannel"))
+        End If
+        If Not IsDBNull(drow("ColourId")) Then
+            cLouvreDetails.ColourId = CInt(drow("ColourId"))
+        End If
+        If Not IsDBNull(drow("Colour")) Then
+            cLouvreDetails.Colour = CStr(drow("Colour"))
+        End If
+        If Not IsDBNull(drow("CostPrice")) Then
+            cLouvreDetails.CostPrice = CDec(drow("CostPrice"))
+        End If
+        If Not IsDBNull(drow("CostPriceGST")) Then
+            cLouvreDetails.CostPriceGST = CDec(drow("CostPriceGST"))
+        End If
+        If Not IsDBNull(drow("ExtrasPrice")) Then
+            cLouvreDetails.ExtrasPrice = CDec(drow("ExtrasPrice"))
+        End If
+        If Not IsDBNull(drow("ExtrasPriceGST")) Then
+            cLouvreDetails.ExtrasPriceGST = CDec(drow("ExtrasPriceGST"))
+        End If
+        If Not IsDBNull(drow("SalePrice")) Then
+            cLouvreDetails.SalePrice = CDec(drow("SalePrice"))
+        End If
+        If Not IsDBNull(drow("SalePriceGST")) Then
+            cLouvreDetails.SalePriceGST = CDec(drow("SalePriceGST"))
+        End If
+        If Not IsDBNull(drow("Deleted")) Then
+            cLouvreDetails.Deleted = CBool(drow("Deleted"))
+        End If
+        If Not IsDBNull(drow("ShutterNo")) Then
+            cLouvreDetails.ShutterNo = CInt(drow("ShutterNo"))
+        End If
+
+        If Not IsDBNull(drow("SlideId")) Then
+            cLouvreDetails.SlideId = CInt(drow("SlideId"))
+        End If
+        If Not IsDBNull(drow("Slide")) Then
+            cLouvreDetails.Slide = CStr(drow("Slide"))
+        End If
+        If Not IsDBNull(drow("StackerLocationId")) Then
+            cLouvreDetails.StackerLocationId = CInt(drow("StackerLocationId"))
+        End If
+        If Not IsDBNull(drow("StackerLocation")) Then
+            cLouvreDetails.StackerLocation = CStr(drow("StackerLocation"))
+        End If
+
+        If Not IsDBNull(drow("OtherColourCode")) Then
+            cLouvreDetails.OtherColourCode = CStr(drow("OtherColourCode"))
+        End If
+
+        If Not IsDBNull(drow("OtherColour")) Then
+            cLouvreDetails.OtherColour = CStr(drow("OtherColour"))
+        End If
+        If Not IsDBNull(drow("FinishTypeId")) Then
+            cLouvreDetails.FinishTypeId = CInt(drow("FinishTypeId"))
+        End If
+        If Not IsDBNull(drow("FinishType")) Then
+            cLouvreDetails.FinishType = CStr(drow("FinishType"))
+        End If
+        If Not IsDBNull(drow("InsertTopId")) Then
+            cLouvreDetails.InsertTopId = CInt(drow("InsertTopId"))
+        End If
+        If Not IsDBNull(drow("InsertTop")) Then
+            cLouvreDetails.InsertTop = CStr(drow("InsertTop"))
+        End If
+        If Not IsDBNull(drow("InsertBottomId")) Then
+            cLouvreDetails.InsertBottomId = CInt(drow("InsertBottomId"))
+        End If
+        If Not IsDBNull(drow("InsertBottom")) Then
+            cLouvreDetails.InsertBottom = CStr(drow("InsertBottom"))
+        End If
+        If Not IsDBNull(drow("BladeOperationId")) Then
+            cLouvreDetails.BladeOperationId = CInt(drow("BladeOperationId"))
+        End If
+        If Not IsDBNull(drow("BladeOperation")) Then
+            cLouvreDetails.BladeOperation = CStr(drow("BladeOperation"))
+        End If
+        If Not IsDBNull(drow("OtherLocation")) Then
+            cLouvreDetails.OtherLocation = CStr(drow("OtherLocation"))
+        End If
+
+        If drow.Table.Columns.Contains("CurvedTrack") Then
+            If Not IsDBNull(drow("CurvedTrack")) Then
+                cLouvreDetails.CurvedTrack = CInt(drow("CurvedTrack"))
+            End If
+        End If
+
+        If drow.Table.Columns.Contains("ExtraTrack") Then
+            If Not IsDBNull(drow("ExtraTrack")) Then
+                cLouvreDetails.ExtraTrack = CInt(drow("ExtraTrack"))
+            End If
+        End If
+
+        If drow.Table.Columns.Contains("BladeOperationBottomId") Then
+            If Not IsDBNull(drow("BladeOperationBottomId")) Then
+                cLouvreDetails.BladeOperationBottomId = CInt(drow("BladeOperationBottomId"))
+            End If
+        End If
+
+        If drow.Table.Columns.Contains("BladeOperationBottom") Then
+            If Not IsDBNull(drow("BladeOperationBottom")) Then
+                cLouvreDetails.BladeOperationBottom = CStr(drow("BladeOperationBottom"))
+            End If
+        End If
+
+        If drow.Table.Columns.Contains("FlyScreen") Then
+            If Not IsDBNull(drow("FlyScreen")) Then
+                cLouvreDetails.FlyScreen = CInt(drow("FlyScreen"))
+            End If
+        End If
+
+        If drow.Table.Columns.Contains("Standoff") Then
+            If Not IsDBNull(drow("Standoff")) Then
+                cLouvreDetails.Standoff = CInt(drow("Standoff"))
+            End If
+        End If
+
+        If drow.Table.Columns.Contains("Winder") Then
+            If Not IsDBNull(drow("Winder")) Then
+                cLouvreDetails.Winder = CInt(drow("Winder"))
+            End If
+        End If
+
+        If drow.Table.Columns.Contains("ControllerSideID") Then
+            If Not IsDBNull(drow("ControllerSideID")) Then
+                cLouvreDetails.ControllerSideID = CInt(drow("ControllerSideID"))
+            End If
+        End If
+
+        If drow.Table.Columns.Contains("ControllerSide") Then
+            If Not IsDBNull(drow("ControllerSide")) Then
+                cLouvreDetails.ControllerSide = CStr(drow("ControllerSide"))
+            End If
+        End If
+
+        If drow.Table.Columns.Contains("HighsetAllowance") Then
+            If Not IsDBNull(drow("HighsetAllowance")) Then
+                cLouvreDetails.HighsetAllowance = CInt(drow("HighsetAllowance"))
+            End If
+        End If
+
+        If drow.Table.Columns.Contains("ExtrasCostPrice") Then
+            If Not IsDBNull(drow("ExtrasCostPrice")) Then
+                cLouvreDetails.ExtrasCostPrice = CDec(drow("ExtrasCostPrice"))
+            End If
+        End If
+
+        If drow.Table.Columns.Contains("ExtrasCostPriceGST") Then
+            If Not IsDBNull(drow("ExtrasCostPriceGST")) Then
+                cLouvreDetails.ExtrasCostPriceGST = CDec(drow("ExtrasCostPriceGST"))
+            End If
+        End If
+
+        If drow.Table.Columns.Contains("Track") Then
+            If Not IsDBNull(drow("Track")) Then
+                cLouvreDetails.Track = CInt(drow("Track"))
+            End If
+        End If
+
+        If drow.Table.Columns.Contains("Layout") Then
+            If Not IsDBNull(drow("Layout")) Then
+                cLouvreDetails.Layout = drow("Layout").ToString
+            End If
+        End If
+
+        If drow.Table.Columns.Contains("RemakeTypeID") Then
+            If Not IsDBNull(drow("RemakeTypeID")) Then
+                cLouvreDetails.RemakeTypeID = drow("RemakeTypeID").ToString
+            End If
+        End If
+
+        If drow.Table.Columns.Contains("SpecialRequirements") Then
+            If Not IsDBNull(drow("SpecialRequirements")) Then
+                cLouvreDetails.SpecialRequirements = drow("SpecialRequirements").ToString
+            End If
+        End If
+
+        If drow.Table.Columns.Contains("OtherLocation") Then
+            If Not IsDBNull(drow("OtherLocation")) Then
+                cLouvreDetails.OtherLocation = drow("OtherLocation").ToString
+            End If
+        End If
+
+        If drow.Table.Columns.Contains("TopTrack") Then
+            If Not IsDBNull(drow("TopTrack")) Then
+                cLouvreDetails.TopTrack = drow("TopTrack").ToString
+            End If
+        End If
+
+        If drow.Table.Columns.Contains("TopTrackID") Then
+            If Not IsDBNull(drow("TopTrackID")) Then
+                cLouvreDetails.TopTrackID = drow("TopTrackID").ToString
+            End If
+        End If
+
+        If drow.Table.Columns.Contains("FixedPanelChannel") Then
+            If Not IsDBNull(drow("FixedPanelChannel")) Then
+                cLouvreDetails.FixedPanelChannel = drow("FixedPanelChannel").ToString
+            End If
+        End If
+
+        If drow.Table.Columns.Contains("FixedPanelChannelID") Then
+            If Not IsDBNull(drow("FixedPanelChannelID")) Then
+                cLouvreDetails.FixedPanelChannelID = drow("FixedPanelChannelID").ToString
+            End If
+        End If
+
+        If drow.Table.Columns.Contains("OpenVertical") Then
+            If Not IsDBNull(drow("OpenVertical")) Then
+                cLouvreDetails.OpenVertical = drow("OpenVertical").ToString
+            End If
+        End If
+
+        If Not IsDBNull(drow("LouvrePriceID")) Then
+            cLouvreDetails.LouvrePriceID = drow("LouvrePriceID")
+        End If
+
+        Return cLouvreDetails
+
+    End Function
+
+    Public Function getLouvreLocations() As DataTable
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getLouvreLocation"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Close()
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+        Return dt
+
+    End Function
+
+    Public Function getLouvreColours() As DataTable
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getLouvreColours"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Close()
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+        Return dt
+
+    End Function
+
+End Class

@@ -1,0 +1,482 @@
+﻿<%@ Page Language="VB" AutoEventWireup="false" CodeFile="ProductionScheduleList.aspx.vb" Inherits="ProductionScheduleList" Theme="SknGridView" %>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head id="Head1">
+    <title>OzRoll Production Schedule List</title>
+        
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <meta http-equiv="expires" content="0" />
+    <meta http-equiv="pragma" content="no-cache" />
+    <meta http-equiv="cache-control" content="no-cache" />
+    <meta name="format-detection" content="telephone=no" />
+    
+    <link href="stylesheets/reset.css" rel="stylesheet" type="text/css" media="screen" />
+    <!--[if IE]><link href="stylesheets/explorer.css" rel="stylesheet" type="text/css" media="screen" /><![endif]-->
+    <link href="stylesheets/style.css?version=<%= Now.Year() & Now.Month & Now.Day() %>" rel="stylesheet" type="text/css" media="screen" />
+    <link href="stylesheets/smoothness/jquery-ui-1.10.2.custom.min.css" rel="stylesheet" type="text/css" />
+  
+    <!--[if lt IE 8]><script src="javascript/IE-fix.js" type="text/javascript"></script><![endif]-->
+    <script src="javascript/jquery-1.9.1.js" type="text/javascript"></script>
+    <script src="javascript/jquery-ui-1.10.2.custom.min.js" type="text/javascript"></script>
+   
+    <link href="favicon.ico" rel="shortcut icon" type="image/x-icon" />
+    
+    <script language="javascript" type="text/javascript">
+
+        (function(document, navigator, standalone) {
+            if ((standalone in navigator) && navigator[standalone]) {
+                var curnode, location = document.location, stop = /^(a|html)$/i;
+                document.addEventListener('click', function(e) {
+                    curnode = e.target;
+                    while (!(stop).test(curnode.nodeName))
+                        curnode = curnode.parentNode;
+                    if ('href' in curnode) {
+                        e.preventDefault();
+                        location.href = curnode.href;
+                    }
+                }, false);
+            }
+        })(document, window.navigator, 'standalone');
+
+        $(function() {
+            $("#dialog-alert").dialog({
+            modal: true,
+            autoOpen: false,
+            draggable: false,
+            buttons: {
+                "Ok": function() {
+                    $(this).dialog("close");
+                    return true;
+                }
+            }
+            });     
+        
+			$("#dialog-confirm").dialog({
+		    modal: true,
+		    autoOpen: false,
+		    draggable: false,
+		    buttons: {
+		        "Yes": function() {
+		            $(this).dialog("close");
+		            __doPostBack('<%=btnLogout.ClientID %>', '');
+		            return true;
+		        },
+		        "No": function() {
+		            $(this).dialog("close");
+		            return false;
+		        }
+		    }
+		    });
+		
+		    $("[id$=txtActualShippingDate]").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'dd M yy', gotoCurrent: true, showAnim: 'slideDown', maxDate: '+5w' });
+		    $("[id$=txtOrderDate]").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'dd M yy', gotoCurrent: true, showAnim: 'slideDown', maxDate: '+1d' });
+		    $("[id$=txtInvoiceDate]").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'dd M yy', gotoCurrent: true, showAnim: 'slideDown', maxDate: '+1d' });
+		    $("[id$=txtStartDate]").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'dd M yy', gotoCurrent: true, showAnim: 'slideDown', maxDate: '+10w' });
+		    $("[id$=txtEndDate]").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'dd M yy', gotoCurrent: true, showAnim: 'slideDown', maxDate: '+10w' });
+		
+        });
+
+	    if (window.history.forward(1) != null)
+	        window.history.forward(1);
+
+	    function openreport() {
+	        document.getElementById("<%=btnReport.ClientID%>").disabled = true;
+	        document.getElementById("<%=btnReport.ClientID%>").className = "form-button-disabled";
+	        document.getElementById("<%=btnReport.ClientID%>").value = "Submitting";
+	        document.getElementById("<%=btnAdd.ClientID %>").disabled = true;
+	        document.getElementById("<%=btnAdd.ClientID %>").className = "form-button-disabled";
+	        document.getElementById("<%=btnAdd.ClientID %>").value = "Add Job";
+	        document.getElementById("<%=btnSearch.ClientID %>").disabled = true;
+	        document.getElementById("<%=btnSearch.ClientID %>").className = "form-button-disabled";
+	        document.getElementById("<%=btnSearch.ClientID %>").value = "Search";
+	        document.getElementById("<%=btnClear.ClientID %>").disabled = true;
+	        document.getElementById("<%=btnClear.ClientID %>").className = "form-button-disabled";
+	        document.getElementById("<%=btnClear.ClientID %>").value = "Clear";
+	        document.getElementById("imgLoading2").style.visibility = "visible";
+	        __doPostBack('<%=btnReport.ClientID%>', '');
+	        return true;
+	    }
+
+        function addnew() {
+            document.getElementById("<%=btnReport.ClientID%>").disabled = true;
+            document.getElementById("<%=btnReport.ClientID%>").className = "form-button-disabled";
+            document.getElementById("<%=btnReport.ClientID%>").value = "Report";
+	        document.getElementById("<%=btnAdd.ClientID %>").disabled = true;
+	        document.getElementById("<%=btnAdd.ClientID %>").className = "form-button-disabled";
+	        document.getElementById("<%=btnAdd.ClientID %>").value = "Submitting";
+	        document.getElementById("<%=btnSearch.ClientID %>").disabled = true;
+	        document.getElementById("<%=btnSearch.ClientID %>").className = "form-button-disabled";
+            document.getElementById("<%=btnSearch.ClientID %>").value = "Search";
+            document.getElementById("<%=btnClear.ClientID %>").disabled = true;
+            document.getElementById("<%=btnClear.ClientID %>").className = "form-button-disabled";
+            document.getElementById("<%=btnClear.ClientID %>").value = "Clear";
+            document.getElementById("imgLoading2").style.visibility = "visible";
+	        __doPostBack('<%=btnAdd.ClientID %>', '');
+	        return true;
+	    }
+
+	    function ValidateAll() {
+	        var bolValid = 1;
+	        var strMessage = "";
+	        document.getElementById("<%=lblStatus.ClientID %>").innerHTML = "";
+//	        if (document.getElementById("<%=txtActualShippingDate.ClientID %>").value.replace(/^\s+|\s+$/g, '') == "") {
+//	            strMessage = "Please enter the Actual Shipping date.";
+//	            bolValid = 0;
+//	        } else {
+//	            if (isNaN(Date.parse(document.getElementById("<%=txtActualShippingDate.ClientID %>").value)) == true) {
+//	                strMessage = "Please enter a valid Actual Shipping date.";
+//	                bolValid = 0;
+//	            }
+//	        }
+//	        if (bolValid == 0) {
+//	            if (document.getElementById("<%=txtOrderDate.ClientID %>").value.replace(/^\s+|\s+$/g, '') == "") {
+//	                strMessage = "Please enter the Order date.";
+//	            } else {
+//	                if (isNaN(Date.parse(document.getElementById("<%=txtOrderDate.ClientID %>").value)) == true) {
+//	                    strMessage = "Please enter a valid Order date.";
+//	                } else {
+//	                    bolValid = 1;
+//	                }
+//	            }
+//	        }
+//	        if (bolValid == 0) {
+//	            if (document.getElementById("<%=cboCustomerName.ClientID %>").selectedIndex <= 0) {
+//	                strMessage = "Please select the Customer Name.";
+//	            } else {
+//	                bolValid = 1;
+//	            }
+//	        }
+//	        if (bolValid == 0) {
+//	            if (document.getElementById("<%=cboOrderStatus.ClientID %>").selectedIndex <= 0) {
+//	                strMessage = "Please select the Order Status.";
+//	            } else {
+//	                bolValid = 1;
+//	            }
+//	        }
+
+	        if (bolValid == 1) {
+	            document.getElementById("<%=btnReport.ClientID%>").disabled = true;
+	            document.getElementById("<%=btnReport.ClientID%>").className = "form-button-disabled";
+	            document.getElementById("<%=btnReport.ClientID%>").value = "Report";
+	            document.getElementById("<%=btnAdd.ClientID %>").disabled = true;
+	            document.getElementById("<%=btnAdd.ClientID %>").className = "form-button-disabled";
+	            document.getElementById("<%=btnAdd.ClientID %>").value = "Add Job";
+	            document.getElementById("<%=btnSearch.ClientID %>").disabled = true;
+	            document.getElementById("<%=btnSearch.ClientID %>").className = "form-button-disabled";
+	            document.getElementById("<%=btnSearch.ClientID %>").value = "Submitting";
+	            document.getElementById("<%=btnClear.ClientID %>").disabled = true;
+	            document.getElementById("<%=btnClear.ClientID %>").className = "form-button-disabled";
+	            document.getElementById("<%=btnClear.ClientID %>").value = "Clear";
+
+	            __doPostBack('<%=btnSearch.ClientID %>', '');
+	            return true;
+	        }
+	        else {
+	            if (strMessage != "") {
+	                document.getElementById("dialog-alert-message").innerHTML = strMessage;
+	                $("#dialog-alert").dialog("open");
+	            }
+	            return false;
+	        }     
+	    }
+
+        function reloadPage() {
+            setTimeout("location.reload(true);", 10000);
+            return true;
+        }
+
+	    function showMe() {
+	        if (document.getElementById("DivCur2").style.display == "none") {
+	            document.getElementById("DivCur2").style.display = "block";
+	        }
+	        else {
+	            document.getElementById("DivCur2").style.display = "none";
+	        }
+	    }
+
+	    function ConfirmLeave() {
+	        document.getElementById("dialog-confirm-message").innerHTML = "Are you sure you want to logout?";
+	        $("#dialog-confirm").dialog("open");
+	        return false;
+	    }
+
+	    function saveLocation() {
+	        localStorage.setItem('sTopLevelPage', window.location);
+	    }
+
+	    function restBTNs() {
+	        document.getElementById("<%=btnAdd.ClientID %>").disabled = false;
+	        document.getElementById("<%=btnAdd.ClientID %>").className = "form-button";
+	        document.getElementById("<%=btnAdd.ClientID %>").value = "Add Job";
+	        document.getElementById("<%=btnReport.ClientID%>").disabled = false;
+	        document.getElementById("<%=btnReport.ClientID%>").className = "form-button";
+	        document.getElementById("<%=btnReport.ClientID%>").value = "Report";
+	        document.getElementById("<%=btnSearch.ClientID %>").disabled = false;
+	        document.getElementById("<%=btnSearch.ClientID %>").className = "form-button";
+	        document.getElementById("<%=btnSearch.ClientID %>").value = "Search";
+	        document.getElementById("<%=btnClear.ClientID %>").disabled = false;
+	        document.getElementById("<%=btnClear.ClientID %>").className = "form-button";
+	        document.getElementById("<%=btnClear.ClientID %>").value = "Clear";
+	        document.getElementById("imgLoading2").style.visibility = "invisible";
+	    }
+
+	    function isNumberKey(evt) {
+	        var charCode = (evt.which) ? evt.which : event.keyCode;
+	        if (charCode != 46 && charCode > 31 && (charCode < 48 || charCode > 57))
+	            return false;
+	        return true;
+	    }
+
+    </script>
+    
+    <style type="text/css">
+
+        .table-button {
+            margin: 5px 10px 5px 5px;
+        }
+
+        .table-header-row th {
+            padding: 10px 10px 10px 10px;
+            color: white;
+            font-weight: normal;
+            height: 20px;
+            font-size: 1.1em;
+        }
+
+        .table-row td {
+            padding-right: 10px;
+        }
+
+    </style>
+    
+</head>
+<body onload="saveLocation();">
+    <form runat="server" id="form1" method="post">
+
+    <asp:ScriptManager ID="ScriptManager1" runat="server" EnablePartialRendering="true">
+    <Scripts>
+    <asp:ScriptReference Path="javascript/fixfocus.js" />
+    </Scripts>
+    </asp:ScriptManager>
+
+    <div id="middle-container-diallerview" >
+
+        <div id="logo" style="height: 100px; text-align: center;" ></div>
+        <div style="height: 50px; text-align: center;">
+        <asp:Button ID="btnHome" runat="server" CssClass="form-button" Visible="true" Text="Home" UseSubmitBehavior="false" />&nbsp;&nbsp;
+        <asp:Button ID="btnLogout" runat="server" CssClass="form-button" Visible="true" Text="Logout" OnClientClick="return ConfirmLeave();" UseSubmitBehavior="false" />
+	    </div>
+    
+    <h1>OzRoll Production Schedule List</h1>
+    
+
+    <div style="height: 100%; text-align: center;">
+   
+     <table class="form-table" cellspacing="0" summary="">
+         <tr>
+            <td class="form-label-td" style="width: 50%; text-align: right;">Customer Name&nbsp;:&nbsp;
+                <asp:DropDownList ID="cboCustomerName" runat="server" UseSubmitBehavior="false" CssClass="form-select" Width="200px" Height="28px" />
+            </td>
+            <td class="form-label-td" style="width: 50%; text-align: left;">Order Reference&nbsp;:&nbsp;
+                <asp:TextBox ID="txtOrderReference" runat="server" CssClass="form-field" Text="" MaxLength="20" Width="120px"></asp:TextBox>
+            </td>
+         </tr>
+         <tr>
+            <td class="form-label-td" style="width: 50%; text-align: right;">Order Type&nbsp;:&nbsp;
+                <asp:DropDownList ID="cboOrderType" runat="server" UseSubmitBehavior="false" CssClass="form-select" Width ="200px" Height="28px" />
+            </td>
+            <td class="form-label-td" style="width: 50%; text-align: left;">Shutter Pro Number&nbsp;:&nbsp;
+                <asp:TextBox ID="txtShutterProNumber" runat="server" CssClass="form-field" Text="" MaxLength="20" Width="120px"></asp:TextBox>               
+            </td>
+         </tr>
+         <tr>
+            <td class="form-label-td" style="width: 50%; text-align: right;">Order Status&nbsp;:&nbsp;
+                <asp:DropDownList ID="cboOrderStatus" runat="server" UseSubmitBehavior="false" CssClass="form-select" Width ="200px" Height="28px" />
+            </td>
+            <td class="form-label-td" style="width: 50%; text-align: left;">Priority&nbsp;:&nbsp;                
+                <asp:DropDownList ID="cboPriority" runat="server" UseSubmitBehavior="false" CssClass="form-select" Width ="200px" Height="28px" />
+            </td>
+         </tr>
+         <tr>
+            <td class="form-label-td" style="width: 50%; text-align: right;">Show Active Jobs Only&nbsp;:&nbsp;
+                <asp:CheckBox ID="chkActiveOnly" runat="server" />
+            </td>
+            <td class="form-label-td" style="width: 50%; text-align: left;">&nbsp;&nbsp;                                
+            </td>
+         </tr>
+         <asp:Panel ID="pnlDates" runat="server" Visible="false">
+             <tr>
+                <td class="form-label-td" style="width: 50%; text-align: right;">&nbsp;&nbsp;                    
+                </td>
+                <td class="form-label-td" style="width: 50%; text-align: left;">Order Date&nbsp;:&nbsp;
+                    <asp:TextBox ID="txtOrderDate" runat="server" CssClass="form-field" Text="" MaxLength="12" Width="120px"></asp:TextBox>
+                </td>
+             </tr>
+             <tr>
+                <td class="form-label-td" style="width: 50%; text-align: right;">Invoice Date&nbsp;:&nbsp;
+                    <asp:TextBox ID="txtInvoiceDate" runat="server" CssClass="form-field" Text="" MaxLength="12" Width="120px"></asp:TextBox>
+                </td>
+                <td class="form-label-td" style="width: 50%; text-align: left;">Shipping Date&nbsp;:&nbsp;
+                    <asp:TextBox ID="txtActualShippingDate" runat="server" CssClass="form-field" Text="" MaxLength="12" Width="120px"></asp:TextBox>
+                </td>
+            </tr>
+        </asp:Panel>
+        <tr>
+            <td class="form-label-td" style="width: 50%; text-align: right;">Date Type&nbsp;:&nbsp;
+                <asp:DropDownList ID="cboDateType" runat="server" UseSubmitBehavior="false" CssClass="form-select" Width ="200px" Height="28px" />
+            </td>
+            <td class="form-label-td" style="width: 50%; text-align: left;">&nbsp;&nbsp;                
+            </td>
+        </tr>
+        <tr>
+            <td class="form-label-td" style="width: 50%; text-align: right;">Start Date&nbsp;:&nbsp;
+                <asp:TextBox ID="txtStartDate" runat="server" CssClass="form-field" Text="" MaxLength="12" Width="120px"></asp:TextBox>
+            </td>
+            <td class="form-label-td" style="width: 50%; text-align: left;">End Date&nbsp;:&nbsp;
+                <asp:TextBox ID="txtEndDate" runat="server" CssClass="form-field" Text="" MaxLength="12" Width="120px"></asp:TextBox>
+            </td>                
+        </tr>
+        <tr>
+            <td class="form-submit-td" style="text-align: right;">&nbsp;&nbsp;&nbsp;&nbsp;
+                <asp:Button ID="btnSearch" runat="server" CssClass="form-button" Text="Search" OnClientClick="return ValidateAll();" UseSubmitBehavior="false" />
+            </td>
+            <td class="form-submit-td" style="text-align: left;">&nbsp;&nbsp;&nbsp;&nbsp;
+                <asp:Button ID="btnClear" runat="server" CssClass="form-button" Text="Clear" UseSubmitBehavior="false" />
+            </td>
+        </tr>  
+        <tr>
+            <td class="form-submit-td" style="text-align: right;">
+                <asp:Button ID="btnReport" runat="server" CssClass="form-button" Text="Report" OnClientClick="javascript:reloadPage();openreport();" UseSubmitBehavior="false" />
+            </td>
+            <td class="form-submit-td" style="text-align: left;">
+                <asp:Button ID="btnAdd" runat="server" CssClass="form-button" Text="Add Job" OnClientClick="return addnew();" UseSubmitBehavior="false" />
+                &nbsp;&nbsp;&nbsp;&nbsp;<img id="imgLoading2" src="images/indicator.gif" width="16px" height="16px" alt="loading" style="visibility: hidden; vertical-align: middle;" />
+            </td>
+        </tr>  
+
+     </table>
+     
+   </div>
+    <br />
+   
+  <asp:UpdatePanel ID="pnlResults" runat="server" UpdateMode="Conditional" ChildrenAsTriggers="true">
+  <ContentTemplate>
+
+  <div style="height: 100%; text-align: center;">
+    <table class="form-table" cellspacing="0" summary="">
+        <tr>
+            <td class="form-submit-td" style="text-align: center;">
+                <asp:Label ID="lblStatus" runat="server" Text="" ForeColor="Red"></asp:Label>
+            </td>
+        </tr>
+     </table>
+  </div>
+
+  <div class="form">  
+            <div class="step">
+                <asp:Panel runat="server" ID="pnlList" Visible="false">
+                    <asp:GridView ID="dgvScheduleList" runat="server" DataKeyNames="ID" AutoGenerateColumns="false" CellPadding="4" ForeColor="#333333" AllowSorting="true" >
+                        <RowStyle BackColor="#F7F6F3" ForeColor="#333333" CssClass="table-row" />
+                        <FooterStyle BackColor="#0059A9" Font-Bold="True" ForeColor="White" />
+                        <PagerStyle BackColor="#284775" ForeColor="White" HorizontalAlign="Center" />
+                        <SelectedRowStyle BackColor="#E2DED6" Font-Bold="True" ForeColor="#333333" />
+                        <HeaderStyle BackColor="#0059A9" ForeColor="White" CssClass="table-header-row" />
+                        <EditRowStyle BackColor="#999999" />
+                        <AlternatingRowStyle BackColor="White" ForeColor="#284775" />
+                        <Columns>
+                            <asp:TemplateField>
+                                <ItemTemplate>
+                                    <asp:Button ID="btnViewDetail" runat="server" Text="Details" CommandName="ScheduleDetail"  CommandArgument="<%# CType(Container, GridViewRow).RowIndex %>" CssClass="form-button table-button" Width="100px" Height="28px" />
+                                </ItemTemplate>
+                            </asp:TemplateField>
+                            <asp:BoundField DataField="Id" Visible="false" /> 
+                            <asp:BoundField DataField="SiteId" Visible="false" /> 
+                            <asp:BoundField DataField="OrderTypeID" Visible="false" /> 
+                            <asp:BoundField DataField="CustomerID" SortExpression="CustomerID" Visible="false" /> 
+                            <asp:BoundField DataField="JobNumber" SortExpression="JobNumber" Visible="false" />
+                            <asp:BoundField DataField="EnteredDatetime" SortExpression="EnteredDatetime" HeaderText="Created Date" DataFormatString="{0:d MMM yyyy}" />
+                            <asp:BoundField DataField="OrderDate" SortExpression="OrderDate" HeaderText="Order Date" DataFormatString="{0:d MMM yyyy}" />
+                            <asp:BoundField DataField="ShutterProNumber" SortExpression="ShutterProNumber" HeaderText="Ozroll ID" />
+                            <asp:BoundField DataField="OrderReference" SortExpression="OrderReference" HeaderText="Order Reference" />
+                            <asp:BoundField DataField="CustomerName" SortExpression="CustomerName" HeaderText="Customer Ref" />
+                            <asp:BoundField DataField="Customer" SortExpression="Customer" HeaderText="Customer" />
+                            <asp:BoundField DataField="OrderStatusName" SortExpression="OrderStatus" HeaderText="Order Status" />
+<%--                            <asp:BoundField DataField="FullMonthName" SortExpression="FullMonthName" HeaderText="Invoice Month" />
+                            <asp:BoundField DataField="WeekNumber" SortExpression="WeekNumber" HeaderText="Invoice Week" />--%>
+                            <asp:BoundField DataField="SalePrice" SortExpression="SalePrice" HeaderText="Sale Price" DataFormatString="{0:C}" />
+                            <asp:BoundField DataField="FreightAmount" SortExpression="FreightAmount" HeaderText="Freight Amt" DataFormatString="{0:C}" />
+                            <asp:BoundField DataField="TotalSQM" SortExpression="TotalSQM" HeaderText="Total SqM" />
+                            <asp:BoundField DataField="TotalPanels" SortExpression="TotalPanels" HeaderText="Total Panels" />
+
+<%--                            <asp:BoundField DataField="PanelsLess700" SortExpression="PanelsLess700" HeaderText="Panels < 700" />
+                            <asp:BoundField DataField="PanelsMore700" SortExpression="PanelsMore700" HeaderText="Panels > 700" />
+                            <asp:BoundField DataField="QtyHinges" SortExpression="QtyHinges" HeaderText="Hinges" />
+                            <asp:BoundField DataField="QtySliding" SortExpression="QtySliding" HeaderText="Sliding" />
+                            <asp:BoundField DataField="QtyBifold" SortExpression="QtyBifold" HeaderText="Bifold" />
+                            <asp:BoundField DataField="QtyFixed" SortExpression="QtyFixed" HeaderText="Fixed" />
+
+                            <asp:BoundField DataField="QtyZFrame" SortExpression="QtyZFrame" HeaderText="ZFrame" />
+                            <asp:BoundField DataField="QtyLFrame" SortExpression="QtyLFrame" HeaderText="LFrame" />
+--%>                        
+                            <asp:BoundField DataField="OffWhiteYN"  visible="false" SortExpression="OffWhite" HeaderText="Off White" />
+                            <asp:BoundField DataField="BrightWhiteYN" visible="false" SortExpression="BrightWhite" HeaderText="Bright White" />
+
+<%--                            <asp:BoundField DataField="PlannedShippingDate" SortExpression="PlannedShippingDate" HeaderText="Planned Shipping Date" />--%>
+                            <asp:BoundField DataField="ExpectedShippingDate" SortExpression="ExpectedShippingDate" HeaderText="Est Shipping Date" DataFormatString="{0:d MMM yyyy}" />
+                            <asp:BoundField DataField="ActualShippingDate" SortExpression="ActualShippingDate" HeaderText="Actual Shipping Date" DataFormatString="{0:d MMM yyyy}" />
+                            <asp:BoundField DataField="InvoicedDate" SortExpression="InvoicedDate" HeaderText="Invoiced Date" DataFormatString="{0:d MMM yyyy}" />
+                            <asp:BoundField DataField="ScheduledDate" SortExpression="ScheduledDate" HeaderText="Scheduled Date" DataFormatString="{0:d MMM yyyy}" />
+                            <asp:BoundField DataField="OrderType" SortExpression="OrderType" HeaderText="Order Type" />
+                        </Columns>
+                    </asp:GridView>
+                </asp:Panel>
+
+	        </div>
+     </div>   
+
+     </ContentTemplate>
+ 
+     <Triggers>
+        <asp:AsyncPostBackTrigger ControlID="btnSearch" EventName="Click" />
+     </Triggers>
+
+    </asp:UpdatePanel>
+
+    <br />
+    <div runat="server" id="DivCur1" onclick="javascript:showMe();" style="width: 10px; height: 10px;"></div>
+        <div runat="server" id="DivCur2" style="display:none;">
+        txtCurState:<asp:TextBox ID="txtCurState" runat="server" TabIndex="-1" Text="0"></asp:TextBox>
+        <br />
+        SiteID:<asp:TextBox ID="txtSiteID" runat="server" TabIndex="-1" Text="0"></asp:TextBox>
+        <br />
+        ProductTypeID<asp:TextBox id="txtProductTypeID" runat="server" TabIndex="-1" Text="0"></asp:TextBox>
+        <br />
+      
+
+    <div id="dialog-alert" title="Insufficient Information">
+        <p id="dialog-alert-message" style="text-align: left;"></p>
+    </div>
+    <div id="dialog-confirm" title="Please Confirm" >
+        <p id="dialog-confirm-message" style="text-align: left;"></p>
+    </div>
+
+    </div>   
+        
+    <script type="text/javascript">
+    $(function () {
+        $("input#txtActualShippingDate").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'dd M yy', gotoCurrent: true, showAnim: 'slideDown', maxDate: '+5w' });
+        $("input#txtOrderDate").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'dd M yy', gotoCurrent: true, showAnim: 'slideDown', maxDate: '+1d' });
+        $("input#txtInvoiceDate").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'dd M yy', gotoCurrent: true, showAnim: 'slideDown', maxDate: '+1d' });
+        $("input#txtStartDate").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'dd M yy', gotoCurrent: true, showAnim: 'slideDown', maxDate: '+10w' });
+        $("input#txtEndDate").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'dd M yy', gotoCurrent: true, showAnim: 'slideDown', maxDate: '+10w' });  
+    });
+    </script>
+
+    </div>  
+    
+   </form>
+</body>
+
+</html>

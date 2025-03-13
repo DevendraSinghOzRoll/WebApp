@@ -1,0 +1,985 @@
+﻿Imports Microsoft.VisualBasic
+
+Public Class PlantationJobDetails
+
+    Implements ICloneable
+
+    Private _PSDetailID As Integer
+    Private _TempGUID As String
+    Private _OriginalPSDetailID As Integer
+    Private _PlantationScheduleListID As Integer
+    Private _ShutterID As Integer    
+    Private _Quantity As Integer
+    Private _InstallationAreaID As Integer
+    Private _InstallationArea As String
+    Private _RoomLocationID As Integer
+    Private _RoomLocation As String
+    Private _RoomLocationOther As String
+    Private _Width As Integer
+    Private _Height As Integer
+    Private _MountConfigID As Integer
+    Private _MountConfig As String
+    Private _MountStyleID As Integer
+    Private _MountStyle As String
+    Private _PanelQtyID As Integer
+    Private _PanelQty As String
+    Private _MaterialID As Integer
+    Private _Material As String
+    Private _BladeSizeID As Integer
+    Private _BladeSize As String
+    Private _ColourID As Integer
+    Private _Colour As String
+    Private _MidRailHeight As Integer
+    Private _MidRailHeight2 As Integer
+    Private _LayoutID As Integer
+    Private _Layout As String
+    Private _LayoutOther As String
+    Private _MountMethodID As Integer
+    Private _MountMethod As String
+    Private _HingeColourID As Integer
+    Private _HingeColour As String
+    Private _FrameTypeID As Integer
+    Private _FrameType As String
+    Private _SidesID As Integer
+    Private _Sides As String
+    Private _ControlTypeID As Integer
+    Private _ControlType As String
+    Private _Track As Integer
+    Private _SlidingGuideID As Integer
+    Private _SlidingGuide As String
+    Private _SlidingOpenCloseID As Integer
+    Private _SlidingOpenClose As String
+    Private _TPostQtyID As Integer
+    Private _TPostQty As String
+    Private _TPostQtyLocationID As Integer
+    Private _TPostQtyLocation As String
+    '  Private _TPostQtyLocationOther As String
+    Private _SplitBladeID As Integer
+    Private _SplitBlade As String
+    Private _SplitBladeHeight As Integer
+    Private _HangStripID As Integer
+    Private _HangStrip As String
+    Private _LightBlockID As Integer
+    Private _LightBlock As String
+    Private _AngleBayID As Integer
+    Private _AngleBay As String
+    Private _FixedBlades As Integer
+    Private _StainlessSteelWheels As Integer
+    Private _ToCenterTPos1 As String
+    Private _ToCenterTPos2 As String
+    Private _ToCenterTPos3 As String
+    Private _ToCenterTPos4 As String
+    Private _ToCenterTPos5 As String
+    Private _SpecialRequirements As String
+    Private _CostPrice As Decimal
+    Private _CostPriceGST As Decimal
+    Private _ExtrasPrice As Decimal
+    Private _ExtrasPriceGST As Decimal
+    Private _SalePrice As Decimal
+    Private _SalePriceGST As Decimal
+    Private _Deleted As Boolean
+    '
+    Private _Sideboards As Integer
+    Private _Bottomboards As Integer
+    Private _BayPost As Integer
+    Private _CornerPost As Integer
+
+    Private _RemakeTypeID As Integer
+
+    Public Sub New()
+
+        _PSDetailID = Constants.DEFAULT_INTEGER_VALUE
+        _TempGUID = String.Empty
+        _OriginalPSDetailID = Constants.DEFAULT_INTEGER_VALUE
+        _PlantationScheduleListID = Constants.DEFAULT_INTEGER_VALUE
+        _ShutterID = Constants.DEFAULT_INTEGER_VALUE
+        _Quantity = Constants.DEFAULT_INTEGER_VALUE
+        _InstallationAreaID = Constants.DEFAULT_INTEGER_VALUE
+        _InstallationArea = String.Empty
+        _RoomLocationID = Constants.DEFAULT_INTEGER_VALUE
+        _RoomLocation = String.Empty
+        _RoomLocationOther = String.Empty
+        _Width = Constants.DEFAULT_INTEGER_VALUE
+        _Height = Constants.DEFAULT_INTEGER_VALUE
+        _MountConfigID = Constants.DEFAULT_INTEGER_VALUE
+        _MountConfig = String.Empty
+        _MountStyleID = Constants.DEFAULT_INTEGER_VALUE
+        _MountStyle = String.Empty
+        _PanelQtyID = Constants.DEFAULT_INTEGER_VALUE
+        _PanelQty = String.Empty
+        _MaterialID = Constants.DEFAULT_INTEGER_VALUE
+        _Material = String.Empty
+        _BladeSizeID = Constants.DEFAULT_INTEGER_VALUE
+        _BladeSize = String.Empty
+        _ColourID = Constants.DEFAULT_INTEGER_VALUE
+        _Colour = String.Empty
+        _MidRailHeight = Constants.DEFAULT_INTEGER_VALUE
+        _MidRailHeight2 = Constants.DEFAULT_INTEGER_VALUE
+        _LayoutID = Constants.DEFAULT_INTEGER_VALUE
+        _Layout = String.Empty
+        _LayoutOther = String.Empty
+        _MountMethodID = Constants.DEFAULT_INTEGER_VALUE
+        _MountMethod = String.Empty
+        _HingeColourID = Constants.DEFAULT_INTEGER_VALUE
+        _HingeColour = String.Empty
+        _FrameTypeID = Constants.DEFAULT_INTEGER_VALUE
+        _FrameType = String.Empty
+        _SidesID = Constants.DEFAULT_INTEGER_VALUE
+        _Sides = String.Empty
+        _ControlTypeID = Constants.DEFAULT_INTEGER_VALUE
+        _ControlType = String.Empty
+        _Track = Constants.DEFAULT_INTEGER_VALUE
+        _SlidingGuideID = Constants.DEFAULT_INTEGER_VALUE
+        _SlidingGuide = String.Empty
+        _SlidingOpenCloseID = Constants.DEFAULT_INTEGER_VALUE
+        _SlidingOpenClose = String.Empty
+        _TPostQtyID = Constants.DEFAULT_INTEGER_VALUE
+        _TPostQty = String.Empty
+        _TPostQtyLocationID = Constants.DEFAULT_INTEGER_VALUE
+        _TPostQtyLocation = String.Empty
+        '  _TPostQtyLocationOther = String.Empty
+        _SplitBladeID = Constants.DEFAULT_INTEGER_VALUE
+        _SplitBlade = String.Empty
+        _SplitBladeHeight = Constants.DEFAULT_INTEGER_VALUE
+        _HangStripID = Constants.DEFAULT_INTEGER_VALUE
+        _HangStrip = String.Empty
+        _LightBlockID = Constants.DEFAULT_INTEGER_VALUE
+        _LightBlock = String.Empty
+        _AngleBayID = Constants.DEFAULT_INTEGER_VALUE
+        _AngleBay = String.Empty
+        _FixedBlades = Constants.DEFAULT_INTEGER_VALUE
+        _StainlessSteelWheels = Constants.DEFAULT_INTEGER_VALUE
+        _ToCenterTPos1 = String.Empty
+        _ToCenterTPos2 = String.Empty
+        _ToCenterTPos3 = String.Empty
+        _ToCenterTPos4 = String.Empty
+        _ToCenterTPos5 = String.Empty
+        _SpecialRequirements = String.Empty
+        _CostPrice = Constants.DEFAULT_DECIMAL_VALUE
+        _CostPriceGST = Constants.DEFAULT_DECIMAL_VALUE
+        _ExtrasPrice = Constants.DEFAULT_DECIMAL_VALUE
+        _ExtrasPriceGST = Constants.DEFAULT_DECIMAL_VALUE
+        _SalePrice = Constants.DEFAULT_DECIMAL_VALUE
+        _SalePriceGST = Constants.DEFAULT_DECIMAL_VALUE
+        _Deleted = Constants.DEFAULT_BOOLEAN_VALUE
+        '
+        _Sideboards = Constants.DEFAULT_INTEGER_VALUE
+        _Bottomboards = Constants.DEFAULT_INTEGER_VALUE
+        _BayPost = Constants.DEFAULT_INTEGER_VALUE
+        _CornerPost = Constants.DEFAULT_INTEGER_VALUE
+
+        _RemakeTypeID = Constants.DEFAULT_INTEGER_VALUE
+
+    End Sub
+
+    Public Property PSDetailID() As Integer
+        Get
+            Return _PSDetailID
+        End Get
+        Set(ByVal Value As Integer)
+            _PSDetailID = Value
+        End Set
+    End Property
+
+    Public Property TempGUID() As String
+        Get
+            Return _TempGUID
+        End Get
+        Set(ByVal Value As String)
+            _TempGUID = Value
+        End Set
+    End Property
+
+    Public Property OriginalPSDetailID() As Integer
+        Get
+            Return _OriginalPSDetailID
+        End Get
+        Set(ByVal Value As Integer)
+            _OriginalPSDetailID = Value
+        End Set
+    End Property
+
+    Public Property PlantationScheduleListID() As Integer
+        Get
+            Return _PlantationScheduleListID
+        End Get
+        Set(ByVal Value As Integer)
+            _PlantationScheduleListID = Value
+        End Set
+    End Property
+
+    Public Property ShutterID() As Integer
+        Get
+            Return _ShutterID
+        End Get
+        Set(ByVal Value As Integer)
+            _ShutterID = Value
+        End Set
+    End Property
+
+    Public Property Quantity() As Integer
+        Get
+            Return _Quantity
+        End Get
+        Set(ByVal Value As Integer)
+            _Quantity = Value
+        End Set
+    End Property
+
+    Public Property InstallationAreaID() As Integer
+        Get
+            Return _InstallationAreaID
+        End Get
+        Set(ByVal Value As Integer)
+            _InstallationAreaID = Value
+        End Set
+    End Property
+
+    Public Property InstallationArea() As String
+        Get
+            Return _InstallationArea
+        End Get
+        Set(ByVal Value As String)
+            _InstallationArea = Value
+        End Set
+    End Property
+
+    Public Property RoomLocationID() As Integer
+        Get
+            Return _RoomLocationID
+        End Get
+        Set(ByVal Value As Integer)
+            _RoomLocationID = Value
+        End Set
+    End Property
+
+    Public Property RoomLocation() As String
+        Get
+            Return _RoomLocation
+        End Get
+        Set(ByVal Value As String)
+            _RoomLocation = Value
+        End Set
+    End Property
+
+    Public Property RoomLocationOther() As String
+        Get
+            Return _RoomLocationOther
+        End Get
+        Set(ByVal Value As String)
+            _RoomLocationOther = Value
+        End Set
+    End Property
+
+    Public Property Width() As Integer
+        Get
+            Return _Width
+        End Get
+        Set(ByVal Value As Integer)
+            _Width = Value
+        End Set
+    End Property
+
+    Public Property Height() As Integer
+        Get
+            Return _Height
+        End Get
+        Set(ByVal Value As Integer)
+            _Height = Value
+        End Set
+    End Property
+
+    Public Property MountConfigID() As Integer
+        Get
+            Return _MountConfigID
+        End Get
+        Set(ByVal Value As Integer)
+            _MountConfigID = Value
+        End Set
+    End Property
+
+    Public Property MountConfig() As String
+        Get
+            Return _MountConfig
+        End Get
+        Set(ByVal Value As String)
+            _MountConfig = Value
+        End Set
+    End Property
+
+    Public Property MountStyleID() As Integer
+        Get
+            Return _MountStyleID
+        End Get
+        Set(ByVal Value As Integer)
+            _MountStyleID = Value
+        End Set
+    End Property
+
+    Public Property MountStyle() As String
+        Get
+            Return _MountStyle
+        End Get
+        Set(ByVal Value As String)
+            _MountStyle = Value
+        End Set
+    End Property
+
+    Public Property PanelQtyID() As Integer
+        Get
+            Return _PanelQtyID
+        End Get
+        Set(ByVal Value As Integer)
+            _PanelQtyID = Value
+        End Set
+    End Property
+
+    Public Property PanelQty() As String
+        Get
+            Return _PanelQty
+        End Get
+        Set(ByVal Value As String)
+            _PanelQty = Value
+        End Set
+    End Property
+
+    Public Property MaterialID() As Integer
+        Get
+            Return _MaterialID
+        End Get
+        Set(ByVal Value As Integer)
+            _MaterialID = Value
+        End Set
+    End Property
+
+    Public Property Material() As String
+        Get
+            Return _Material
+        End Get
+        Set(ByVal Value As String)
+            _Material = Value
+        End Set
+    End Property
+
+    Public Property BladeSizeID() As Integer
+        Get
+            Return _BladeSizeID
+        End Get
+        Set(ByVal Value As Integer)
+            _BladeSizeID = Value
+        End Set
+    End Property
+
+    Public Property BladeSize() As String
+        Get
+            Return _BladeSize
+        End Get
+        Set(ByVal Value As String)
+            _BladeSize = Value
+        End Set
+    End Property
+
+    Public Property ColourID() As Integer
+        Get
+            Return _ColourID
+        End Get
+        Set(ByVal Value As Integer)
+            _ColourID = Value
+        End Set
+    End Property
+
+    Public Property Colour() As String
+        Get
+            Return _Colour
+        End Get
+        Set(ByVal Value As String)
+            _Colour = Value
+        End Set
+    End Property
+
+    Public Property MidRailHeight() As Integer
+        Get
+            Return _MidRailHeight
+        End Get
+        Set(ByVal Value As Integer)
+            _MidRailHeight = Value
+        End Set
+    End Property
+
+    Public Property MidRailHeight2() As Integer
+        Get
+            Return _MidRailHeight2
+        End Get
+        Set(ByVal Value As Integer)
+            _MidRailHeight2 = Value
+        End Set
+    End Property
+
+    Public Property LayoutID() As Integer
+        Get
+            Return _LayoutID
+        End Get
+        Set(ByVal Value As Integer)
+            _LayoutID = Value
+        End Set
+    End Property
+
+    Public Property Layout() As String
+        Get
+            Return _Layout
+        End Get
+        Set(ByVal Value As String)
+            _Layout = Value
+        End Set
+    End Property
+
+    Public Property LayoutOther() As String
+        Get
+            Return _LayoutOther
+        End Get
+        Set(ByVal Value As String)
+            _LayoutOther = Value
+        End Set
+    End Property
+
+    Public Property MountMethodID() As Integer
+        Get
+            Return _MountMethodID
+        End Get
+        Set(ByVal Value As Integer)
+            _MountMethodID = Value
+        End Set
+    End Property
+
+    Public Property MountMethod() As String
+        Get
+            Return _MountMethod
+        End Get
+        Set(ByVal Value As String)
+            _MountMethod = Value
+        End Set
+    End Property
+
+    Public Property HingeColourID() As Integer
+        Get
+            Return _HingeColourID
+        End Get
+        Set(ByVal Value As Integer)
+            _HingeColourID = Value
+        End Set
+    End Property
+
+    Public Property HingeColour() As String
+        Get
+            Return _HingeColour
+        End Get
+        Set(ByVal Value As String)
+            _HingeColour = Value
+        End Set
+    End Property
+
+    Public Property FrameTypeID() As Integer
+        Get
+            Return _FrameTypeID
+        End Get
+        Set(ByVal Value As Integer)
+            _FrameTypeID = Value
+        End Set
+    End Property
+
+    Public Property FrameType() As String
+        Get
+            Return _FrameType
+        End Get
+        Set(ByVal Value As String)
+            _FrameType = Value
+        End Set
+    End Property
+
+    Public Property SidesID() As Integer
+        Get
+            Return _SidesID
+        End Get
+        Set(ByVal Value As Integer)
+            _SidesID = Value
+        End Set
+    End Property
+
+    Public Property Sides() As String
+        Get
+            Return _Sides
+        End Get
+        Set(ByVal Value As String)
+            _Sides = Value
+        End Set
+    End Property
+
+    Public Property ControlTypeID() As Integer
+        Get
+            Return _ControlTypeID
+        End Get
+        Set(ByVal Value As Integer)
+            _ControlTypeID = Value
+        End Set
+    End Property
+
+    Public Property ControlType() As String
+        Get
+            Return _ControlType
+        End Get
+        Set(ByVal Value As String)
+            _ControlType = Value
+        End Set
+    End Property
+
+    Public Property Track() As Integer
+        Get
+            Return _Track
+        End Get
+        Set(ByVal Value As Integer)
+            _Track = Value
+        End Set
+    End Property
+
+    Public Property SlidingGuideID() As Integer
+        Get
+            Return _SlidingGuideID
+        End Get
+        Set(ByVal Value As Integer)
+            _SlidingGuideID = Value
+        End Set
+    End Property
+
+    Public Property SlidingGuide() As String
+        Get
+            Return _SlidingGuide
+        End Get
+        Set(ByVal Value As String)
+            _SlidingGuide = Value
+        End Set
+    End Property
+
+    Public Property SlidingOpenCloseID() As Integer
+        Get
+            Return _SlidingOpenCloseID
+        End Get
+        Set(ByVal Value As Integer)
+            _SlidingOpenCloseID = Value
+        End Set
+    End Property
+
+    Public Property SlidingOpenClose() As String
+        Get
+            Return _SlidingOpenClose
+        End Get
+        Set(ByVal Value As String)
+            _SlidingOpenClose = Value
+        End Set
+    End Property
+
+    Public Property TPostQtyID() As Integer
+        Get
+            Return _TPostQtyID
+        End Get
+        Set(ByVal Value As Integer)
+            _TPostQtyID = Value
+        End Set
+    End Property
+
+    Public Property TPostQty() As String
+        Get
+            Return _TPostQty
+        End Get
+        Set(ByVal Value As String)
+            _TPostQty = Value
+        End Set
+    End Property
+
+    Public Property TPostQtyLocationID() As Integer
+        Get
+            Return _TPostQtyLocationID
+        End Get
+        Set(ByVal Value As Integer)
+            _TPostQtyLocationID = Value
+        End Set
+    End Property
+
+    Public Property TPostQtyLocation() As String
+        Get
+            Return _TPostQtyLocation
+        End Get
+        Set(ByVal Value As String)
+            _TPostQtyLocation = Value
+        End Set
+    End Property
+
+    'Public Property TPostQtyLocationOther() As String
+    '    Get
+    '        Return _TPostQtyLocationOther
+    '    End Get
+    '    Set(ByVal Value As String)
+    '        _TPostQtyLocationOther = Value
+    '    End Set
+    'End Property
+
+    Public Property SplitBladeID() As Integer
+        Get
+            Return _SplitBladeID
+        End Get
+        Set(ByVal Value As Integer)
+            _SplitBladeID = Value
+        End Set
+    End Property
+
+    Public Property SplitBlade() As String
+        Get
+            Return _SplitBlade
+        End Get
+        Set(ByVal Value As String)
+            _SplitBlade = Value
+        End Set
+    End Property
+
+    Public Property SplitBladeHeight() As Integer
+        Get
+            Return _SplitBladeHeight
+        End Get
+        Set(ByVal Value As Integer)
+            _SplitBladeHeight = Value
+        End Set
+    End Property
+
+    Public Property HangStripID() As Integer
+        Get
+            Return _HangStripID
+        End Get
+        Set(ByVal Value As Integer)
+            _HangStripID = Value
+        End Set
+    End Property
+
+    Public Property HangStrip() As String
+        Get
+            Return _HangStrip
+        End Get
+        Set(ByVal Value As String)
+            _HangStrip = Value
+        End Set
+    End Property
+
+    Public Property LightBlockID() As Integer
+        Get
+            Return _LightBlockID
+        End Get
+        Set(ByVal Value As Integer)
+            _LightBlockID = Value
+        End Set
+    End Property
+
+    Public Property LightBlock() As String
+        Get
+            Return _LightBlock
+        End Get
+        Set(ByVal Value As String)
+            _LightBlock = Value
+        End Set
+    End Property
+
+    Public Property AngleBayID() As Integer
+        Get
+            Return _AngleBayID
+        End Get
+        Set(ByVal Value As Integer)
+            _AngleBayID = Value
+        End Set
+    End Property
+
+    Public Property AngleBay() As String
+        Get
+            Return _AngleBay
+        End Get
+        Set(ByVal Value As String)
+            _AngleBay = Value
+        End Set
+    End Property
+
+    Public Property FixedBlades() As Integer
+        Get
+            Return _FixedBlades
+        End Get
+        Set(ByVal Value As Integer)
+            _FixedBlades = Value
+        End Set
+    End Property
+
+    Public Property StainlessSteelWheels() As Integer
+        Get
+            Return _StainlessSteelWheels
+        End Get
+        Set(ByVal Value As Integer)
+            _StainlessSteelWheels = Value
+        End Set
+    End Property
+
+    Public Property ToCenterTPos1() As String
+        Get
+            Return _ToCenterTPos1
+        End Get
+        Set(ByVal Value As String)
+            _ToCenterTPos1 = Value
+        End Set
+    End Property
+
+    Public Property ToCenterTPos2() As String
+        Get
+            Return _ToCenterTPos2
+        End Get
+        Set(ByVal Value As String)
+            _ToCenterTPos2 = Value
+        End Set
+    End Property
+
+    Public Property ToCenterTPos3() As String
+        Get
+            Return _ToCenterTPos3
+        End Get
+        Set(ByVal Value As String)
+            _ToCenterTPos3 = Value
+        End Set
+    End Property
+
+    Public Property ToCenterTPos4() As String
+        Get
+            Return _ToCenterTPos4
+        End Get
+        Set(ByVal Value As String)
+            _ToCenterTPos4 = Value
+        End Set
+    End Property
+
+    Public Property ToCenterTPos5() As String
+        Get
+            Return _ToCenterTPos5
+        End Get
+        Set(ByVal Value As String)
+            _ToCenterTPos5 = Value
+        End Set
+    End Property
+
+    Public Property SpecialRequirements() As String
+        Get
+            Return _SpecialRequirements
+        End Get
+        Set(ByVal Value As String)
+            _SpecialRequirements = Value
+        End Set
+    End Property
+
+    Public Property CostPrice() As Decimal
+        Get
+            Return _CostPrice
+        End Get
+        Set(ByVal Value As Decimal)
+            _CostPrice = Value
+        End Set
+    End Property
+
+    Public Property CostPriceGST() As Decimal
+        Get
+            Return _CostPriceGST
+        End Get
+        Set(ByVal Value As Decimal)
+            _CostPriceGST = Value
+        End Set
+    End Property
+
+    Public Property ExtrasPrice() As Decimal
+        Get
+            Return _ExtrasPrice
+        End Get
+        Set(ByVal Value As Decimal)
+            _ExtrasPrice = Value
+        End Set
+    End Property
+
+    Public Property ExtrasPriceGST() As Decimal
+        Get
+            Return _ExtrasPriceGST
+        End Get
+        Set(ByVal Value As Decimal)
+            _ExtrasPriceGST = Value
+        End Set
+    End Property
+
+    Public Property SalePrice() As Decimal
+        Get
+            Return _SalePrice
+        End Get
+        Set(ByVal Value As Decimal)
+            _SalePrice = Value
+        End Set
+    End Property
+
+    Public Property SalePriceGST() As Decimal
+        Get
+            Return _SalePriceGST
+        End Get
+        Set(ByVal Value As Decimal)
+            _SalePriceGST = Value
+        End Set
+    End Property
+
+    Public Property Deleted() As Boolean
+        Get
+            Return _Deleted
+        End Get
+        Set(ByVal Value As Boolean)
+            _Deleted = Value
+        End Set
+    End Property
+
+    '
+    Public Property Sideboards() As Integer
+        Get
+            Return _Sideboards
+        End Get
+        Set(ByVal Value As Integer)
+            _Sideboards = Value
+        End Set
+    End Property
+    '
+    Public Property Bottomboards() As Integer
+        Get
+            Return _Bottomboards
+        End Get
+        Set(ByVal Value As Integer)
+            _Bottomboards = Value
+        End Set
+    End Property
+
+    Public Property BayPost() As Integer
+        Get
+            Return _BayPost
+        End Get
+        Set(ByVal Value As Integer)
+            _BayPost = Value
+        End Set
+    End Property
+    '
+    Public Property CornerPost() As Integer
+        Get
+            Return _CornerPost
+        End Get
+        Set(ByVal Value As Integer)
+            _CornerPost = Value
+        End Set
+    End Property
+    '
+    Public Property RemakeTypeID() As Integer
+        Get
+            Return _RemakeTypeID
+        End Get
+        Set(ByVal Value As Integer)
+            _RemakeTypeID = Value
+        End Set
+    End Property
+
+    Public Function Clone() As Object Implements ICloneable.Clone
+
+        Return MyBase.MemberwiseClone
+
+    End Function
+
+    Public Overrides Function ToString() As String
+
+        Return "[PLANTATIONJOBDETAILS]" & Environment.NewLine & _
+            "PSDetailID " & _PSDetailID & Environment.NewLine & _
+            "TempGUID " & _TempGUID & Environment.NewLine & _
+            "OriginalPSDetailID " & _OriginalPSDetailID & Environment.NewLine & _
+            "PlantationScheduleListID " & _PlantationScheduleListID & Environment.NewLine & _
+            "ShutterID " & _ShutterID & Environment.NewLine & _
+            "Quantity " & _Quantity & Environment.NewLine & _
+            "InstallationAreaID " & _InstallationAreaID & Environment.NewLine & _
+            "InstallationArea " & _InstallationArea & Environment.NewLine & _
+            "RoomLocationID " & _RoomLocationID & Environment.NewLine & _
+            "RoomLocationID " & _RoomLocation & Environment.NewLine & _
+            "RoomLocationOther " & _RoomLocationOther & Environment.NewLine & _
+            "Width " & _Width & Environment.NewLine & _
+            "Height " & _Height & Environment.NewLine & _
+            "MountConfigID " & _MountConfigID & Environment.NewLine & _
+            "MountConfig " & _MountConfig & Environment.NewLine & _
+            "MountStyleID " & _MountStyleID & Environment.NewLine & _
+            "MountStyle " & _MountStyle & Environment.NewLine & _
+            "PanelQtyID " & _PanelQtyID & Environment.NewLine & _
+            "PanelQty " & _PanelQty & Environment.NewLine & _
+            "MaterialID " & _MaterialID & Environment.NewLine & _
+            "Material " & _Material & Environment.NewLine & _
+            "BladeSizeID " & _BladeSizeID & Environment.NewLine & _
+            "BladeSize " & _BladeSize & Environment.NewLine & _
+            "ColourID " & _ColourID & Environment.NewLine & _
+            "Colour " & _Colour & Environment.NewLine & _
+            "MidRailHeight " & _MidRailHeight & Environment.NewLine & _
+            "MidRailHeight2 " & _MidRailHeight2 & Environment.NewLine & _
+            "LayoutID " & _LayoutID & Environment.NewLine & _
+            "Layout " & _Layout & Environment.NewLine & _
+            "LayoutOther " & _LayoutOther & Environment.NewLine & _
+            "MountMethodID " & _MountMethodID & Environment.NewLine & _
+            "MountMethod " & _MountMethod & Environment.NewLine & _
+            "HingeColourID " & _HingeColourID & Environment.NewLine & _
+            "HingeColour " & _HingeColour & Environment.NewLine & _
+            "FrameTypeID " & _FrameTypeID & Environment.NewLine & _
+            "FrameType " & _FrameType & Environment.NewLine & _
+            "SidesID " & _SidesID & Environment.NewLine & _
+            "Sides " & _Sides & Environment.NewLine & _
+            "ControlTypeID " & _ControlTypeID & Environment.NewLine & _
+            "ControlType " & _ControlType & Environment.NewLine & _
+            "Track " & _Track & Environment.NewLine & _
+            "SlidingGuideID " & _SlidingGuideID & Environment.NewLine & _
+            "SlidingGuide " & _SlidingGuide & Environment.NewLine & _
+            "SlidingOpenCloseID " & _SlidingOpenCloseID & Environment.NewLine & _
+            "SlidingOpenClose " & _SlidingOpenClose & Environment.NewLine & _
+            "TPostQtyID " & _TPostQtyID & Environment.NewLine & _
+            "TPostQty " & _TPostQty & Environment.NewLine & _
+            "TPostQtyLocationID " & _TPostQtyLocationID & Environment.NewLine & _
+            "TPostQtyLocation " & _TPostQtyLocation & Environment.NewLine & _
+            "SplitBladeID " & _SplitBladeID & Environment.NewLine & _
+            "SplitBlade " & _SplitBlade & Environment.NewLine & _
+            "SplitBladeHeight " & _SplitBladeHeight & Environment.NewLine & _
+            "HangStripID " & _HangStripID & Environment.NewLine & _
+            "HangStrip " & _HangStrip & Environment.NewLine & _
+            "LightBlockID " & _LightBlockID & Environment.NewLine & _
+            "LightBlock " & _LightBlock & Environment.NewLine & _
+            "AngleBayID " & _AngleBayID & Environment.NewLine & _
+            "AngleBay " & _AngleBay & Environment.NewLine & _
+            "FixedBlades " & _FixedBlades & Environment.NewLine & _
+            "StainlessSteelWheels " & _StainlessSteelWheels & Environment.NewLine & _
+            "ToCenterTPos1 " & _ToCenterTPos1 & Environment.NewLine & _
+            "ToCenterTPos2 " & _ToCenterTPos2 & Environment.NewLine & _
+            "ToCenterTPos3 " & _ToCenterTPos3 & Environment.NewLine & _
+            "ToCenterTPos4 " & _ToCenterTPos4 & Environment.NewLine & _
+            "ToCenterTPos5 " & _ToCenterTPos5 & Environment.NewLine & _
+            "SpecialRequirements " & _SpecialRequirements & Environment.NewLine & _
+            "CostPrice " & _CostPrice & Environment.NewLine & _
+            "CostPriceGST " & _CostPriceGST & Environment.NewLine & _
+            "ExtrasPrice " & _ExtrasPrice & Environment.NewLine & _
+            "ExtrasPriceGST " & _ExtrasPriceGST & Environment.NewLine & _
+            "SalePrice " & _SalePrice & Environment.NewLine & _
+            "SalePriceGST " & _SalePriceGST & Environment.NewLine & _
+            "Deleted " & _Deleted & Environment.NewLine & _
+            "Sideboards " & _Sideboards & Environment.NewLine & _
+            "Bottomboards " & _Bottomboards & Environment.NewLine & _
+            "BayPost " & _BayPost & Environment.NewLine & _
+            "CornerPost " & _CornerPost & Environment.NewLine & _
+            "RemakeTypeID " & _RemakeTypeID
+
+    End Function
+
+    Public Overloads Function Equals(ByVal obj As Object) As Boolean
+        If obj.ToString.Equals(Me.ToString) Then
+            Return True
+        Else : Return False
+        End If
+    End Function
+
+
+End Class

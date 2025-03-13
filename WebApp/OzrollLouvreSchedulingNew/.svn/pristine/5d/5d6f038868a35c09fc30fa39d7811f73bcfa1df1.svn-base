@@ -1,0 +1,46 @@
+﻿Imports System.Data.SqlClient
+
+Public Class RemoteUsersDAO
+
+    Private dbcon As New DBConnection
+
+    ' Public Function getUserDetailsFromRemoteUsers(ByVal strUsername As String, ByVal strHash As String) As DataTable
+    '     Dim con As SqlConnection
+    '     Dim com As New SqlCommand
+    '     Dim da As New SqlDataAdapter
+    '     Dim dt As New DataTable
+
+    '     con = dbcon.getSQLConnection_To_RemoteUsers()
+    '     Try
+    '         con.Open()
+    '         com.Connection = con
+    '         com.CommandText = "SELECT tblRemoteUsers.UserID, tblRemoteUsers.Username, tblRemoteConnections.SiteID, tblRemoteConnections.SiteName FROM tblRemoteUsers INNER JOIN tblRemoteConnections ON tblRemoteUsers.SiteID = tblRemoteConnections.SiteID WHERE (tblRemoteUsers.Discontinued = 0) AND (tblRemoteUsers.Username = '" & strUsername & "') AND (tblRemoteUsers.[Password MD5] = '" & strHash & "')"
+    '         com.CommandType = CommandType.Text
+
+    '         da.SelectCommand = com
+    '         da.Fill(dt)
+    '         con.Close()
+
+    '         Return dt
+
+    '     Catch ex As Exception
+    '         If con.State = ConnectionState.Open Then
+    '             con.Close()
+    '         End If
+    ''EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message, String.Empty)
+    '         Return dt
+
+    '     Finally
+    '         dt.Dispose()
+    '         dt = Nothing
+    '         da.Dispose()
+    '         da = Nothing
+    '         com.Dispose()
+    '         com = Nothing
+    '         con.Dispose()
+    '         con = Nothing
+
+    '     End Try
+    ' End Function
+
+End Class

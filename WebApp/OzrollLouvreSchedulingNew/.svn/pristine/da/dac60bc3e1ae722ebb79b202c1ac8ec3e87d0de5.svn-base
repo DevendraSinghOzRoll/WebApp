@@ -1,0 +1,324 @@
+﻿Imports Microsoft.VisualBasic
+Imports System.Data.SqlClient
+Public Class StockUsageDAO
+    Function AddStkRecord(Stk As StockUsage, Optional cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As Integer
+
+        Dim bolAddOK As Boolean = True
+        Dim SaveRecord As Boolean = False
+        If IsNothing(cnn) Then
+            bolAddOK = False
+            Dim dbConn As New DBConnection
+            cnn = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+            dbConn = Nothing
+        End If
+
+        Dim cmd As New SqlCommand
+        Try
+
+            If bolAddOK = False Then
+                cnn.Open()
+            End If
+            Dim SqlStr As String = "Insert Into tblStockUsage(ID,LineID,SybizProductID,ProductType,ProductCode,"
+            SqlStr += "Quantity,UnitCost,TotalCost,Deleted,TransferToSyBiz) values((Select IsNull(max(id),0)+1 from tblStockUsage),"
+            SqlStr += Stk.LineID.ToString() + "," + Stk.SybizProductID.ToString() + "," + Stk.ProductType.ToString() + ","
+            SqlStr += Stk.ProductCode + "," + Stk.Quantity.ToString() + "," + Stk.UnitCost.ToString() + ","
+            SqlStr += (Stk.UnitCost * Stk.Quantity).ToString() + ",0," + Stk.TransferToSybiz
+
+            cmd.Connection = cnn
+            cmd.CommandText = SqlStr
+            cmd.CommandType = CommandType.Text
+
+            If bolAddOK = True Then
+                cmd.Transaction = trans
+            End If
+
+            setupCommandParameters(Stk, cmd)
+            Dim ra As Integer = cmd.ExecuteNonQuery
+            If ra < 1 Then
+                EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - add record failed" & Environment.NewLine)
+                bolAddOK = False
+            Else
+                SaveRecord = True
+            End If
+            If bolAddOK = False Then
+                cnn.Close()
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+            bolAddOK = False
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+            If bolAddOK = False Then
+                cnn.Dispose()
+                cnn = Nothing
+            End If
+        End Try
+        Return SaveRecord
+        ''
+
+    End Function
+    Function updateStkRecord(Stk As StockUsage, Optional cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As Integer
+        Dim bolAddOK As Boolean = True
+        Dim SaveRecord As Boolean = False
+        If IsNothing(cnn) Then
+            bolAddOK = False
+            Dim dbConn As New DBConnection
+            cnn = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+            dbConn = Nothing
+        End If
+
+        Dim cmd As New SqlCommand
+        Try
+
+            If bolAddOK = False Then
+                cnn.Open()
+            End If
+
+            Dim SqlStr As String = "Update tblStockUsage set LineID = " + Stk.LineID.ToString() + ",SybizProductID="
+            SqlStr += Stk.SybizProductID.ToString() + ",ProductType=" + Stk.ProductType.ToString() + ",ProductCode="
+            SqlStr += Stk.ProductCode + ",Quantity=" + Stk.Quantity.ToString() + ",UnitCost=" + Stk.UnitCost.ToString()
+            SqlStr += ",TotalCost=" + (Stk.UnitCost * Stk.Quantity).ToString() + ",Deleted=" + Stk.Deleted
+            SqlStr += ",TransferToSybiz = " + Stk.TransferToSybiz + "where ID=" + Stk.ID
+
+
+            cmd.Connection = cnn
+            cmd.CommandText = SqlStr
+            cmd.CommandType = CommandType.Text
+
+            If bolAddOK = True Then
+                cmd.Transaction = trans
+            End If
+
+            setupCommandParameters(Stk, cmd)
+            Dim ra As Integer = cmd.ExecuteNonQuery
+            If ra < 1 Then
+                EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - add record failed" & Environment.NewLine)
+                bolAddOK = False
+            Else
+                SaveRecord = True
+            End If
+            If bolAddOK = False Then
+                cnn.Close()
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+            bolAddOK = False
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+            If bolAddOK = False Then
+                cnn.Dispose()
+                cnn = Nothing
+            End If
+        End Try
+        Return SaveRecord
+    End Function
+    Function GetStkRecord(Stk As StockUsage, VariableName As String, VarSearch As String, Optional cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As DataTable
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+        Dim bolAddOK As Boolean = True
+        Dim SaveRecord As Boolean = False
+        If IsNothing(cnn) Then
+            bolAddOK = False
+            Dim dbConn As New DBConnection
+            cnn = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+            dbConn = Nothing
+        End If
+
+        Dim cmd As New SqlCommand
+        Try
+
+            If bolAddOK = False Then
+                cnn.Open()
+            End If
+
+            Dim SqlStr As String = "Declare @VarName as Varchar(50) set @VarType =  " + VariableName
+            SqlStr += "  Select * from  tblStockUsage where CASE @VarName "
+            SqlStr += "when ""ID"" then ID  When ""LineID"" then LineID  when ""SybizProductID"" then SybizProductID "
+            SqlStr += "when ""ProductCode"" then ProductCode  when ""ProductType"" then ProductType "
+            SqlStr += "when ""Deleted"" then Deleted END = " + VarSearch
+
+            cmd.Connection = cnn
+            cmd.CommandText = SqlStr
+            cmd.CommandType = CommandType.Text
+
+
+            If bolAddOK = True Then
+                cmd.Transaction = trans
+            End If
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+
+            If bolAddOK = False Then
+                cnn.Close()
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+            bolAddOK = False
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+            If bolAddOK = False Then
+                cnn.Dispose()
+                cnn = Nothing
+            End If
+        End Try
+        Return dt
+    End Function
+    Protected Sub setupCommandParameters(StkUsage As StockUsage, ByRef cmd As SqlCommand)
+
+        SqlCommandBuilder.DeriveParameters(cmd)
+
+        If StkUsage.ID <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@ID").Value = StkUsage.ID
+        Else
+            cmd.Parameters("@ID").Direction = ParameterDirection.Output
+            cmd.Parameters("@ID").Value = DBNull.Value
+        End If
+
+        If StkUsage.LineID <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@LineID").Value = StkUsage.LineID
+        Else
+            cmd.Parameters("@LineID").Value = DBNull.Value
+        End If
+
+        If StkUsage.SybizProductID <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@SybizProductID").Value = StkUsage.SybizProductID
+        Else
+            cmd.Parameters("@SybizProductID").Value = DBNull.Value
+        End If
+
+        If StkUsage.TransferToSybiz <> Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@TransferToSybiz").Value = StkUsage.TransferToSybiz
+        Else
+            cmd.Parameters("@TransferToSybiz").Value = DBNull.Value
+        End If
+
+        If StkUsage.ProductCode <> String.Empty Then
+            cmd.Parameters("@ProductCode").Value = StkUsage.ProductCode
+        Else
+            cmd.Parameters("@ProductCode").Value = DBNull.Value
+        End If
+
+        If StkUsage.ProductType <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@ProductType").Value = StkUsage.ProductType
+        Else
+            cmd.Parameters("@ProductType").Value = DBNull.Value
+        End If
+
+        If StkUsage.Quantity <> Constants.DEFAULT_DECIMAL_VALUE Then
+            cmd.Parameters("@Quantity").Value = StkUsage.Quantity
+        Else
+            cmd.Parameters("@Quantity").Value = DBNull.Value
+        End If
+
+        If StkUsage.UnitCost <> Constants.DEFAULT_DECIMAL_VALUE Then
+            cmd.Parameters("@UnitCost").Value = StkUsage.UnitCost
+        Else
+            cmd.Parameters("@UnitCost").Value = DBNull.Value
+        End If
+
+        If StkUsage.TotalCost <> Constants.DEFAULT_DECIMAL_VALUE Then
+            cmd.Parameters("@TotalCost").Value = StkUsage.TotalCost
+        Else
+            cmd.Parameters("@TotalCost").Value = DBNull.Value
+        End If
+
+        If StkUsage.Deleted <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@Deleted").Value = StkUsage.Deleted
+        Else
+            cmd.Parameters("@Deleted").Value = DBNull.Value
+        End If
+
+    End Sub
+
+    Function getJobStockUsageByID(ByVal ScheduleID As Integer, ByVal StockArticleTypeID As Integer) As DataTable
+
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getStockUsageByID"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            cmd.Parameters.Add("@ScheduleID", Data.SqlDbType.Int)
+            If ScheduleID = Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@ScheduleID").Value = System.DBNull.Value
+            Else : cmd.Parameters("@ScheduleID").Value = ScheduleID
+            End If
+
+            cmd.Parameters.Add("@StockArticleTypeID", Data.SqlDbType.Int)
+            If StockArticleTypeID = Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@StockArticleTypeID").Value = System.DBNull.Value
+            Else : cmd.Parameters("@StockArticleTypeID").Value = StockArticleTypeID
+            End If
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Close()
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+        dbConn = Nothing
+        Return dt
+
+    End Function
+
+    Function getJobStockUsageByReqID(ByVal AdditionalRequirementsID As Integer) As DataTable
+
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getStockUsageByReqID"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            cmd.Parameters.Add("@AdditionalRequirementsID", Data.SqlDbType.Int)
+            If AdditionalRequirementsID = Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@AdditionalRequirementsID").Value = System.DBNull.Value
+            Else : cmd.Parameters("@AdditionalRequirementsID").Value = AdditionalRequirementsID
+            End If
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Close()
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+        dbConn = Nothing
+        Return dt
+
+    End Function
+
+End Class

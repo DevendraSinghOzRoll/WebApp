@@ -1,0 +1,255 @@
+﻿Public Class WebEmail
+
+    Private _EmailID As Integer
+    Private _DateOfEntry As Date
+    Private _TimeOfEntry As Date
+    Private _FromUserID As Integer
+    Private _FromUser As String
+    Private _FromMachineID As String
+    Private _Source As Integer
+    Private _FromField As String
+    Private _ToField As String
+    Private _CC As String
+    Private _BCC As String
+
+    Private _DoNotEmailTo As String
+    Private _DoNotEmailCC As String
+    Private _DoNotEmailBCC As String
+
+    Private _NoOfRecipients As Integer
+    Private _Subject As String
+    Private _AttachmentPath As String
+    Private _MessageBody As String
+    Private _EmailSent As Boolean
+    Private _EmailNotSent As Boolean
+    Private _DateEmailSent As Date
+    Private _TimeEmailSent As Date
+
+    Public Sub New()
+
+        _EmailID = Constants.DEFAULT_INTEGER_VALUE
+        _DateOfEntry = Constants.DEFAULT_DATE_VALUE
+        _TimeOfEntry = Constants.DEFAULT_DATE_VALUE
+        _FromUserID = Constants.DEFAULT_INTEGER_VALUE
+        _FromUser = String.Empty
+        _FromMachineID = String.Empty
+        _Source = Constants.DEFAULT_INTEGER_VALUE
+        _FromField = String.Empty
+        _ToField = String.Empty
+        _CC = String.Empty
+        _BCC = String.Empty
+
+        _DoNotEmailTo = String.Empty
+        _DoNotEmailCC = String.Empty
+        _DoNotEmailBCC = String.Empty
+
+        _NoOfRecipients = Constants.DEFAULT_INTEGER_VALUE
+        _Subject = String.Empty
+        _AttachmentPath = String.Empty
+        _MessageBody = String.Empty
+        _EmailSent = False
+        _EmailNotSent = False
+        _DateEmailSent = Constants.DEFAULT_DATE_VALUE
+        _TimeEmailSent = Constants.DEFAULT_DATE_VALUE
+
+    End Sub
+
+    Public Property EmailID() As Integer
+        Get
+            Return _EmailID
+        End Get
+        Set(ByVal Value As Integer)
+            _EmailID = Value
+        End Set
+    End Property
+
+    Public Property DateOfEntry() As Date
+        Get
+            Return _DateOfEntry
+        End Get
+        Set(ByVal Value As Date)
+            _DateOfEntry = Value
+        End Set
+    End Property
+
+    Public Property TimeOfEntry() As Date
+        Get
+            Return _TimeOfEntry
+        End Get
+        Set(ByVal Value As Date)
+            _TimeOfEntry = Value
+        End Set
+    End Property
+
+    Public Property FromUserID() As Integer
+        Get
+            Return _FromUserID
+        End Get
+        Set(ByVal Value As Integer)
+            _FromUserID = Value
+        End Set
+    End Property
+
+    Public Property FromUser() As String
+        Get
+            Return _FromUser
+        End Get
+        Set(ByVal Value As String)
+            _FromUser = Value
+        End Set
+    End Property
+
+    Public Property FromMachineID() As String
+        Get
+            Return _FromMachineID
+        End Get
+        Set(ByVal Value As String)
+            _FromMachineID = Value
+        End Set
+    End Property
+
+    Public Property Source() As Integer
+        Get
+            Return _Source
+        End Get
+        Set(ByVal Value As Integer)
+            _Source = Value
+        End Set
+    End Property
+
+    Public Property FromField() As String
+        Get
+            Return _FromField
+        End Get
+        Set(ByVal Value As String)
+            _FromField = Value
+        End Set
+    End Property
+
+    Public Property ToField() As String
+        Get
+            Return _ToField
+        End Get
+        Set(ByVal Value As String)
+            _ToField = Value
+        End Set
+    End Property
+
+    Public Property CC() As String
+        Get
+            Return _CC
+        End Get
+        Set(ByVal Value As String)
+            _CC = Value
+        End Set
+    End Property
+
+    Public Property BCC() As String
+        Get
+            Return _BCC
+        End Get
+        Set(ByVal Value As String)
+            _BCC = Value
+        End Set
+    End Property
+
+    Public Property DoNotEmailTo() As String
+        Get
+            Return _DoNotEmailTo
+        End Get
+        Set(ByVal value As String)
+            _DoNotEmailTo = value
+        End Set
+    End Property
+
+    Public Property DoNotEmailCC() As String
+        Get
+            Return _DoNotEmailCC
+        End Get
+        Set(ByVal value As String)
+            _DoNotEmailCC = value
+        End Set
+    End Property
+
+    Public Property DoNotEmailBCC() As String
+        Get
+            Return _DoNotEmailBCC
+        End Get
+        Set(ByVal value As String)
+            _DoNotEmailBCC = value
+        End Set
+    End Property
+
+    Public Property NoOfRecipients() As Integer
+        Get
+            Return _NoOfRecipients
+        End Get
+        Set(ByVal Value As Integer)
+            _NoOfRecipients = Value
+        End Set
+    End Property
+
+    Public Property Subject() As String
+        Get
+            Return _Subject
+        End Get
+        Set(ByVal Value As String)
+            _Subject = Value
+        End Set
+    End Property
+
+    Public Property AttachmentPath() As String
+        Get
+            Return _AttachmentPath
+        End Get
+        Set(ByVal Value As String)
+            _AttachmentPath = Value
+        End Set
+    End Property
+
+    Public Property MessageBody() As String
+        Get
+            Return _MessageBody
+        End Get
+        Set(ByVal Value As String)
+            _MessageBody = Value
+        End Set
+    End Property
+
+    Public Property EmailSent() As Boolean
+        Get
+            Return _EmailSent
+        End Get
+        Set(ByVal Value As Boolean)
+            _EmailSent = Value
+        End Set
+    End Property
+
+    Public Property EmailNotSent() As Boolean
+        Get
+            Return _EmailNotSent
+        End Get
+        Set(ByVal value As Boolean)
+            _EmailNotSent = value
+        End Set
+    End Property
+
+    Public Property DateEmailSent() As Date
+        Get
+            Return _DateEmailSent
+        End Get
+        Set(ByVal Value As Date)
+            _DateEmailSent = Value
+        End Set
+    End Property
+
+    Public Property TimeEmailSent() As Date
+        Get
+            Return _TimeEmailSent
+        End Get
+        Set(ByVal Value As Date)
+            _TimeEmailSent = Value
+        End Set
+    End Property
+
+End Class

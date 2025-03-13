@@ -1,0 +1,142 @@
+﻿Imports Microsoft.VisualBasic
+
+<Serializable>
+Public Class LouvreExtraProduct
+    Implements ICloneable
+
+    Private _ID As Integer
+    Private _LouvreDetailsID As Integer
+    Private _ExtraProductID As Integer
+    Private _Quantity As Decimal
+    Private _CutLength As Decimal
+    Private _CostPrice As Decimal
+    Private _CostPriceGST As Decimal
+    Private _SalePrice As Decimal
+    Private _SalePriceGST As Decimal
+    Private _PriceIsPercentage As Boolean
+    Private _LouvreExtraPriceID As Integer
+
+    ' From another DB table as result of a join.
+    Private ReadOnly _Description As String
+
+    Public Property ID As Integer
+        Get
+            Return _ID
+        End Get
+        Set(value As Integer)
+            _ID = value
+        End Set
+    End Property
+
+    Public Property LouvreDetailsID As Integer
+        Get
+            Return _LouvreDetailsID
+        End Get
+        Set(value As Integer)
+            _LouvreDetailsID = value
+        End Set
+    End Property
+
+    Public Property ExtraProductID As Integer
+        Get
+            Return _ExtraProductID
+        End Get
+        Set(value As Integer)
+            _ExtraProductID = value
+        End Set
+    End Property
+
+    Public Property Quantity As Decimal
+        Get
+            Return _Quantity
+        End Get
+        Set(value As Decimal)
+            _Quantity = value
+        End Set
+    End Property
+
+    Public Property CutLength As Decimal
+        Get
+            Return _CutLength
+        End Get
+        Set(value As Decimal)
+            _CutLength = value
+        End Set
+    End Property
+
+    Public Property CostPrice As Decimal
+        Get
+            Return _CostPrice
+        End Get
+        Set(value As Decimal)
+            _CostPrice = value
+        End Set
+    End Property
+
+    Public Property CostPriceGST As Decimal
+        Get
+            Return _CostPriceGST
+        End Get
+        Set(value As Decimal)
+            _CostPriceGST = value
+        End Set
+    End Property
+
+    Public Property SalePrice As Decimal
+        Get
+            Return _SalePrice
+        End Get
+        Set(value As Decimal)
+            _SalePrice = value
+        End Set
+    End Property
+
+    Public Property SalePriceGST As Decimal
+        Get
+            Return _SalePriceGST
+        End Get
+        Set(value As Decimal)
+            _SalePriceGST = value
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' Not part of the DB table. Result of join.
+    ''' </summary>
+    ''' <returns>Description form another table.</returns>
+    Public ReadOnly Property Description As String
+        Get
+            Return _Description
+        End Get
+    End Property
+
+    Public Property PriceIsPercentage As Boolean
+        Get
+            Return _PriceIsPercentage
+        End Get
+        Set(value As Boolean)
+            _PriceIsPercentage = value
+        End Set
+    End Property
+
+    Public Property LouvreExtraPriceID As Integer
+        Get
+            Return _LouvreExtraPriceID
+        End Get
+        Set(value As Integer)
+            _LouvreExtraPriceID = value
+        End Set
+    End Property
+
+    Public Sub New()
+        '
+    End Sub
+
+    Public Sub New(strDescription As String)
+        _Description = strDescription
+    End Sub
+
+    Public Function Clone() As Object Implements ICloneable.Clone
+        Return MyBase.MemberwiseClone()
+    End Function
+End Class

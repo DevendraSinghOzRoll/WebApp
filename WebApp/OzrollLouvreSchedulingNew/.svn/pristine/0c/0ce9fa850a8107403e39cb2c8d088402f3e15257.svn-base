@@ -1,0 +1,41 @@
+﻿Imports Microsoft.VisualBasic
+
+Public Class OrderType
+
+    Implements ICloneable
+
+    Private _ID As Integer
+    Private _Description As String
+
+    Public Property ID() As Integer
+        Get
+            Return _ID
+        End Get
+        Set(value As Integer)
+            _ID = value
+        End Set
+    End Property
+
+    Public Property Description() As String
+        Get
+            Return _Description
+        End Get
+        Set(value As String)
+            _Description = value
+        End Set
+    End Property
+
+    Public Sub New()
+
+        _ID = Constants.DEFAULT_INTEGER_VALUE
+        _Description = String.Empty
+
+    End Sub
+
+    Public Function Clone() As Object Implements System.ICloneable.Clone
+
+        Return MyBase.MemberwiseClone
+
+    End Function
+
+End Class

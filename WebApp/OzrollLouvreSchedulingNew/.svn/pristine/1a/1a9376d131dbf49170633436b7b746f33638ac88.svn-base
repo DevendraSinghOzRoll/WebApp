@@ -1,0 +1,102 @@
+﻿
+Public Class LouvreExtraProduct
+
+    Implements ICloneable
+
+    Private _ID As Integer
+    Private _LouvreDetailsID As Integer
+    Private _ExtraProductID As Integer
+    Private _Quantity As Decimal
+    Private _CutLength As Decimal
+    Private _CostPrice As Decimal
+    Private _CostPriceGST As Decimal
+    Private _SalePrice As Decimal
+    Private _SalePriceGST As Decimal
+
+    Public Property ID() As Integer
+        Get
+            Return _ID
+        End Get
+        Set(value As Integer)
+            _ID = value
+        End Set
+    End Property
+
+    Public Property LouvreDetailsID() As Integer
+        Get
+            Return _LouvreDetailsID
+        End Get
+        Set(value As Integer)
+            _LouvreDetailsID = value
+        End Set
+    End Property
+
+    Public Property ExtraProductID() As Integer
+        Get
+            Return _ExtraProductID
+        End Get
+        Set(value As Integer)
+            _ExtraProductID = value
+        End Set
+    End Property
+
+    Public Property Quantity() As Decimal
+        Get
+            Return _Quantity
+        End Get
+        Set(value As Decimal)
+            _Quantity = value
+        End Set
+    End Property
+
+    Public Property CutLength() As Decimal
+        Get
+            Return _CutLength
+        End Get
+        Set(value As Decimal)
+            _CutLength = value
+        End Set
+    End Property
+
+    Public Property CostPrice() As Decimal
+        Get
+            Return _CostPrice
+        End Get
+        Set(value As Decimal)
+            _CostPrice = value
+        End Set
+    End Property
+
+    Public Property CostPriceGST() As Decimal
+        Get
+            Return _CostPriceGST
+        End Get
+        Set(value As Decimal)
+            _CostPriceGST = value
+        End Set
+    End Property
+
+    Public Property SalePrice() As Decimal
+        Get
+            Return _SalePrice
+        End Get
+        Set(value As Decimal)
+            _SalePrice = value
+        End Set
+    End Property
+
+    Public Property SalePriceGST() As Decimal
+        Get
+            Return _SalePriceGST
+        End Get
+        Set(value As Decimal)
+            _SalePriceGST = value
+        End Set
+    End Property
+
+
+    Public Function Clone() As Object Implements ICloneable.Clone
+        Return MyBase.MemberwiseClone
+    End Function
+
+End Class

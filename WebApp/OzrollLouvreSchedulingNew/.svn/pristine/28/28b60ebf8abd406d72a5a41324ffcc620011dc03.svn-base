@@ -1,0 +1,28 @@
+﻿Public Class EventLog
+
+    Public Shared Sub addEventLogEmail(ByVal strMessage As String)
+
+        Dim webMail As New WebEmailDAO
+        Dim cWebEmail As New WebEmail
+
+        cWebEmail.DateOfEntry = CDate(Date.Now.ToShortDateString)
+        cWebEmail.TimeOfEntry = Date.Now
+        cWebEmail.FromUser = "Ozroll Plantation Scheduling" '//// change this
+        cWebEmail.FromMachineID = Environment.MachineName.ToString
+
+        cWebEmail.ToField = Constants.IT_HELPDESK_EMAIL
+        cWebEmail.CC = Constants.IT_DEVELOPER_EMAIL
+
+        cWebEmail.Subject = "Ozroll Plantation Scheduling - Error" '//// change below and this line.
+
+        cWebEmail.MessageBody = "An error has occurred in the Ozroll Plantation Scheduling on machine " & Environment.MachineName.ToString & Environment.NewLine & Environment.NewLine
+        cWebEmail.MessageBody &= "Time: " & Date.Now & Environment.NewLine & Environment.NewLine
+        cWebEmail.MessageBody &= strMessage
+
+        webMail.addAutoEmailWebRecord(cWebEmail) '////////////////////////// Un-Comment this!
+        cWebEmail = Nothing
+
+        webMail = Nothing
+
+    End Sub
+End Class

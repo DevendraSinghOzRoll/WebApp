@@ -1,0 +1,162 @@
+﻿Imports Microsoft.VisualBasic
+
+Public Class StockUsage
+
+    Implements ICloneable
+
+    Private _StockUsageID As Integer
+    Private _ScheduleID As Integer
+    Private _DetailID As Integer
+    Private _StockArticleID As Integer
+    Private _StockArticleTypeID As Integer
+    Private _OptimiserQuantity As Decimal
+    Private _ActualQuantity As Decimal
+    Private _StockArticleLength As Integer
+    Private _CostPrice As Decimal
+    Private _CostPriceGST As Decimal
+    Private _DateBookedOut As DateTime
+    Private _BookedOutBy As Integer
+    Private _AdditionalRequirementsID As Integer
+    Private _TransferToSybiz As DateTime
+    Public Sub New()
+        _StockUsageID = Constants.DEFAULT_INTEGER_VALUE
+        _ScheduleID = Constants.DEFAULT_INTEGER_VALUE
+        _DetailID = Constants.DEFAULT_INTEGER_VALUE
+        _StockArticleID = Constants.DEFAULT_INTEGER_VALUE
+        _StockArticleTypeID = Constants.DEFAULT_INTEGER_VALUE
+        _OptimiserQuantity = Constants.DEFAULT_DECIMAL_VALUE
+        _ActualQuantity = Constants.DEFAULT_DECIMAL_VALUE
+        _StockArticleLength = Constants.DEFAULT_INTEGER_VALUE
+        _CostPrice = Constants.DEFAULT_DECIMAL_VALUE
+        _CostPriceGST = Constants.DEFAULT_DECIMAL_VALUE
+        _DateBookedOut = Constants.DEFAULT_DATE_VALUE
+        _BookedOutBy = Constants.DEFAULT_INTEGER_VALUE
+        _AdditionalRequirementsID = Constants.DEFAULT_INTEGER_VALUE
+        _TransferToSybiz = Constants.DEFAULT_DATE_VALUE
+    End Sub
+    Public Property StockUsageID() As Integer
+        Get
+            Return _StockUsageID
+        End Get
+        Set(value As Integer)
+            _StockUsageID = value
+        End Set
+    End Property
+    Public Property ScheduleID() As Integer
+        Get
+            Return _ScheduleID
+        End Get
+        Set(value As Integer)
+            _ScheduleID = value
+        End Set
+    End Property
+    Public Property DetailID() As Integer
+        Get
+            Return _DetailID
+        End Get
+        Set(value As Integer)
+            _DetailID = value
+        End Set
+    End Property
+    Public Property StockArticleID() As Integer
+        Get
+            Return _StockArticleID
+        End Get
+        Set(value As Integer)
+            _StockArticleID = value
+        End Set
+    End Property
+
+    Public Property StockArticleTypeID() As Integer
+        Get
+            Return _StockArticleTypeID
+        End Get
+        Set(value As Integer)
+            _StockArticleTypeID = value
+        End Set
+    End Property
+
+    Public Property OptimiserQuantity() As Decimal
+        Get
+            Return _OptimiserQuantity
+        End Get
+        Set(value As Decimal)
+            _OptimiserQuantity = value
+        End Set
+    End Property
+    Public Property ActualQuantity() As Decimal
+        Get
+            Return _ActualQuantity
+        End Get
+        Set(value As Decimal)
+            _ActualQuantity = value
+        End Set
+    End Property
+    Public Property StockArticleLength() As Integer
+        Get
+            Return _StockArticleLength
+        End Get
+        Set(value As Integer)
+            _StockArticleLength = value
+        End Set
+    End Property
+
+    Public Property CostPrice() As Decimal
+        Get
+            Return _CostPrice
+        End Get
+        Set(value As Decimal)
+            _CostPrice = value
+        End Set
+    End Property
+
+    Public Property CostPriceGST() As Decimal
+        Get
+            Return _CostPriceGST
+        End Get
+        Set(value As Decimal)
+            _CostPriceGST = value
+        End Set
+    End Property
+
+    Public Property DateBookedOut() As DateTime
+        Get
+            Return _DateBookedOut
+        End Get
+        Set(value As DateTime)
+            _DateBookedOut = value
+        End Set
+    End Property
+
+    Public Property BookedOutBy() As Integer
+        Get
+            Return _BookedOutBy
+        End Get
+        Set(value As Integer)
+            _BookedOutBy = value
+        End Set
+    End Property
+
+    Public Property AdditionalRequirementsID() As Integer
+        Get
+            Return _AdditionalRequirementsID
+        End Get
+        Set(value As Integer)
+            _AdditionalRequirementsID = value
+        End Set
+    End Property
+
+    Public Property TransferToSybiz() As DateTime
+        Get
+            Return _TransferToSybiz
+        End Get
+        Set(value As DateTime)
+            _TransferToSybiz = value
+        End Set
+    End Property
+    Public Function Clone() As Object Implements System.ICloneable.Clone
+        Return MyBase.MemberwiseClone
+    End Function
+
+End Class
+

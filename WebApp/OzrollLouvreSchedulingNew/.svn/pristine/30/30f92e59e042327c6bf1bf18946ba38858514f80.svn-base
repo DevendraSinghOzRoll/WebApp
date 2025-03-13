@@ -1,0 +1,40 @@
+﻿Imports Sybiz.Vision.Platform.Debtors
+Imports VisionCustomer = Sybiz.Vision.Platform.Debtors.Customer
+Imports Sybiz.Vision.Platform.Core.Enumerations
+Imports Sybiz.Vision.Platform.Common
+
+Public Class SyBizShared
+    Private Shared ReadOnly VisionCustomerCODText As [String] = "*COD*"
+
+    Private Shared ReadOnly NATWarehouseLocationCode As [String] = "1"
+    Shared Function PingSybiz() As Boolean
+        Dim CompanyDSN As String, CommonDSN As String
+        'CompanyDSN = "data source=OZSASQL2\vision;initial catalog=Ozroll;persist security info=True;user id=sybiz;password=Centre847"
+
+        'CommonDSN below being used for Create Customer & Invoice
+        'CompanyDSN = "data source=OZOTSSVR\OzRoll;initial catalog=VisOZOts_TEST;persist security info=True;user id=HiveAccess;password=skycity"
+
+        'CommonDSN below being used for Job 
+        CompanyDSN = "data source=OZSASQL2;initial catalog=ozroll_DevTEST;persist security info=True;user id=sybiz;password=Centre847"
+        'CommonDSN below being used for Create Customer & Invoice
+        CommonDSN = "Data source = OZSASQL2\vision;initial catalog=VisionCommon;persist security info=True;user id=sybiz;password=Centre847"
+
+
+
+        Dim principal = Sybiz.Vision.Platform.Security.Principal.CurrentPrincipal()
+        If principal Is Nothing Then
+            ' Sybiz.Vision.Platform.Security.Principal.LogIn(Configuration.SybizUser, Configuration.SybizPassword, Configuration.SybizCompanyDsn, Configuration.SybizCommonDsn)
+            Sybiz.Vision.Platform.Security.Principal.LogIn("Ozots", "ozots", CompanyDSN, CommonDSN)
+        End If
+        Return Sybiz.Vision.Platform.Security.Principal.CurrentPrincipal() IsNot Nothing
+    End Function
+    Shared Sub LogoutSybiz()
+        If Sybiz.Vision.Platform.Security.Principal.CurrentPrincipal() IsNot Nothing Then
+            Sybiz.Vision.Platform.Security.Principal.LogOut()
+        End If
+    End Sub
+End Class
+
+
+
+

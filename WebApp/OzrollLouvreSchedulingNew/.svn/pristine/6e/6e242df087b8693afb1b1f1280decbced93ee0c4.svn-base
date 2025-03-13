@@ -1,0 +1,281 @@
+﻿Imports Microsoft.VisualBasic
+Imports System.Data.SqlClient
+
+Public Class AdditionalRequirementsDAO
+
+    Function addAdditionalRequirementsRecord(cRequirement As AdditionalRequirements, cnn As SqlConnection, ByRef trans As SqlTransaction) As Integer
+
+        Dim cmd As New SqlCommand
+
+        Try
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_addAdditionalRequirementsRecord"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            cmd.Transaction = trans
+
+            setupCommandParameters(cRequirement, cmd)
+
+            cmd.ExecuteNonQuery()
+
+            Return CInt(cmd.Parameters("@AdditionalRequirementsID").Value)
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - add record failed" & Environment.NewLine)
+            Return Constants.DEFAULT_INTEGER_VALUE
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+        End Try
+
+    End Function
+
+    Function updateAdditionalRequirementsRecord(cRequirement As AdditionalRequirements, cnn As SqlConnection, ByRef trans As SqlTransaction) As Boolean
+
+        Dim cmd As New SqlCommand
+
+        Try
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_updateAdditionalRequirementsRecord"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            cmd.Transaction = trans
+
+            setupCommandParameters(cRequirement, cmd)
+
+            cmd.ExecuteNonQuery()
+
+            Return True
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - add record failed" & Environment.NewLine)
+            Return False
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+        End Try
+
+    End Function
+
+    Function getAdditionalRequirementsRecord(intAdditonalRequirementID As Integer) As DataTable
+
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        dbConn = Nothing
+
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "select * from dbo.tblAdditionalRequirements where AdditionalRequirementsID = " & intAdditonalRequirementID.ToString
+            cmd.CommandType = CommandType.Text
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+
+            cnn.Close()
+
+            Return dt
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - add record failed" & Environment.NewLine)
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+
+    End Function
+
+    Function getAdditionalRequirementsByProductionScheduleID(intProductionScheduleID As Integer) As DataTable
+
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        dbConn = Nothing
+
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "select * from dbo.tblAdditionalRequirements where ProductionScheduleID = " & intProductionScheduleID.ToString
+            cmd.CommandType = CommandType.Text
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+
+            cnn.Close()
+
+            Return dt
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - add record failed" & Environment.NewLine)
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+
+    End Function
+
+    Protected Sub setupCommandParameters(cRequirement As AdditionalRequirements, ByRef cmd As SqlCommand)
+
+        SqlCommandBuilder.DeriveParameters(cmd)
+
+        If cRequirement.AdditionalRequirementsID <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@AdditionalRequirementsID").Value = cRequirement.AdditionalRequirementsID
+        Else
+            cmd.Parameters("@AdditionalRequirementsID").Direction = ParameterDirection.Output
+            cmd.Parameters("@AdditionalRequirementsID").Value = DBNull.Value
+        End If
+
+        If cRequirement.ProductionScheduleID <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@ProductionScheduleID").Value = cRequirement.ProductionScheduleID
+        Else
+            cmd.Parameters("@ProductionScheduleID").Value = DBNull.Value
+        End If
+
+        If cRequirement.AdditionalRequirementTypeID <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@AdditionalRequirementTypeID").Value = cRequirement.AdditionalRequirementTypeID
+        Else
+            cmd.Parameters("@AdditionalRequirementTypeID").Value = DBNull.Value
+        End If
+
+        If cRequirement.DescriptionText <> String.Empty Then
+            cmd.Parameters("@DescriptionText").Value = cRequirement.DescriptionText
+        Else
+            cmd.Parameters("@DescriptionText").Value = DBNull.Value
+        End If
+
+        If cRequirement.StartDate <> Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@StartDate").Value = cRequirement.StartDate
+        Else
+            cmd.Parameters("@StartDate").Value = DBNull.Value
+        End If
+
+        If cRequirement.ETADate <> Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@ETADate").Value = cRequirement.ETADate
+        Else
+            cmd.Parameters("@ETADate").Value = DBNull.Value
+        End If
+
+        If cRequirement.CompleteDate <> Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@CompleteDate").Value = cRequirement.CompleteDate
+        Else
+            cmd.Parameters("@CompleteDate").Value = DBNull.Value
+        End If
+
+        If cRequirement.StatusID <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@StatusID").Value = cRequirement.StatusID
+        Else
+            cmd.Parameters("@StatusID").Value = DBNull.Value
+        End If
+
+        If cRequirement.PowdercoaterID <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@PowdercoaterID").Value = cRequirement.PowdercoaterID
+        Else
+            cmd.Parameters("@PowdercoaterID").Value = DBNull.Value
+        End If
+
+        If cRequirement.PurchaseOrderNo <> String.Empty Then
+            cmd.Parameters("@PurchaseOrderNo").Value = cRequirement.PurchaseOrderNo
+        Else
+            cmd.Parameters("@PurchaseOrderNo").Value = DBNull.Value
+        End If
+
+        If cRequirement.CostPrice <> Constants.DEFAULT_DECIMAL_VALUE Then
+            cmd.Parameters("@CostPrice").Value = cRequirement.CostPrice
+        Else
+            cmd.Parameters("@CostPrice").Value = DBNull.Value
+        End If
+
+        If cRequirement.PickDate <> Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@PickDate").Value = cRequirement.PickDate
+        Else
+            cmd.Parameters("@PickDate").Value = DBNull.Value
+        End If
+
+    End Sub
+
+    Function setAdditionalRequirementsObjectFromDataRow(drow As DataRow) As AdditionalRequirements
+
+        Dim cRequirements As New AdditionalRequirements
+
+        If Not IsDBNull(drow("AdditionalRequirementsID")) Then
+            cRequirements.AdditionalRequirementsID = CInt(drow("AdditionalRequirementsID"))
+        End If
+
+        If drow.Table.Columns.Contains("TempGUID") Then
+            If Not IsDBNull(drow("TempGUID")) Then
+                cRequirements.TempGUID = drow("TempGUID").ToString
+            End If
+        End If
+
+        If drow.Table.Columns.Contains("OriginalAddRequirementsID") Then
+            If Not IsDBNull(drow("OriginalAddRequirementsID")) Then
+                cRequirements.OriginalAddRequirementsID = CInt(drow("OriginalAddRequirementsID"))
+            End If
+        End If
+
+        If Not IsDBNull(drow("ProductionScheduleID")) Then
+            cRequirements.ProductionScheduleID = CInt(drow("ProductionScheduleID"))
+        End If
+
+        If Not IsDBNull(drow("AdditionalRequirementTypeID")) Then
+            cRequirements.AdditionalRequirementTypeID = CInt(drow("AdditionalRequirementTypeID"))
+        End If
+
+        If Not IsDBNull(drow("DescriptionText")) Then
+            cRequirements.DescriptionText = drow("DescriptionText").ToString
+        End If
+
+        If Not IsDBNull(drow("StartDate")) Then
+            cRequirements.StartDate = CDate(drow("StartDate"))
+        End If
+
+        If Not IsDBNull(drow("ETADate")) Then
+            cRequirements.ETADate = CDate(drow("ETADate"))
+        End If
+
+        If Not IsDBNull(drow("CompleteDate")) Then
+            cRequirements.CompleteDate = CDate(drow("CompleteDate"))
+        End If
+
+        If Not IsDBNull(drow("StatusID")) Then
+            cRequirements.StatusID = CInt(drow("StatusID"))
+        End If
+
+        If Not IsDBNull(drow("PowdercoaterID")) Then
+            cRequirements.PowdercoaterID = CInt(drow("PowdercoaterID"))
+        End If
+
+        If Not IsDBNull(drow("PurchaseOrderNo")) Then
+            cRequirements.PurchaseOrderNo = drow("PurchaseOrderNo").ToString
+        End If
+
+        If Not IsDBNull(drow("CostPrice")) Then
+            cRequirements.CostPrice = CDec(drow("CostPrice"))
+        End If
+
+        If Not IsDBNull(drow("PickDate")) Then
+            cRequirements.PickDate = CDate(drow("PickDate"))
+        End If
+
+        Return cRequirements
+
+    End Function
+
+End Class

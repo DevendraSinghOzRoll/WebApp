@@ -1,0 +1,58 @@
+﻿<%@ Page Language="VB" AutoEventWireup="false" CodeFile="PlantationRemakeDetails.aspx.vb" Inherits="PlantationRemakeDetails" %>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head runat="server">
+
+     <title>Plantation Remake Details</title>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <meta http-equiv="expires" content="0" />
+    <meta http-equiv="pragma" content="no-cache" />
+    <meta http-equiv="cache-control" content="no-cache" />
+    <meta name="format-detection" content="telephone=no" />
+    
+    <link href="stylesheets/reset.css" rel="stylesheet" type="text/css" media="screen" />
+    <!--[if IE]><link href="stylesheets/explorer.css" rel="stylesheet" type="text/css" media="screen" /><![endif]-->
+    <link href="stylesheets/style.css?version=<%= Now.Year() & Now.Month & Now.Day() %>" rel="stylesheet" type="text/css" media="screen" />
+    <link href="stylesheets/smoothness/jquery-ui-1.10.2.custom.min.css" rel="stylesheet" type="text/css" />
+    
+    <!--[if lt IE 8]><script src="javascript/IE-fix.js" type="text/javascript"></script><![endif]-->
+    <script src="javascript/jquery-1.9.1.js" type="text/javascript"></script>
+    <script src="javascript/jquery-ui-1.10.2.custom.min.js" type="text/javascript"></script>
+    
+    <link href="favicon.ico" rel="shortcut icon" type="image/x-icon" />
+    
+    
+    <script language="javascript" type="text/javascript">    
+
+          function ConfirmLeave() {
+          document.getElementById("dialog-confirm-message").innerHTML = "Are you sure you want to logout?";
+          $("#dialog-confirm").dialog("open");
+          return false;
+      }
+
+    </script>
+
+</head>
+<body>
+    <form id="form1" runat="server">
+    <asp:Literal ID="lblWarning" runat="server"></asp:Literal>
+    <div id="middle-container-diallerview">
+    <asp:Literal ID="lblNotification" runat="server"></asp:Literal>
+    
+    <div style="height: 100px; text-align: center;">
+        <asp:Button ID="btnHome" runat="server" CssClass="form-button" Text="Home" Visible="false" />&nbsp;&nbsp;
+        <asp:Button ID="btnback" runat="server" CssClass="form-button" Text="Back" />&nbsp;&nbsp;
+        <asp:Button ID="btnLogout" runat="server" CssClass="form-button" Visible="false" Text="Logout" OnClientClick="return ConfirmLeave();" UseSubmitBehavior="false" />
+    </div>
+    
+    <h1>Manufacturing Remake Information For Contract <asp:Label ID="lblContractNumber" runat="server"></asp:Label></h1>
+        <asp:Label ID="lblShutter" runat="server" Text=""></asp:Label>
+        <asp:Label ID="lblShutterDtl" runat="server" Text=""></asp:Label>
+        <asp:Label ID="lblExtras" runat="server" Text=""></asp:Label>
+
+    </div> 
+    </form>
+</body>
+</html>

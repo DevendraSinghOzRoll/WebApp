@@ -1,0 +1,28 @@
+﻿Imports Microsoft.VisualBasic
+
+<Serializable>
+Public Class LouvreDetailsCollection
+    Inherits List(Of LouvreDetails)
+
+    Public Overloads Function Add(cLouvreDetails As LouvreDetails, boolAssignUniqueNegativeID As Boolean) As LouvreDetails
+        If boolAssignUniqueNegativeID Then
+            cLouvreDetails.LouvreDetailID = GetUniqueNegativeID()
+        End If
+
+        MyBase.Add(cLouvreDetails)
+
+        Return cLouvreDetails
+    End Function
+
+    Private Function GetUniqueNegativeID() As Integer
+        Dim lowestID As Integer = -1
+
+        For Each l As LouvreDetails In Me
+            If l.LouvreDetailID <= lowestID Then
+                lowestID = l.LouvreDetailID - 1
+            End If
+        Next
+
+        Return lowestID
+    End Function
+End Class

@@ -1,0 +1,156 @@
+﻿Imports Microsoft.VisualBasic
+
+Public Class Address
+
+    Implements ICloneable
+
+    Private _ID As Integer
+    Private _CustomerID As Integer
+    Private _Street As String
+    Private _Suburb As String
+    Private _State As String
+    Private _Postcode As String
+    Private _DeliveryCode As String
+    Private _AddressType As Integer
+    Private _IsPrimary As Integer
+    Private _Discontinued As Integer
+
+    Public Property ID() As Integer
+        Get
+            Return _ID
+        End Get
+        Set(ByVal value As Integer)
+            _ID = value
+        End Set
+    End Property
+
+    Public Property CustomerID() As Integer
+        Get
+            Return _CustomerID
+        End Get
+        Set(ByVal value As Integer)
+            _CustomerID = value
+        End Set
+    End Property
+
+    Public Property Street() As String
+        Get
+            Return _Street
+        End Get
+        Set(ByVal value As String)
+            _Street = value
+        End Set
+    End Property
+
+    Public Property Suburb() As String
+        Get
+            Return _Suburb
+        End Get
+        Set(ByVal value As String)
+            _Suburb = value
+        End Set
+    End Property
+
+    Public Property State() As String
+        Get
+            Return _State
+        End Get
+        Set(ByVal value As String)
+            _State = value
+        End Set
+    End Property
+
+    Public Property Postcode() As String
+        Get
+            Return _Postcode
+        End Get
+        Set(ByVal value As String)
+            _Postcode = value
+        End Set
+    End Property
+
+    Public Property DeliveryCode() As String
+        Get
+            Return _DeliveryCode
+        End Get
+        Set(ByVal value As String)
+            _DeliveryCode = value
+        End Set
+    End Property
+
+    Public Property AddressType() As Integer
+        Get
+            Return _AddressType
+        End Get
+        Set(ByVal value As Integer)
+            _AddressType = value
+        End Set
+    End Property
+
+    Public Property IsPrimary() As Integer
+        Get
+            Return _IsPrimary
+        End Get
+        Set(ByVal value As Integer)
+            _IsPrimary = value
+        End Set
+    End Property
+
+    Public Property Discontinued() As Integer
+        Get
+            Return _Discontinued
+        End Get
+        Set(ByVal value As Integer)
+            _Discontinued = value
+        End Set
+    End Property
+
+    Public Sub New()
+
+        _ID = Constants.DEFAULT_INTEGER_VALUE
+        _CustomerID = Constants.DEFAULT_INTEGER_VALUE
+        _Street = String.Empty
+        _Suburb = String.Empty
+        _State = String.Empty
+        _PostCode = String.Empty
+        _DeliveryCode = String.Empty
+        _AddressType = Constants.DEFAULT_INTEGER_VALUE
+        _IsPrimary = Constants.DEFAULT_INTEGER_VALUE
+        _Discontinued = Constants.DEFAULT_INTEGER_VALUE
+
+    End Sub
+
+    Public Sub New(intID As Integer,
+                   intCustomerID As Integer,
+                   strStreet As String,
+                   strSuburb As String,
+                   strState As String,
+                   strPostcode As String,
+                   strDeliveryCode As String,
+                   intAddressType As Integer,
+                   intIsPrimary As Integer,
+                   intDiscontinued As Integer)
+
+        _ID = intID
+        _CustomerID = intCustomerID
+        _Street = strStreet
+        _Suburb = strSuburb
+        _State = strState
+        _Postcode = strPostcode
+        _DeliveryCode = strDeliveryCode
+        _AddressType = intAddressType
+        _IsPrimary = intIsPrimary
+        _Discontinued = intDiscontinued
+
+    End Sub
+
+    Public Function Clone() As Object Implements System.ICloneable.Clone
+
+        Return MyBase.MemberwiseClone
+
+    End Function
+
+    Public Overrides Function ToString() As String
+        Return _Street & ", " & _Suburb & ", " & _State & ", " & _Postcode
+    End Function
+End Class

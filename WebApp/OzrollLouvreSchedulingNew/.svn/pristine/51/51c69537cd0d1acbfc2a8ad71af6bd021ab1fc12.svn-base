@@ -1,0 +1,1491 @@
+﻿Imports Microsoft.VisualBasic
+Imports System.Data.SqlClient
+Imports System.Data
+
+Public Class ProductionScheduleDAO
+
+    Function createOrderStatusTBL(intProductTypeID As Integer) As DataTable
+
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        dbConn = Nothing
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cmd.Connection = cnn
+            cmd.CommandText = "select * from dbo.tblStatus inner join dbo.tblProductStatus on dbo.tblStatus.StatusID = dbo.tblProductStatus.StatusID where ProductTypeID = " & intProductTypeID.ToString & " order by dbo.tblProductStatus.SortOrder"
+            cmd.CommandType = CommandType.Text
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+
+            cnn.Close()
+
+            Return dt
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+
+    End Function
+
+    Function getSchedulingMonths(ByRef dtAllMonths As DataTable, Optional ByVal intYearID As Integer = Nothing) As DataTable
+
+        Dim service As New AppService
+        dtAllMonths = service.runSQLScheduling("Select MonthID, MonthName, YearID from dbo.loctblMonths Order By MonthID")
+        service = Nothing
+        Dim col As DataColumn = New DataColumn
+        col.ColumnName = "FullMonthName"
+        col.DataType = System.Type.GetType("System.String")
+        dtAllMonths.Columns.Add(col)
+        col = Nothing
+        Dim dtMonths As DataTable = dtAllMonths.Clone
+        dtMonths.Rows.Clear()
+
+        Dim bolSkip As Boolean = False
+        Dim bolFilter As Boolean = False
+        If IsNothing(intYearID) = False Then
+            bolFilter = True
+        End If
+        Dim drowMonth As DataRow = Nothing
+        For i As Integer = 0 To dtAllMonths.Rows.Count - 1
+            dtAllMonths.Rows(i)("FullMonthName") = dtAllMonths.Rows(i)("MonthName").ToString & " " & dtAllMonths.Rows(i)("YearID").ToString
+            bolSkip = False
+            If bolFilter Then
+                If dtAllMonths.Rows(i)("YearID") < intYearID Then
+                    bolSkip = True
+                End If
+            End If
+            If bolSkip = False Then
+                drowMonth = dtMonths.NewRow
+                For j As Integer = 0 To dtAllMonths.Columns.Count - 1
+                    drowMonth(dtAllMonths.Columns(j).ColumnName) = dtAllMonths.Rows(i)(dtAllMonths.Columns(j).ColumnName)
+                Next
+                drowMonth("FullMonthName") = dtAllMonths.Rows(i)("MonthName").ToString & " " & dtAllMonths.Rows(i)("YearID").ToString
+                dtMonths.Rows.Add(drowMonth)
+            End If
+        Next
+        Return dtMonths
+
+    End Function
+
+    Function getProductionScheduleByID(ByVal intProdScheduleId As Integer, Optional cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As DataTable
+
+        'Dim service As New AppService
+        'Dim dtProdScheduleTBL As DataTable = service.runSQLScheduling("Select * From tblProductionScheduleList Where Id = " & intProdScheduleId)
+        'service = Nothing
+        'Return dtProdScheduleTBL
+
+        Dim bolCnnOpen As Boolean = True
+        If IsNothing(cnn) Then
+            Dim dbConn As New DBConnection
+            cnn = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+            dbConn = Nothing
+            bolCnnOpen = False
+        End If
+
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            If bolCnnOpen = False Then
+                cnn.Open()
+            End If
+            cmd.Connection = cnn
+            cmd.CommandText = "Select * From tblProductionScheduleList Where Id = " & intProdScheduleId
+            cmd.CommandType = CommandType.Text
+
+            If bolCnnOpen Then
+                cmd.Transaction = trans
+            End If
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+
+            If bolCnnOpen = False Then
+                cnn.Close()
+            End If
+
+            Return dt
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            If bolCnnOpen = False Then
+                cnn.Dispose()
+                cnn = Nothing
+            End If
+        End Try
+
+    End Function
+
+    Function getProdScheduleClsByID(ByVal intProdScheduleId As Integer, Optional cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As ProductionSchedule
+
+        Dim dtProdScheduleTBL As DataTable = getProductionScheduleByID(intProdScheduleId, cnn, trans)
+        Dim clsProductionSchedule As New ProductionSchedule
+        If dtProdScheduleTBL.Rows.Count > 0 Then
+            clsProductionSchedule = ConvertRcdToProdScheduleCls(dtProdScheduleTBL.Rows(0))
+        End If
+        Return clsProductionSchedule
+
+    End Function
+
+    Function addProductionScheduleRecord(ByVal clsProdSchedule As ProductionSchedule, ByVal cnn As SqlConnection, ByRef trans As SqlTransaction) As Integer
+
+        Dim intProdScheduleRcdId As Integer = Constants.DEFAULT_INTEGER_VALUE
+        Dim cmd As New SqlCommand
+        Try
+            cmd.Connection = cnn
+            cmd.Transaction = trans
+            cmd.CommandText = "sp_addProductionScheduleRecord"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            'SqlCommandBuilder.DeriveParameters(cmd)
+            'return id
+            cmd.Parameters.Add("@ID", SqlDbType.Int)
+            cmd.Parameters("@ID").Direction = ParameterDirection.Output
+
+            populateProdScheduleCMD(cmd, clsProdSchedule)
+
+            cmd.ExecuteNonQuery()
+            intProdScheduleRcdId = CInt(cmd.Parameters("@ID").Value)
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+        End Try
+        Return intProdScheduleRcdId
+
+    End Function
+
+    'Function updateProductionScheduleByID(ByVal clsProdSchedule As ProductionSchedule, ByVal intSiteID As Integer, ByVal cnn As SqlConnection, ByRef trans As SqlTransaction) As Boolean
+    '
+    '    Dim bolUpdateOK As Boolean = True
+    '    Dim dbConn As New DBConnection
+    '    Dim cnn As SqlConnection = getSQLConnection_To_OzRollPlantationScheduling
+    '    dbConn = Nothing
+    '    Dim cmd As New SqlCommand
+    '    Try
+    '        cmd.Connection = cnn
+    '        cmd.CommandText = "sp_updateProductionScheduleByID"
+    '        cmd.CommandType = CommandType.StoredProcedure
+    '
+    '        SqlCommandBuilder.DeriveParameters(cmd)
+    '        populateProdScheduleCMD(cmd, clsProdSchedule)
+    '        Dim ra As Integer = cmd.ExecuteNonQuery
+    '        If ra < 1 Then
+    '            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - update record failed" & Environment.NewLine)
+    '            bolUpdateOK = False
+    '        End If
+    '
+    '    Catch ex As Exception
+    '        EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+    '        bolUpdateOK = False
+    '    Finally
+    '        cmd.Dispose()
+    '        cmd = Nothing
+    '    End Try
+    '    Return bolUpdateOK
+    '
+    'End Function
+
+    Function updateProductionScheduleByID(ByVal clsProdSchedule As ProductionSchedule, ByVal cnn As SqlConnection, ByRef trans As SqlTransaction) As Boolean
+
+        Dim bolUpdateOK As Boolean = True
+        Dim cmd As New SqlCommand
+        Try
+            cmd.Connection = cnn
+            cmd.Transaction = trans
+            cmd.CommandText = "sp_updateProductionScheduleByID"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            'SqlCommandBuilder.DeriveParameters(cmd)
+            populateProdScheduleCMD(cmd, clsProdSchedule)
+
+            cmd.Parameters.Add("@ProdScheduleID", SqlDbType.Int)
+            cmd.Parameters("@ProdScheduleID").Value = clsProdSchedule.ID
+            Dim ra As Integer = cmd.ExecuteNonQuery
+            If ra < 1 Then
+                EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - update record failed" & Environment.NewLine)
+                bolUpdateOK = False
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+            bolUpdateOK = False
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+        End Try
+        Return bolUpdateOK
+        ''
+
+    End Function
+
+    Sub populateProdScheduleCMD(ByRef cmd As SqlCommand, ByVal clsProdSchedule As ProductionSchedule)
+
+        cmd.Parameters.Add("@CustomerID", SqlDbType.Int)
+        If clsProdSchedule.CustomerID <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@CustomerID").Value = clsProdSchedule.CustomerID
+        Else
+            cmd.Parameters("@CustomerID").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@JobNumber", SqlDbType.Int)
+        If clsProdSchedule.JobNumber <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@JobNumber").Value = clsProdSchedule.JobNumber
+        Else
+            cmd.Parameters("@JobNumber").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@EnteredDatetime", Data.SqlDbType.DateTime)
+        If clsProdSchedule.EnteredDatetime <> Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@EnteredDatetime").Value = clsProdSchedule.EnteredDatetime
+        Else
+            cmd.Parameters("@EnteredDatetime").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@OrderDate", Data.SqlDbType.DateTime)
+        If clsProdSchedule.OrderDate <> Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@OrderDate").Value = clsProdSchedule.OrderDate
+        Else
+            cmd.Parameters("@OrderDate").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@OrderReference", Data.SqlDbType.VarChar)
+        If clsProdSchedule.OrderReference <> String.Empty Then
+            cmd.Parameters("@OrderReference").Value = clsProdSchedule.OrderReference
+        Else
+            cmd.Parameters("@OrderReference").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@CustomerName", Data.SqlDbType.VarChar)
+        If clsProdSchedule.CustomerName <> String.Empty Then
+            cmd.Parameters("@CustomerName").Value = clsProdSchedule.CustomerName
+        Else
+            cmd.Parameters("@CustomerName").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@State", Data.SqlDbType.VarChar)
+        If clsProdSchedule.State <> String.Empty Then
+            cmd.Parameters("@State").Value = clsProdSchedule.State
+        Else
+            cmd.Parameters("@State").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@OrderStatus", SqlDbType.Int)
+        If clsProdSchedule.OrderStatus <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@OrderStatus").Value = clsProdSchedule.OrderStatus
+        Else
+            cmd.Parameters("@OrderStatus").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@InvoiceMonth", SqlDbType.Int)
+        If clsProdSchedule.InvoiceMonth <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@InvoiceMonth").Value = clsProdSchedule.InvoiceMonth
+        Else
+            cmd.Parameters("@InvoiceMonth").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@InvoiceWeek", SqlDbType.Int)
+        If clsProdSchedule.InvoiceWeek <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@InvoiceWeek").Value = clsProdSchedule.InvoiceWeek
+        Else
+            cmd.Parameters("@InvoiceWeek").Value = DBNull.Value
+        End If
+        cmd.Parameters.Add("@CostPrice", SqlDbType.Decimal)
+        cmd.Parameters("@CostPrice").Value = clsProdSchedule.CostPrice
+
+        cmd.Parameters.Add("@CostPriceGST", SqlDbType.Decimal)
+        cmd.Parameters("@CostPriceGST").Value = clsProdSchedule.CostPriceGST
+
+        cmd.Parameters.Add("@TotalSQM", SqlDbType.Decimal)
+        cmd.Parameters("@TotalSQM").Value = clsProdSchedule.TotalSQM
+
+        cmd.Parameters.Add("@TotalPanels", SqlDbType.Int)
+        cmd.Parameters("@TotalPanels").Value = clsProdSchedule.TotalPanels
+
+        cmd.Parameters.Add("@PanelsLess700", SqlDbType.Int)
+        cmd.Parameters("@PanelsLess700").Value = clsProdSchedule.PanelsLess700
+
+        cmd.Parameters.Add("@PanelsMore700", SqlDbType.Int)
+        cmd.Parameters("@PanelsMore700").Value = clsProdSchedule.PanelsMore700
+
+        cmd.Parameters.Add("@QtyHinges", SqlDbType.Int)
+        cmd.Parameters("@QtyHinges").Value = clsProdSchedule.QtyHinges
+
+        cmd.Parameters.Add("@QtySliding", SqlDbType.Int)
+        cmd.Parameters("@QtySliding").Value = clsProdSchedule.QtySliding
+
+        cmd.Parameters.Add("@QtyBifold", SqlDbType.Int)
+        cmd.Parameters("@QtyBifold").Value = clsProdSchedule.QtyBifold
+
+        cmd.Parameters.Add("@QtyFixed", SqlDbType.Int)
+        cmd.Parameters("@QtyFixed").Value = clsProdSchedule.QtyFixed
+
+        cmd.Parameters.Add("@QtyZFrame", SqlDbType.Int)
+        cmd.Parameters("@QtyZFrame").Value = clsProdSchedule.QtyZFrame
+
+        cmd.Parameters.Add("@QtyLFrame", SqlDbType.Int)
+        cmd.Parameters("@QtyLFrame").Value = clsProdSchedule.QtyLFrame
+
+        cmd.Parameters.Add("@OffWhite", SqlDbType.Int)
+        If clsProdSchedule.OffWhite > 0 Then
+            cmd.Parameters("@OffWhite").Value = 1
+        Else
+            cmd.Parameters("@OffWhite").Value = 0
+        End If
+
+        cmd.Parameters.Add("@BrightWhite", SqlDbType.Int)
+        If clsProdSchedule.BrightWhite > 0 Then
+            cmd.Parameters("@BrightWhite").Value = 1
+        Else
+            cmd.Parameters("@BrightWhite").Value = 0
+        End If
+
+        cmd.Parameters.Add("@GRARemakes", Data.SqlDbType.VarChar)
+        If clsProdSchedule.GRARemakes <> String.Empty Then
+            cmd.Parameters("@GRARemakes").Value = clsProdSchedule.GRARemakes
+        Else
+            cmd.Parameters("@GRARemakes").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@UpdatesText", Data.SqlDbType.VarChar)
+        If clsProdSchedule.UpdatesText <> String.Empty Then
+            cmd.Parameters("@UpdatesText").Value = clsProdSchedule.UpdatesText
+        Else
+            cmd.Parameters("@UpdatesText").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@BOMCosted", Data.SqlDbType.VarChar)
+        If clsProdSchedule.BOMCosted <> String.Empty Then
+            cmd.Parameters("@BOMCosted").Value = clsProdSchedule.BOMCosted
+        Else
+            cmd.Parameters("@BOMCosted").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@ShutterPro", Data.SqlDbType.VarChar)
+        If clsProdSchedule.ShutterPro <> String.Empty Then
+            cmd.Parameters("@ShutterPro").Value = clsProdSchedule.ShutterPro
+        Else
+            cmd.Parameters("@ShutterPro").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@ShippingDetails", Data.SqlDbType.VarChar)
+        If clsProdSchedule.ShippingDetails <> String.Empty Then
+            cmd.Parameters("@ShippingDetails").Value = clsProdSchedule.ShippingDetails
+        Else
+            cmd.Parameters("@ShippingDetails").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@PlannedShippingDate", Data.SqlDbType.VarChar)
+        If clsProdSchedule.PlannedShippingDate <> String.Empty Then
+            cmd.Parameters("@PlannedShippingDate").Value = clsProdSchedule.PlannedShippingDate
+        Else
+            cmd.Parameters("@PlannedShippingDate").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@ActualShippingDate", Data.SqlDbType.DateTime)
+        If clsProdSchedule.ActualShippingDate <> Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@ActualShippingDate").Value = clsProdSchedule.ActualShippingDate
+        Else
+            cmd.Parameters("@ActualShippingDate").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@PriorityLevel", SqlDbType.Int)
+        If clsProdSchedule.PriorityLevel <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@PriorityLevel").Value = clsProdSchedule.PriorityLevel
+        Else
+            cmd.Parameters("@PriorityLevel").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@OrderTypeID", SqlDbType.Int)
+        If clsProdSchedule.OrderTypeID <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@OrderTypeID").Value = clsProdSchedule.OrderTypeID
+        Else
+            cmd.Parameters("@OrderTypeID").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@ShutterProNumber", SqlDbType.VarChar)
+        If clsProdSchedule.ShutterProNumber <> String.Empty Then
+            cmd.Parameters("@ShutterProNumber").Value = clsProdSchedule.ShutterProNumber
+        Else
+            cmd.Parameters("@ShutterProNumber").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@ScheduledDate", SqlDbType.DateTime)
+        If clsProdSchedule.ScheduledDate <> Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@ScheduledDate").Value = clsProdSchedule.ScheduledDate
+        Else
+            cmd.Parameters("@ScheduledDate").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@RemakeReasonID", SqlDbType.Int)
+        If clsProdSchedule.RemakeReasonID <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@RemakeReasonID").Value = clsProdSchedule.RemakeReasonID
+        Else
+            cmd.Parameters("@RemakeReasonID").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@RemakeLiablePartyID", SqlDbType.Int)
+        If clsProdSchedule.RemakeLiablePartyID <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@RemakeLiablePartyID").Value = clsProdSchedule.RemakeLiablePartyID
+        Else
+            cmd.Parameters("@RemakeLiablePartyID").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@RemakeIssueDescription", SqlDbType.Text)
+        If clsProdSchedule.RemakeIssueDescription <> String.Empty Then
+            cmd.Parameters("@RemakeIssueDescription").Value = clsProdSchedule.RemakeIssueDescription
+        Else
+            cmd.Parameters("@RemakeIssueDescription").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@OriginalOrderNumber", SqlDbType.VarChar)
+        If clsProdSchedule.OriginalOrderNumber <> String.Empty Then
+            cmd.Parameters("@OriginalOrderNumber").Value = clsProdSchedule.OriginalOrderNumber
+        Else
+            cmd.Parameters("@OriginalOrderNumber").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@InvoicedDate", SqlDbType.DateTime)
+        If clsProdSchedule.InvoicedDate <> Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@InvoicedDate").Value = clsProdSchedule.InvoicedDate
+        Else
+            cmd.Parameters("@InvoicedDate").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@EnteredShutterProDate", SqlDbType.DateTime)
+        If clsProdSchedule.EnteredShutterProDate <> Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@EnteredShutterProDate").Value = clsProdSchedule.EnteredShutterProDate
+        Else
+            cmd.Parameters("@EnteredShutterProDate").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@CollectedFactoryDate", SqlDbType.DateTime)
+        If clsProdSchedule.CollectedFactoryDate <> Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@CollectedFactoryDate").Value = clsProdSchedule.CollectedFactoryDate
+        Else
+            cmd.Parameters("@CollectedFactoryDate").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@ExpectedShippingDate", SqlDbType.DateTime)
+        If clsProdSchedule.ExpectedShippingDate <> Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@ExpectedShippingDate").Value = clsProdSchedule.ExpectedShippingDate
+        Else
+            cmd.Parameters("@ExpectedShippingDate").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@OnHold", SqlDbType.Int)
+        If clsProdSchedule.OnHold <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@OnHold").Value = clsProdSchedule.OnHold
+        Else
+            cmd.Parameters("@OnHold").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@ReceivedDate", SqlDbType.DateTime)
+        If clsProdSchedule.ReceivedDate <> Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@ReceivedDate").Value = clsProdSchedule.ReceivedDate
+        Else
+            cmd.Parameters("@ReceivedDate").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@CompletedDate", SqlDbType.DateTime)
+        If clsProdSchedule.CompletedDate <> Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@CompletedDate").Value = clsProdSchedule.CompletedDate
+        Else
+            cmd.Parameters("@CompletedDate").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@FreightAmount", SqlDbType.Decimal)
+        If clsProdSchedule.FreightAmount <> Constants.DEFAULT_DECIMAL_VALUE Then
+            cmd.Parameters("@FreightAmount").Value = clsProdSchedule.FreightAmount
+        Else
+            cmd.Parameters("@FreightAmount").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@FreightAmountGST", SqlDbType.Decimal)
+        If clsProdSchedule.FreightAmountGST <> Constants.DEFAULT_DECIMAL_VALUE Then
+            cmd.Parameters("@FreightAmountGST").Value = clsProdSchedule.FreightAmountGST
+        Else
+            cmd.Parameters("@FreightAmountGST").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@ProductTypeID", SqlDbType.Int)
+        If clsProdSchedule.ProductTypeID <> Constants.DEFAULT_INTEGER_VALUE Then
+            If (clsProdSchedule.ProductTypeID = Constants.DEFAULT_INTEGER_VALUE) Then
+                clsProdSchedule.ProductTypeID = 2
+            End If
+            cmd.Parameters("@ProductTypeID").Value = clsProdSchedule.ProductTypeID
+        Else
+            cmd.Parameters("@ProductTypeID").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@OzrollContractNo", SqlDbType.VarChar)
+        If clsProdSchedule.OzrollContractNo <> String.Empty Then
+            cmd.Parameters("@OzrollContractNo").Value = clsProdSchedule.OzrollContractNo
+        Else
+            cmd.Parameters("@OzrollContractNo").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@Deleted", SqlDbType.Int)
+        If clsProdSchedule.Deleted <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@Deleted").Value = clsProdSchedule.Deleted
+        Else
+            cmd.Parameters("@Deleted").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@DeliveryAddressID", SqlDbType.Int)
+        If clsProdSchedule.DeliveryAddressID <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@DeliveryAddressID").Value = clsProdSchedule.DeliveryAddressID
+        Else
+            cmd.Parameters("@DeliveryAddressID").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@CreditOverrideUserID", SqlDbType.Int)
+        If clsProdSchedule.CreditOverrideUserID <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@CreditOverrideUserID").Value = clsProdSchedule.CreditOverrideUserID
+        Else
+            cmd.Parameters("@CreditOverrideUserID").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@CreditOverrideDateTime", SqlDbType.DateTime)
+        If clsProdSchedule.CreditOverrideDateTime <> Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@CreditOverrideDateTime").Value = clsProdSchedule.CreditOverrideDateTime
+        Else
+            cmd.Parameters("@CreditOverrideDateTime").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@OutstandingItemsConfirmID", SqlDbType.Int)
+        If clsProdSchedule.OutstandingItemsConfirmID <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@OutstandingItemsConfirmID").Value = clsProdSchedule.OutstandingItemsConfirmID
+        Else
+            cmd.Parameters("@OutstandingItemsConfirmID").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@OutstandingItemsConfirmDateTime", SqlDbType.DateTime)
+        If clsProdSchedule.OutstandingItemsConfirmDateTime <> Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@OutstandingItemsConfirmDateTime").Value = clsProdSchedule.OutstandingItemsConfirmDateTime
+        Else
+            cmd.Parameters("@OutstandingItemsConfirmDateTime").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@PickingDate", SqlDbType.DateTime)
+        If clsProdSchedule.PickingDate <> Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@PickingDate").Value = clsProdSchedule.PickingDate
+        Else
+            cmd.Parameters("@PickingDate").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@PromisedDate", SqlDbType.DateTime)
+        If clsProdSchedule.PromisedDate <> Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@PromisedDate").Value = clsProdSchedule.PromisedDate
+        Else
+            cmd.Parameters("@PromisedDate").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@RetailDiscount", SqlDbType.Decimal)
+        cmd.Parameters("@RetailDiscount").Value = clsProdSchedule.RetailDiscount
+
+        cmd.Parameters.Add("@SalePrice", SqlDbType.Decimal)
+        cmd.Parameters("@SalePrice").Value = clsProdSchedule.SalePrice
+
+        cmd.Parameters.Add("@SalePriceGST", SqlDbType.Decimal)
+        cmd.Parameters("@SalePriceGST").Value = clsProdSchedule.SalePriceGST
+
+        cmd.Parameters.Add("@SalePriceIsValid", SqlDbType.Int)
+        cmd.Parameters("@SalePriceIsValid").Value = clsProdSchedule.SalePriceIsValid
+
+        cmd.Parameters.Add("@AddressZoneID", SqlDbType.Int)
+        cmd.Parameters("@AddressZoneID").Value = clsProdSchedule.AddressZoneID
+
+        cmd.Parameters.Add("@QuoteExpiryDateTime", SqlDbType.DateTime)
+        cmd.Parameters("@QuoteExpiryDateTime").Value = clsProdSchedule.QuoteExpiryDateTime
+
+    End Sub
+
+    Function addProdScheduleHistoryRcd(ByVal intChangedID As Integer, ByVal clsProdSchedule As ProductionSchedule, ByVal cnn As SqlConnection, ByRef trans As SqlTransaction) As Boolean
+
+        Dim bolAddOK As Boolean = True
+        Dim cmd As New SqlCommand
+        Try
+            cmd.Connection = cnn
+            cmd.Transaction = trans
+            cmd.CommandText = "sp_addProdScheduleHistoryRcd"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            'SqlCommandBuilder.DeriveParameters(cmd)
+            'return id
+            cmd.Parameters.Add("@ChangedID", SqlDbType.Int)
+            cmd.Parameters("@ChangedID").Value = intChangedID
+            cmd.Parameters.Add("@ChangedDateTime", Data.SqlDbType.DateTime)
+            cmd.Parameters("@ChangedDateTime").Value = Now()
+            cmd.Parameters.Add("@ID", SqlDbType.Int)
+            cmd.Parameters("@ID").Value = clsProdSchedule.ID
+
+            populateProdScheduleCMD(cmd, clsProdSchedule)
+            Dim ra As Integer = cmd.ExecuteNonQuery
+            If ra < 1 Then
+                EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - add record failed" & Environment.NewLine)
+                bolAddOK = False
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+            bolAddOK = False
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+        End Try
+        Return bolAddOK
+        ''
+
+    End Function
+
+    Function getProductScheduleHistoryNewChgID() As Integer
+
+        Dim service As New AppService
+        Dim intMaxChangedID As Integer = 0
+        Dim dtMaxChanged As DataTable = service.runSQLScheduling("Select max(ChangedID) as MaxChangedID From tblProductionScheduleHistory")
+        If dtMaxChanged.Rows.Count > 0 Then
+            If Not IsDBNull(dtMaxChanged.Rows(0)("MaxChangedID")) Then
+                intMaxChangedID = dtMaxChanged.Rows(0)("MaxChangedID")
+            End If
+        End If
+        intMaxChangedID += 1
+        service = Nothing
+        Return intMaxChangedID
+
+    End Function
+
+    Function addCustomersRecord(ByVal clsCustomer As Customer, ByVal cnn As SqlConnection, ByRef trans As SqlTransaction) As Integer
+
+        Dim intCustomerID As Integer = Constants.DEFAULT_INTEGER_VALUE
+        Dim cmd As New SqlCommand
+        Try
+            cmd.Connection = cnn
+            cmd.Transaction = trans
+            cmd.CommandText = "sp_addCustomerRecord"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            SqlCommandBuilder.DeriveParameters(cmd)
+            'return id
+            cmd.Parameters.Add("@CustomerID", SqlDbType.Int)
+            cmd.Parameters("@CustomerID").Direction = ParameterDirection.Output
+            populateCustomerCMD(cmd, clsCustomer)
+
+            cmd.ExecuteNonQuery()
+            intCustomerID = CInt(cmd.Parameters("@CustomerID").Value)
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+        End Try
+        Return intCustomerID
+
+    End Function
+
+    Sub populateCustomerCMD(ByRef cmd As SqlCommand, ByVal clsCustomer As Customer)
+
+        If clsCustomer.CustomerName <> String.Empty Then
+            cmd.Parameters("@CustomerName").Value = clsCustomer.CustomerName
+        Else
+            cmd.Parameters("@CustomerName").Value = DBNull.Value
+        End If
+
+        If clsCustomer.Discontinued <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@Discontinued").Value = clsCustomer.Discontinued
+        Else
+            cmd.Parameters("@Discontinued").Value = DBNull.Value
+        End If
+
+        If clsCustomer.SortOrder <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@SortOrder").Value = clsCustomer.SortOrder
+        Else
+            cmd.Parameters("@SortOrder").Value = DBNull.Value
+        End If
+
+        If clsCustomer.SiteID <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@SiteID").Value = clsCustomer.SiteID
+        Else
+            cmd.Parameters("@SiteID").Value = DBNull.Value
+        End If
+
+        If clsCustomer.ExternalCustomer <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@ExternalCustomer").Value = clsCustomer.ExternalCustomer
+        Else
+            cmd.Parameters("@ExternalCustomer").Value = DBNull.Value
+        End If
+
+    End Sub
+
+    Function updateCustomerByCustomerId(ByVal clsCustomer As Customer, ByVal cnn As SqlConnection, ByRef trans As SqlTransaction) As Integer
+
+        Dim bolUpdateOK As Boolean = True
+        Dim cmd As New SqlCommand
+        Try
+            cmd.Connection = cnn
+            cmd.Transaction = trans
+            cmd.CommandText = "sp_updateCustomerByCustomerId"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            SqlCommandBuilder.DeriveParameters(cmd)
+            '
+            cmd.Parameters("@CustomerID").Value = clsCustomer.CustomerID
+            populateCustomerCMD(cmd, clsCustomer)
+
+            Dim ra As Integer = cmd.ExecuteNonQuery
+            If ra < 1 Then
+                EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - update record failed" & Environment.NewLine)
+                bolUpdateOK = False
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+            bolUpdateOK = False
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+        End Try
+        Return bolUpdateOK
+
+    End Function
+
+    Function addPlantationJobRcd(ByVal intChangedByID As Integer, ByVal clsPlantationJob As PlantationJob, ByVal cnn As SqlConnection, ByRef trans As SqlTransaction) As Boolean
+
+        Dim bolAddOK As Boolean = True
+        Dim cmd As New SqlCommand
+        Try
+            cmd.Connection = cnn
+            cmd.Transaction = trans
+            cmd.CommandText = "sp_addPlantationJobRcd"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            SqlCommandBuilder.DeriveParameters(cmd)
+            '
+            populatePlantationJobCMD(cmd, clsPlantationJob)
+
+            Dim ra As Integer = cmd.ExecuteNonQuery
+            If ra < 1 Then
+                EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - add record failed" & Environment.NewLine)
+                bolAddOK = False
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+            bolAddOK = False
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+        End Try
+        Return bolAddOK
+        '
+
+    End Function
+
+    Sub populatePlantationJobCMD(ByRef cmd As SqlCommand, ByVal clsPlantationJob As PlantationJob)
+
+        If clsPlantationJob.SiteID <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@SiteID").Value = clsPlantationJob.SiteID
+        Else
+            cmd.Parameters("@SiteID").Value = DBNull.Value
+        End If
+
+        If clsPlantationJob.JobNumber <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@JobNumber").Value = clsPlantationJob.JobNumber
+        Else
+            cmd.Parameters("@JobNumber").Value = DBNull.Value
+        End If
+
+        If clsPlantationJob.ContractNo <> String.Empty Then
+            cmd.Parameters("@ContractNo").Value = clsPlantationJob.ContractNo
+        Else
+            cmd.Parameters("@ContractNo").Value = DBNull.Value
+        End If
+
+        If clsPlantationJob.CustomerName <> String.Empty Then
+            cmd.Parameters("@CustomerName").Value = clsPlantationJob.CustomerName
+        Else
+            cmd.Parameters("@CustomerName").Value = DBNull.Value
+        End If
+
+        If clsPlantationJob.SoldDate <> Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@SoldDate").Value = clsPlantationJob.SoldDate
+        Else
+            cmd.Parameters("@SoldDate").Value = DBNull.Value
+        End If
+
+        If clsPlantationJob.OrderedDate <> Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@OrderedDate").Value = clsPlantationJob.OrderedDate
+        Else
+            cmd.Parameters("@OrderedDate").Value = DBNull.Value
+        End If
+
+        If clsPlantationJob.ScheduledDate <> Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@ScheduledDate").Value = clsPlantationJob.ScheduledDate
+        Else
+            cmd.Parameters("@ScheduledDate").Value = DBNull.Value
+        End If
+
+        If clsPlantationJob.CalculatedScheduledDate <> Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@CalculatedScheduledDate").Value = clsPlantationJob.CalculatedScheduledDate
+        Else
+            cmd.Parameters("@CalculatedScheduledDate").Value = DBNull.Value
+        End If
+
+        If clsPlantationJob.StatusID <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@StatusID").Value = clsPlantationJob.StatusID
+        Else
+            cmd.Parameters("@StatusID").Value = DBNull.Value
+        End If
+
+        If clsPlantationJob.NoOfShutters <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@NoOfShutters").Value = clsPlantationJob.NoOfShutters
+        Else
+            cmd.Parameters("@NoOfShutters").Value = DBNull.Value
+        End If
+
+        If clsPlantationJob.NoOfPanels <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@NoOfPanels").Value = clsPlantationJob.NoOfPanels
+        Else
+            cmd.Parameters("@NoOfPanels").Value = DBNull.Value
+        End If
+
+        If clsPlantationJob.TotalSqM <> Constants.DEFAULT_DECIMAL_VALUE Then
+            cmd.Parameters("@TotalSqM").Value = clsPlantationJob.TotalSqM
+        Else
+            cmd.Parameters("@TotalSqM").Value = DBNull.Value
+        End If
+
+    End Sub
+
+    Function updatePlantationJobByJobNumber(ByVal clsPlantationJob As PlantationJob, ByVal cnn As SqlConnection, ByRef trans As SqlTransaction) As Integer
+
+        Dim bolUpdateOK As Boolean = True
+        Dim cmd As New SqlCommand
+        Try
+            cmd.Connection = cnn
+            cmd.Transaction = trans
+            cmd.CommandText = "sp_updatePlantationJobByJobNumber"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            SqlCommandBuilder.DeriveParameters(cmd)
+            '
+            populatePlantationJobCMD(cmd, clsPlantationJob)
+
+            Dim ra As Integer = cmd.ExecuteNonQuery
+            If ra < 1 Then
+                EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - update record failed" & Environment.NewLine)
+                bolUpdateOK = False
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+            bolUpdateOK = False
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+        End Try
+
+        Return bolUpdateOK
+
+    End Function
+
+    Function ConvertProdScheduleNoteRowToClass(ByVal drNote As DataRow) As ProdScheduleNote
+        Dim cProdScheduleNote As New ProdScheduleNote
+
+        With cProdScheduleNote
+            .ID = CInt(drNote("AutoID"))
+
+            If Not IsDBNull(drNote("EntryDate")) Then
+                .EntryDate = CDate(drNote("EntryDate"))
+            End If
+
+            If Not IsDBNull(drNote("NoteDetails")) Then
+                .NoteDetails = drNote("NoteDetails").ToString()
+            End If
+
+            If Not IsDBNull(drNote("NoteTypeID")) Then
+                .NoteTypeID = CInt(drNote("NoteTypeID"))
+            End If
+
+            If Not IsDBNull(drNote("ProdScheduleID")) Then
+                .ProdScheduleID = CInt(drNote("ProdScheduleID"))
+            End If
+
+            If Not IsDBNull(drNote("UserID")) Then
+                .UserID = CInt(drNote("UserID"))
+            End If
+
+            If Not IsDBNull(drNote("VisibleToCustomer")) Then
+                .VisibleToCustomer = CBool(drNote("VisibleToCustomer"))
+            End If
+        End With
+
+        Return cProdScheduleNote
+
+    End Function
+
+    Function ConvertRcdToProdScheduleCls(ByVal dwProdScheduleTBL As DataRow) As ProductionSchedule
+
+        Dim clsProdSchedule As New ProductionSchedule
+        If Not IsDBNull(dwProdScheduleTBL("Id")) Then
+            clsProdSchedule.ID = CInt(dwProdScheduleTBL("Id"))
+        End If
+        If Not IsDBNull(dwProdScheduleTBL("CustomerID")) Then
+            clsProdSchedule.CustomerID = CInt(dwProdScheduleTBL("CustomerID"))
+        End If
+        If Not IsDBNull(dwProdScheduleTBL("JobNumber")) Then
+            clsProdSchedule.JobNumber = CInt(dwProdScheduleTBL("JobNumber"))
+        End If
+        If Not IsDBNull(dwProdScheduleTBL("EnteredDatetime")) Then
+            clsProdSchedule.EnteredDatetime = CDate(dwProdScheduleTBL("EnteredDatetime"))
+        End If
+        If Not IsDBNull(dwProdScheduleTBL("OrderDate")) Then
+            clsProdSchedule.OrderDate = CDate(dwProdScheduleTBL("OrderDate"))
+        End If
+        If Not IsDBNull(dwProdScheduleTBL("OrderReference")) Then
+            clsProdSchedule.OrderReference = CStr(dwProdScheduleTBL("OrderReference"))
+        End If
+        If Not IsDBNull(dwProdScheduleTBL("CustomerName")) Then
+            clsProdSchedule.CustomerName = CStr(dwProdScheduleTBL("CustomerName"))
+        End If
+        If Not IsDBNull(dwProdScheduleTBL("State")) Then
+            clsProdSchedule.State = CStr(dwProdScheduleTBL("State"))
+        End If
+        If Not IsDBNull(dwProdScheduleTBL("OrderStatus")) Then
+            clsProdSchedule.OrderStatus = CInt(dwProdScheduleTBL("OrderStatus"))
+        End If
+        If Not IsDBNull(dwProdScheduleTBL("InvoiceMonth")) Then
+            clsProdSchedule.InvoiceMonth = CInt(dwProdScheduleTBL("InvoiceMonth"))
+        End If
+        If Not IsDBNull(dwProdScheduleTBL("InvoiceWeek")) Then
+            clsProdSchedule.InvoiceWeek = CInt(dwProdScheduleTBL("InvoiceWeek"))
+        End If
+        If Not IsDBNull(dwProdScheduleTBL("CostPrice")) Then
+            clsProdSchedule.CostPrice = CDec(dwProdScheduleTBL("CostPrice"))
+        End If
+        If Not IsDBNull(dwProdScheduleTBL("FreightAmount")) Then
+            clsProdSchedule.FreightAmount = CDec(dwProdScheduleTBL("FreightAmount"))
+        End If
+        If Not IsDBNull(dwProdScheduleTBL("CostPriceGST")) Then
+            clsProdSchedule.CostPriceGST = CDec(dwProdScheduleTBL("CostPriceGST"))
+        End If
+        If Not IsDBNull(dwProdScheduleTBL("TotalSQM")) Then
+            clsProdSchedule.TotalSQM = CDec(dwProdScheduleTBL("TotalSQM"))
+        End If
+        If Not IsDBNull(dwProdScheduleTBL("TotalPanels")) Then
+            clsProdSchedule.TotalPanels = CInt(dwProdScheduleTBL("TotalPanels"))
+        End If
+        If Not IsDBNull(dwProdScheduleTBL("PanelsLess700")) Then
+            clsProdSchedule.PanelsLess700 = CInt(dwProdScheduleTBL("PanelsLess700"))
+        End If
+        If Not IsDBNull(dwProdScheduleTBL("PanelsMore700")) Then
+            clsProdSchedule.PanelsMore700 = CInt(dwProdScheduleTBL("PanelsMore700"))
+        End If
+        If Not IsDBNull(dwProdScheduleTBL("QtyHinges")) Then
+            clsProdSchedule.QtyHinges = CInt(dwProdScheduleTBL("QtyHinges"))
+        End If
+        If Not IsDBNull(dwProdScheduleTBL("QtySliding")) Then
+            clsProdSchedule.QtySliding = CInt(dwProdScheduleTBL("QtySliding"))
+        End If
+        If Not IsDBNull(dwProdScheduleTBL("QtyBifold")) Then
+            clsProdSchedule.QtyBifold = CInt(dwProdScheduleTBL("QtyBifold"))
+        End If
+        If Not IsDBNull(dwProdScheduleTBL("QtyFixed")) Then
+            clsProdSchedule.QtyFixed = CInt(dwProdScheduleTBL("QtyFixed"))
+        End If
+        If Not IsDBNull(dwProdScheduleTBL("QtyZFrame")) Then
+            clsProdSchedule.QtyZFrame = CInt(dwProdScheduleTBL("QtyZFrame"))
+        End If
+        If Not IsDBNull(dwProdScheduleTBL("QtyLFrame")) Then
+            clsProdSchedule.QtyLFrame = CInt(dwProdScheduleTBL("QtyLFrame"))
+        End If
+        If Not IsDBNull(dwProdScheduleTBL("OffWhite")) Then
+            If CInt(dwProdScheduleTBL("OffWhite")) > 0 Then
+                clsProdSchedule.OffWhite = 1
+            Else
+                clsProdSchedule.OffWhite = 0
+            End If
+        End If
+        If Not IsDBNull(dwProdScheduleTBL("BrightWhite")) Then
+            If CInt(dwProdScheduleTBL("BrightWhite")) > 0 Then
+                clsProdSchedule.BrightWhite = 1
+            Else
+                clsProdSchedule.BrightWhite = 0
+            End If
+        End If
+        If Not IsDBNull(dwProdScheduleTBL("GRARemakes")) Then
+            clsProdSchedule.GRARemakes = CStr(dwProdScheduleTBL("GRARemakes"))
+        End If
+        If Not IsDBNull(dwProdScheduleTBL("UpdatesText")) Then
+            clsProdSchedule.UpdatesText = CStr(dwProdScheduleTBL("UpdatesText"))
+        End If
+        If Not IsDBNull(dwProdScheduleTBL("BOMCosted")) Then
+            clsProdSchedule.BOMCosted = CStr(dwProdScheduleTBL("BOMCosted"))
+        End If
+        If Not IsDBNull(dwProdScheduleTBL("ShutterPro")) Then
+            clsProdSchedule.ShutterPro = CStr(dwProdScheduleTBL("ShutterPro"))
+        End If
+        If Not IsDBNull(dwProdScheduleTBL("ShippingDetails")) Then
+            clsProdSchedule.ShippingDetails = CStr(dwProdScheduleTBL("ShippingDetails"))
+        End If
+        If Not IsDBNull(dwProdScheduleTBL("PlannedShippingDate")) Then
+            clsProdSchedule.PlannedShippingDate = CStr(dwProdScheduleTBL("PlannedShippingDate"))
+        End If
+        If Not IsDBNull(dwProdScheduleTBL("ActualShippingDate")) Then
+            clsProdSchedule.ActualShippingDate = CDate(dwProdScheduleTBL("ActualShippingDate"))
+        End If
+
+        If Not IsDBNull(dwProdScheduleTBL("PriorityLevel")) Then
+            clsProdSchedule.PriorityLevel = CInt(dwProdScheduleTBL("PriorityLevel"))
+        End If
+        If Not IsDBNull(dwProdScheduleTBL("OrderTypeID")) Then
+            clsProdSchedule.OrderTypeID = CInt(dwProdScheduleTBL("OrderTypeID"))
+        End If
+        If Not IsDBNull(dwProdScheduleTBL("ShutterProNumber")) Then
+            clsProdSchedule.ShutterProNumber = dwProdScheduleTBL("ShutterProNumber").ToString
+        End If
+
+        If Not IsDBNull(dwProdScheduleTBL("ScheduledDate")) Then
+            clsProdSchedule.ScheduledDate = CDate(dwProdScheduleTBL("ScheduledDate"))
+        End If
+
+        If dwProdScheduleTBL.Table.Columns.Contains("RemakeReasonID") Then
+            If Not IsDBNull(dwProdScheduleTBL("RemakeReasonID")) Then
+                clsProdSchedule.RemakeReasonID = CInt(dwProdScheduleTBL("RemakeReasonID"))
+            End If
+        End If
+
+        If dwProdScheduleTBL.Table.Columns.Contains("RemakeLiablePartyID") Then
+            If Not IsDBNull(dwProdScheduleTBL("RemakeLiablePartyID")) Then
+                clsProdSchedule.RemakeLiablePartyID = CInt(dwProdScheduleTBL("RemakeLiablePartyID"))
+            End If
+        End If
+
+        If dwProdScheduleTBL.Table.Columns.Contains("RemakeIssueDescription") Then
+            If Not IsDBNull(dwProdScheduleTBL("RemakeIssueDescription")) Then
+                clsProdSchedule.RemakeIssueDescription = dwProdScheduleTBL("RemakeIssueDescription").ToString
+            End If
+        End If
+
+        If dwProdScheduleTBL.Table.Columns.Contains("OriginalOrderNumber") Then
+            If Not IsDBNull(dwProdScheduleTBL("OriginalOrderNumber")) Then
+                clsProdSchedule.OriginalOrderNumber = dwProdScheduleTBL("OriginalOrderNumber").ToString
+            End If
+        End If
+
+        If dwProdScheduleTBL.Table.Columns.Contains("InvoicedDate") Then
+            If Not IsDBNull(dwProdScheduleTBL("InvoicedDate")) Then
+                clsProdSchedule.InvoicedDate = CDate(dwProdScheduleTBL("InvoicedDate"))
+            End If
+        End If
+
+        If dwProdScheduleTBL.Table.Columns.Contains("EnteredShutterProDate") Then
+            If Not IsDBNull(dwProdScheduleTBL("EnteredShutterProDate")) Then
+                clsProdSchedule.EnteredShutterProDate = CDate(dwProdScheduleTBL("EnteredShutterProDate"))
+            End If
+        End If
+
+        If dwProdScheduleTBL.Table.Columns.Contains("CollectedFactoryDate") Then
+            If Not IsDBNull(dwProdScheduleTBL("CollectedFactoryDate")) Then
+                clsProdSchedule.CollectedFactoryDate = CDate(dwProdScheduleTBL("CollectedFactoryDate"))
+            End If
+        End If
+
+        If dwProdScheduleTBL.Table.Columns.Contains("ExpectedShippingDate") Then
+            If Not IsDBNull(dwProdScheduleTBL("ExpectedShippingDate")) Then
+                clsProdSchedule.ExpectedShippingDate = CDate(dwProdScheduleTBL("ExpectedShippingDate"))
+            End If
+        End If
+
+        If dwProdScheduleTBL.Table.Columns.Contains("OnHold") Then
+            If Not IsDBNull(dwProdScheduleTBL("OnHold")) Then
+                clsProdSchedule.OnHold = CInt(dwProdScheduleTBL("OnHold"))
+            End If
+        End If
+
+        If dwProdScheduleTBL.Table.Columns.Contains("ReceivedDate") Then
+            If Not IsDBNull(dwProdScheduleTBL("ReceivedDate")) Then
+                clsProdSchedule.ReceivedDate = CDate(dwProdScheduleTBL("ReceivedDate"))
+            End If
+        End If
+
+        If dwProdScheduleTBL.Table.Columns.Contains("CompletedDate") Then
+            If Not IsDBNull(dwProdScheduleTBL("CompletedDate")) Then
+                clsProdSchedule.CompletedDate = CDate(dwProdScheduleTBL("CompletedDate"))
+            End If
+        End If
+
+        If dwProdScheduleTBL.Table.Columns.Contains("FreightAmount") Then
+            If Not IsDBNull(dwProdScheduleTBL("FreightAmount")) Then
+                clsProdSchedule.FreightAmount = CDec(dwProdScheduleTBL("FreightAmount"))
+            End If
+        End If
+
+        If dwProdScheduleTBL.Table.Columns.Contains("FreightAmountGST") Then
+            If Not IsDBNull(dwProdScheduleTBL("FreightAmountGST")) Then
+                clsProdSchedule.FreightAmountGST = CDec(dwProdScheduleTBL("FreightAmountGST"))
+            End If
+        End If
+
+        If dwProdScheduleTBL.Table.Columns.Contains("ProductTypeID") Then
+            If Not IsDBNull(dwProdScheduleTBL("ProductTypeID")) Then
+                clsProdSchedule.ProductTypeID = CInt(dwProdScheduleTBL("ProductTypeID"))
+            End If
+        End If
+
+        If dwProdScheduleTBL.Table.Columns.Contains("OzrollContractNo") Then
+            clsProdSchedule.OzrollContractNo = dwProdScheduleTBL("OzrollContractNo").ToString
+        End If
+
+        If dwProdScheduleTBL.Table.Columns.Contains("Deleted") Then
+            If Not IsDBNull(dwProdScheduleTBL("Deleted")) Then
+                clsProdSchedule.Deleted = CInt(dwProdScheduleTBL("Deleted"))
+            End If
+        End If
+
+        If dwProdScheduleTBL.Table.Columns.Contains("DeliveryAddressID") Then
+            If Not IsDBNull(dwProdScheduleTBL("DeliveryAddressID")) Then
+                clsProdSchedule.DeliveryAddressID = CInt(dwProdScheduleTBL("DeliveryAddressID"))
+            End If
+        End If
+
+        If dwProdScheduleTBL.Table.Columns.Contains("CreditOverrideUserID") Then
+            If Not IsDBNull(dwProdScheduleTBL("CreditOverrideUserID")) Then
+                clsProdSchedule.CreditOverrideUserID = CInt(dwProdScheduleTBL("CreditOverrideUserID"))
+            End If
+        End If
+
+        If dwProdScheduleTBL.Table.Columns.Contains("CreditOverrideDateTime") Then
+            If Not IsDBNull(dwProdScheduleTBL("CreditOverrideDateTime")) Then
+                clsProdSchedule.CreditOverrideDateTime = CDate(dwProdScheduleTBL("CreditOverrideDateTime"))
+            End If
+        End If
+
+        If dwProdScheduleTBL.Table.Columns.Contains("OutstandingItemsConfirmID") Then
+            If Not IsDBNull(dwProdScheduleTBL("OutstandingItemsConfirmID")) Then
+                clsProdSchedule.OutstandingItemsConfirmID = CInt(dwProdScheduleTBL("OutstandingItemsConfirmID"))
+            End If
+        End If
+
+        If dwProdScheduleTBL.Table.Columns.Contains("OutstandingItemsConfirmDateTime") Then
+            If Not IsDBNull(dwProdScheduleTBL("OutstandingItemsConfirmDateTime")) Then
+                clsProdSchedule.OutstandingItemsConfirmDateTime = CDate(dwProdScheduleTBL("OutstandingItemsConfirmDateTime"))
+            End If
+        End If
+
+        If dwProdScheduleTBL.Table.Columns.Contains("PickingDate") Then
+            If Not IsDBNull(dwProdScheduleTBL("PickingDate")) Then
+                clsProdSchedule.PickingDate = CDate(dwProdScheduleTBL("PickingDate"))
+            End If
+        End If
+
+        If dwProdScheduleTBL.Table.Columns.Contains("PromisedDate") Then
+            If Not IsDBNull(dwProdScheduleTBL("PromisedDate")) Then
+                clsProdSchedule.PromisedDate = CDate(dwProdScheduleTBL("PromisedDate"))
+            End If
+        End If
+
+        If dwProdScheduleTBL.Table.Columns.Contains("RetailDiscount") Then
+            If Not IsDBNull(dwProdScheduleTBL("RetailDiscount")) Then
+                clsProdSchedule.RetailDiscount = CDec(dwProdScheduleTBL("RetailDiscount"))
+            End If
+        End If
+
+        If dwProdScheduleTBL.Table.Columns.Contains("SalePrice") Then
+            If Not IsDBNull(dwProdScheduleTBL("SalePrice")) Then
+                clsProdSchedule.SalePrice = CDec(dwProdScheduleTBL("SalePrice"))
+            End If
+        End If
+
+        If dwProdScheduleTBL.Table.Columns.Contains("SalePriceGST") Then
+            If Not IsDBNull(dwProdScheduleTBL("SalePriceGST")) Then
+                clsProdSchedule.SalePriceGST = CDec(dwProdScheduleTBL("SalePriceGST"))
+            End If
+        End If
+
+        If Not IsDBNull(dwProdScheduleTBL("SalePriceIsValid")) Then
+            clsProdSchedule.SalePriceIsValid = CInt(dwProdScheduleTBL("SalePriceIsValid"))
+        End If
+
+        If Not IsDBNull(dwProdScheduleTBL("AddressZoneID")) Then
+            clsProdSchedule.AddressZoneID = CInt(dwProdScheduleTBL("AddressZoneID"))
+        End If
+
+        If Not IsDBNull(dwProdScheduleTBL("QuoteExpiryDateTime")) Then
+            clsProdSchedule.QuoteExpiryDateTime = CDate(dwProdScheduleTBL("QuoteExpiryDateTime"))
+        End If
+
+        Return clsProdSchedule
+
+    End Function
+
+    Function addProdScheduleNoteRcd(ByVal clsProdScheduleNote As ProdScheduleNote, ByVal cnn As SqlConnection, ByRef trans As SqlTransaction) As Boolean
+
+        Dim bolAddOK As Boolean = True
+        Dim cmd As New SqlCommand
+
+        Try
+            cmd.Connection = cnn
+            cmd.Transaction = trans
+            cmd.CommandText = "sp_addProductScheduleNote"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            'SqlCommandBuilder.DeriveParameters(cmd)
+            cmd.Parameters.Add("@ProdScheduleID", SqlDbType.Int)
+            cmd.Parameters("@ProdScheduleID").Value = clsProdScheduleNote.ProdScheduleID
+            cmd.Parameters.Add("@NoteTypeID", SqlDbType.Int)
+            cmd.Parameters("@NoteTypeID").Value = clsProdScheduleNote.NoteTypeID
+            cmd.Parameters.Add("@NoteDetails", SqlDbType.Text)
+            cmd.Parameters("@NoteDetails").Value = clsProdScheduleNote.NoteDetails
+            cmd.Parameters.Add("@EntryDate", SqlDbType.DateTime)
+            cmd.Parameters("@EntryDate").Value = clsProdScheduleNote.EntryDate
+            cmd.Parameters.Add("@UserID", SqlDbType.Int)
+            cmd.Parameters("@UserID").Value = clsProdScheduleNote.UserID
+            cmd.Parameters.Add("@VisibleToCustomer", SqlDbType.Int)
+            cmd.Parameters("@VisibleToCustomer").Value = clsProdScheduleNote.VisibleToCustomer
+
+            Dim ra As Integer = cmd.ExecuteNonQuery
+
+            If ra < 1 Then
+                EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - add record failed" & Environment.NewLine)
+                bolAddOK = False
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+            bolAddOK = False
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+        End Try
+
+        Return bolAddOK
+        ''
+
+    End Function
+
+    ''' <summary>
+    ''' Gets a <see cref="list(Of ProdScheduleNote)"/> for the given ID from the tblProdScheduleNotes database table.
+    ''' </summary>
+    ''' <param name="intProdScheduleID">The production schedule ID of the Prod Schedule Note record to get.</param>
+    ''' <returns>A <see cref="list(Of ProdScheduleNote)"/> representing the database table query result.</returns>
+    Function getProdScheduleNotesDataTableByProductionScheduleID(intProdScheduleID As Integer) As DataTable
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getProductScheduleNotesByProdScheduleID"
+            cmd.CommandType = CommandType.StoredProcedure
+            SqlCommandBuilder.DeriveParameters(cmd)
+
+            cmd.Parameters("@ProdScheduleID").Value = intProdScheduleID
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Close()
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+
+        Return dt
+    End Function
+
+    ''' <summary>
+    ''' Gets a <see cref="list(Of ProdScheduleNote)"/> for the given ID from the tblProdScheduleNotes database table.
+    ''' </summary>
+    ''' <param name="intProdScheduleID">The prduction schedule ID of the Prod Schedule Note record to get.</param>
+    ''' <returns>A <see cref="list(Of ProdScheduleNote)"/> representing the database table query result.</returns>
+    Function getProdScheduleNotesByProductionScheduleID(intProdScheduleID As Integer) As List(Of ProdScheduleNote)
+        Dim lProdScheduleNotes As New List(Of ProdScheduleNote)
+
+        Dim dtNotes As DataTable = getProdScheduleNotesDataTableByProductionScheduleID(intProdScheduleID)
+
+        For Each r As DataRow In dtNotes.Rows
+            Dim cProdScheduleNote As ProdScheduleNote = ConvertProdScheduleNoteRowToClass(r)
+
+            lProdScheduleNotes.Add(cProdScheduleNote)
+        Next r
+
+        Return lProdScheduleNotes
+    End Function
+
+    Function getDailyProductionSchedule(dteScheduleDate As Date, intProductTypeId As Integer) As DataTable
+
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        dbConn = Nothing
+
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getDailyProductionSchedule"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            cmd.Parameters.Add("@ScheduledDate", SqlDbType.DateTime)
+            cmd.Parameters("@ScheduledDate").Value = dteScheduleDate
+
+            cmd.Parameters.Add("@ProductTypeID", SqlDbType.Int)
+            cmd.Parameters("@ProductTypeID").Value = intProductTypeId
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+
+            cnn.Close()
+
+            Return dt
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+
+
+    End Function
+
+    Function getToBeDespatchedList(ByVal intProductTypeId As Integer) As DataTable
+
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        dbConn = Nothing
+
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getToBeDespatchedList"
+            cmd.CommandType = CommandType.StoredProcedure
+            cmd.Parameters.Add("@ProductTypeID", SqlDbType.Int)
+            cmd.Parameters("@ProductTypeID").Value = intProductTypeId
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Close()
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+        Return dt
+
+    End Function
+
+    Function getToBeCollectedFromFactory(ByVal intProductTypeId As Integer) As DataTable
+
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        dbConn = Nothing
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getToBeCollectedFromFactory"
+            cmd.CommandType = CommandType.StoredProcedure
+            cmd.Parameters.Add("@ProductTypeID", SqlDbType.Int)
+            cmd.Parameters("@ProductTypeID").Value = intProductTypeId
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Close()
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+        Return dt
+
+    End Function
+
+    Function getToBeInvoiced(ByVal intProductTypeId As Integer) As DataTable
+
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        dbConn = Nothing
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getToBeInvoiced"
+            cmd.CommandType = CommandType.StoredProcedure
+            cmd.Parameters.Add("@ProductTypeID", SqlDbType.Int)
+            cmd.Parameters("@ProductTypeID").Value = intProductTypeId
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Close()
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+        Return dt
+
+    End Function
+
+End Class

@@ -1,0 +1,88 @@
+﻿Imports System.Data.SqlClient
+Imports Microsoft.VisualBasic
+
+Public Class ProductionLeadDaysDAO
+
+    Public Function updateProductionLeadDays(ByVal prodLead As ProductionLeadDays, Optional ByVal cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As Boolean
+
+        Dim dbcon As New DBConnection
+        Dim bolUpdateOK As Boolean = True
+        Dim bolCnnOpen As Boolean = True
+        Dim cmd As New SqlCommand
+
+        If IsNothing(cnn) Then
+            bolCnnOpen = False
+            cnn = dbcon.getSQLConnection_To_OzRollPlantationScheduling
+        End If
+        Try
+            If bolCnnOpen = False Then
+                cnn.Open()
+            End If
+            cmd.Connection = cnn
+            If bolCnnOpen = True Then
+                cmd.Transaction = trans
+            End If
+
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_updateProductionLeadDays"
+            cmd.CommandType = CommandType.StoredProcedure
+            cmd.Transaction = trans
+
+            setupCommandParameters(prodLead, cmd)
+
+            Dim ra As Integer = cmd.ExecuteNonQuery
+            If ra < 1 Then
+                EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - update record failed" & Environment.NewLine)
+                bolUpdateOK = False
+            End If
+
+            'This try catch block is entered, in ProductionScheduleDetails it is not entered
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+            bolUpdateOK = False
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+        End Try
+        Return bolUpdateOK
+
+    End Function
+
+    Private Sub setupCommandParameters(ByVal prodLead As ProductionLeadDays, ByRef cmd As SqlCommand)
+
+        SqlCommandBuilder.DeriveParameters(cmd)
+
+        If prodLead.LeadTimesID = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@LeadTimesID").Value = DBNull.Value
+        Else
+            cmd.Parameters("@LeadTimesID").Value = prodLead.LeadTimesID
+        End If
+
+        If prodLead.ProductTypeID = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@ProductTypeID").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ProductTypeID").Value = prodLead.ProductTypeID
+        End If
+
+        If prodLead.EffectiveDate = Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@EffectiveDate").Value = DBNull.Value
+        Else
+            cmd.Parameters("@EffectiveDate").Value = prodLead.EffectiveDate
+        End If
+
+        If prodLead.StandardDays = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@StandardDays").Value = DBNull.Value
+        Else
+            cmd.Parameters("@StandardDays").Value = prodLead.StandardDays
+        End If
+
+        If prodLead.PowdercoatDays = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@PowdercoatDays").Value = DBNull.Value
+        Else
+            cmd.Parameters("@PowdercoatDays").Value = prodLead.PowdercoatDays
+        End If
+
+
+    End Sub
+
+End Class

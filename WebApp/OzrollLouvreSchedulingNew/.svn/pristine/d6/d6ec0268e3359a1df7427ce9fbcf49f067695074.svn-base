@@ -1,0 +1,1235 @@
+﻿Imports Microsoft.VisualBasic
+Imports System.Data.SqlClient
+
+Public Class OSCJobRegisterDAO
+
+    Function getNextWholesaleContractNumber(cnn As SqlConnection, ByRef trans As SqlTransaction) As DataTable
+
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cmd.Connection = cnn
+            cmd.CommandText = "select * from tblWholesaleContractNumbers where JobRegisterID is null order by ID ASC"
+            cmd.CommandType = CommandType.Text
+
+            cmd.Transaction = trans
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+
+            Return dt
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & Environment.NewLine & ex.Message)
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+        End Try
+
+    End Function
+
+    Function getJobRegisterRecord(intJobRegisterID As Integer) As DataTable
+
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OSCDatabase
+        dbConn = Nothing
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "select * from [Table1] where JobRegisterID = " & intJobRegisterID.ToString
+            cmd.CommandType = CommandType.Text
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+
+            cnn.Close()
+
+            Return dt
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & Environment.NewLine & ex.Message)
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+
+    End Function
+
+    Function addJobRegisterRecord(cJobRegister As OSCJobRegister, cnn As SqlConnection, ByRef trans As SqlTransaction) As Integer
+
+        Dim intID As Integer = Constants.DEFAULT_INTEGER_VALUE
+        Dim cmd As New SqlCommand
+
+        Try
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_addJobRegisterRecord"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            cmd.Transaction = trans
+
+            SqlCommandBuilder.DeriveParameters(cmd)
+
+            populateJobRegisterCommandParameters(cJobRegister, cmd, True)
+
+            cmd.ExecuteNonQuery()
+
+            intID = CInt(cmd.Parameters("@JobRegisterID").Value)
+
+            Return intID
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & Environment.NewLine & ex.Message)
+            Return intID
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+        End Try
+
+    End Function
+
+    Function updateJobRegisterRecord(cJobRegister As OSCJobRegister, cnn As SqlConnection, ByRef trans As SqlTransaction) As Boolean
+
+        Dim cmd As New SqlCommand
+
+        Try
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_updateJobRegisterRecord"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            cmd.Transaction = trans
+
+            SqlCommandBuilder.DeriveParameters(cmd)
+
+            populateJobRegisterCommandParameters(cJobRegister, cmd, False)
+
+            cmd.ExecuteNonQuery()
+
+            Return True
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & Environment.NewLine & ex.Message)
+            Return False
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+        End Try
+
+    End Function
+
+    Protected Sub populateJobRegisterCommandParameters(cJobRegister As OSCJobRegister, ByRef cmd As SqlCommand, bolAdd As Boolean)
+
+        If bolAdd Then
+            cmd.Parameters("@JobRegisterID").Direction = ParameterDirection.Output
+            cmd.Parameters("@JobRegisterID").Value = DBNull.Value
+        Else
+            If cJobRegister.JobRegisterID = Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@JobRegisterID").Value = DBNull.Value
+            Else
+                cmd.Parameters("@JobRegisterID").Value = cJobRegister.JobRegisterID
+            End If
+        End If
+
+        If cJobRegister.QuoteRegisterID = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@QuoteRegisterID").Value = DBNull.Value
+        Else
+            cmd.Parameters("@QuoteRegisterID").Value = cJobRegister.QuoteRegisterID
+        End If
+
+        If cJobRegister.DateSold = Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@DateSold").Value = DBNull.Value
+        Else
+            cmd.Parameters("@DateSold").Value = cJobRegister.DateSold
+        End If
+
+        If cJobRegister.SoldBy = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@SoldBy").Value = DBNull.Value
+        Else
+            cmd.Parameters("@SoldBy").Value = cJobRegister.SoldBy
+        End If
+
+        If cJobRegister.Status = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@Status").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Status").Value = cJobRegister.Status
+        End If
+
+        If cJobRegister.Code = String.Empty Then
+            cmd.Parameters("@Code").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Code").Value = cJobRegister.Code
+        End If
+
+        If cJobRegister.ContractNo = String.Empty Then
+            cmd.Parameters("@ContractNo").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ContractNo").Value = cJobRegister.ContractNo
+        End If
+
+        If cJobRegister.Clients_ID = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@Clients_ID").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Clients_ID").Value = cJobRegister.Clients_ID
+        End If
+
+        If cJobRegister.ProjectName = String.Empty Then
+            cmd.Parameters("@ProjectName").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ProjectName").Value = cJobRegister.ProjectName
+        End If
+
+        If cJobRegister.ProjectAddress = String.Empty Then
+            cmd.Parameters("@ProjectAddress").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ProjectAddress").Value = cJobRegister.ProjectAddress
+        End If
+
+        If cJobRegister.ProjectSuburb = String.Empty Then
+            cmd.Parameters("@ProjectSuburb").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ProjectSuburb").Value = cJobRegister.ProjectSuburb
+        End If
+
+        If cJobRegister.ProjectPostcode = String.Empty Then
+            cmd.Parameters("@ProjectPostcode").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ProjectPostcode").Value = cJobRegister.ProjectPostcode
+        End If
+
+        If cJobRegister.ProjectState = String.Empty Then
+            cmd.Parameters("@ProjectState").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ProjectState").Value = cJobRegister.ProjectState
+        End If
+
+        If cJobRegister.ProjectCountry = String.Empty Then
+            cmd.Parameters("@ProjectCountry").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ProjectCountry").Value = cJobRegister.ProjectCountry
+        End If
+
+        If cJobRegister.Style = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@Style").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Style").Value = cJobRegister.Style
+        End If
+
+        If cJobRegister.Type = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@Type").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Type").Value = cJobRegister.Type
+        End If
+
+        If cJobRegister.Colour = String.Empty Then
+            cmd.Parameters("@Colour").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Colour").Value = cJobRegister.Colour
+        End If
+
+        If cJobRegister.DateRequired = Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@DateRequired").Value = DBNull.Value
+        Else
+            cmd.Parameters("@DateRequired").Value = cJobRegister.DateRequired
+        End If
+
+        If cJobRegister.BriefJobDescription = String.Empty Then
+            cmd.Parameters("@BriefJobDescription").Value = DBNull.Value
+        Else
+            cmd.Parameters("@BriefJobDescription").Value = cJobRegister.BriefJobDescription
+        End If
+
+        If cJobRegister.JobNotes = String.Empty Then
+            cmd.Parameters("@JobNotes").Value = DBNull.Value
+        Else
+            cmd.Parameters("@JobNotes").Value = cJobRegister.JobNotes
+        End If
+
+        If cJobRegister.Contact1Name = String.Empty Then
+            cmd.Parameters("@Contact1Name").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Contact1Name").Value = cJobRegister.Contact1Name
+        End If
+
+        If cJobRegister.Contact1HmPh = String.Empty Then
+            cmd.Parameters("@Contact1HmPh").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Contact1HmPh").Value = cJobRegister.Contact1HmPh
+        End If
+
+        If cJobRegister.Contact1WkPH = String.Empty Then
+            cmd.Parameters("@Contact1WkPH").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Contact1WkPH").Value = cJobRegister.Contact1WkPH
+        End If
+
+        If cJobRegister.Contact1Fax = String.Empty Then
+            cmd.Parameters("@Contact1Fax").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Contact1Fax").Value = cJobRegister.Contact1Fax
+        End If
+
+        If cJobRegister.Contact1Mob = String.Empty Then
+            cmd.Parameters("@Contact1Mob").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Contact1Mob").Value = cJobRegister.Contact1Mob
+        End If
+
+        If cJobRegister.Contact1Email = String.Empty Then
+            cmd.Parameters("@Contact1Email").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Contact1Email").Value = cJobRegister.Contact1Email
+        End If
+
+        If cJobRegister.Contact1Type = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@Contact1Type").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Contact1Type").Value = cJobRegister.Contact1Type
+        End If
+
+        If cJobRegister.Contact2Name = String.Empty Then
+            cmd.Parameters("@Contact2Name").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Contact2Name").Value = cJobRegister.Contact2Name
+        End If
+
+        If cJobRegister.Contact2HmPh = String.Empty Then
+            cmd.Parameters("@Contact2HmPh").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Contact2HmPh").Value = cJobRegister.Contact2HmPh
+        End If
+
+        If cJobRegister.Contact2WkPH = String.Empty Then
+            cmd.Parameters("@Contact2WkPH").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Contact2WkPH").Value = cJobRegister.Contact2WkPH
+        End If
+
+        If cJobRegister.Contact2Fax = String.Empty Then
+            cmd.Parameters("@Contact2Fax").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Contact2Fax").Value = cJobRegister.Contact2Fax
+        End If
+
+        If cJobRegister.Contact2Mob = String.Empty Then
+            cmd.Parameters("@Contact2Mob").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Contact2Mob").Value = cJobRegister.Contact2Mob
+        End If
+
+        If cJobRegister.Contact2Email = String.Empty Then
+            cmd.Parameters("@Contact2Email").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Contact2Email").Value = cJobRegister.Contact2Email
+        End If
+
+        If cJobRegister.Contact2Type = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@Contact2Type").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Contact2Type").Value = cJobRegister.Contact2Type
+        End If
+
+        If cJobRegister.Contact3Name = String.Empty Then
+            cmd.Parameters("@Contact3Name").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Contact3Name").Value = cJobRegister.Contact3Name
+        End If
+
+        If cJobRegister.Contact3HmPh = String.Empty Then
+            cmd.Parameters("@Contact3HmPh").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Contact3HmPh").Value = cJobRegister.Contact3HmPh
+        End If
+
+        If cJobRegister.Contact3WkPH = String.Empty Then
+            cmd.Parameters("@Contact3WkPH").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Contact3WkPH").Value = cJobRegister.Contact3WkPH
+        End If
+
+        If cJobRegister.Contact3Fax = String.Empty Then
+            cmd.Parameters("@Contact3Fax").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Contact3Fax").Value = cJobRegister.Contact3Fax
+        End If
+
+        If cJobRegister.Contact3Mob = String.Empty Then
+            cmd.Parameters("@Contact3Mob").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Contact3Mob").Value = cJobRegister.Contact3Mob
+        End If
+
+        If cJobRegister.Contact3Email = String.Empty Then
+            cmd.Parameters("@Contact3Email").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Contact3Email").Value = cJobRegister.Contact3Email
+        End If
+
+        If cJobRegister.Contact3Type = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@Contact3Type").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Contact3Type").Value = cJobRegister.Contact3Type
+        End If
+
+        If cJobRegister.ContractTotal = Constants.DEFAULT_DECIMAL_VALUE Then
+            cmd.Parameters("@ContractTotal").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ContractTotal").Value = cJobRegister.ContractTotal
+        End If
+
+        If cJobRegister.PONumber = String.Empty Then
+            cmd.Parameters("@PONumber").Value = DBNull.Value
+        Else
+            cmd.Parameters("@PONumber").Value = cJobRegister.PONumber
+        End If
+
+        If cJobRegister.DepositDate = Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@DepositDate").Value = DBNull.Value
+        Else
+            cmd.Parameters("@DepositDate").Value = cJobRegister.DepositDate
+        End If
+
+        If cJobRegister.Deposit = Constants.DEFAULT_DECIMAL_VALUE Then
+            cmd.Parameters("@Deposit").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Deposit").Value = cJobRegister.Deposit
+        End If
+
+        If cJobRegister.ProgressClaim1Date = Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@ProgressClaim1Date").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ProgressClaim1Date").Value = cJobRegister.ProgressClaim1Date
+        End If
+
+        If cJobRegister.ProgressClaim1 = Constants.DEFAULT_DECIMAL_VALUE Then
+            cmd.Parameters("@ProgressClaim1").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ProgressClaim1").Value = cJobRegister.ProgressClaim1
+        End If
+
+        If cJobRegister.ProgressClaim2Date = Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@ProgressClaim2Date").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ProgressClaim2Date").Value = cJobRegister.ProgressClaim2Date
+        End If
+
+        If cJobRegister.ProgressClaim2 = Constants.DEFAULT_DECIMAL_VALUE Then
+            cmd.Parameters("@ProgressClaim2").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ProgressClaim2").Value = cJobRegister.ProgressClaim2
+        End If
+
+        If cJobRegister.ProgressClaim3Date = Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@ProgressClaim3Date").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ProgressClaim3Date").Value = cJobRegister.ProgressClaim3Date
+        End If
+
+        If cJobRegister.ProgressClaim3 = Constants.DEFAULT_DECIMAL_VALUE Then
+            cmd.Parameters("@ProgressClaim3").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ProgressClaim3").Value = cJobRegister.ProgressClaim3
+        End If
+
+        If cJobRegister.ProgressClaim4Date = Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@ProgressClaim4Date").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ProgressClaim4Date").Value = cJobRegister.ProgressClaim4Date
+        End If
+
+        If cJobRegister.ProgressClaim4 = Constants.DEFAULT_DECIMAL_VALUE Then
+            cmd.Parameters("@ProgressClaim4").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ProgressClaim4").Value = cJobRegister.ProgressClaim4
+        End If
+
+        If cJobRegister.Balance = Constants.DEFAULT_DECIMAL_VALUE Then
+            cmd.Parameters("@Balance").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Balance").Value = cJobRegister.Balance
+        End If
+
+        If cJobRegister.InvoicedDate = Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@InvoicedDate").Value = DBNull.Value
+        Else
+            cmd.Parameters("@InvoicedDate").Value = cJobRegister.InvoicedDate
+        End If
+
+        If cJobRegister.Variation1 = Constants.DEFAULT_DECIMAL_VALUE Then
+            cmd.Parameters("@Variation1").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Variation1").Value = cJobRegister.Variation1
+        End If
+
+        If cJobRegister.Retention1DueDate = Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@Retention1DueDate").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Retention1DueDate").Value = cJobRegister.Retention1DueDate
+        End If
+
+        If cJobRegister.Retention1Amount = Constants.DEFAULT_DECIMAL_VALUE Then
+            cmd.Parameters("@Retention1Amount").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Retention1Amount").Value = cJobRegister.Retention1Amount
+        End If
+
+        If cJobRegister.Retention2DueDate = Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@Retention2DueDate").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Retention2DueDate").Value = cJobRegister.Retention2DueDate
+        End If
+
+        If cJobRegister.Retention2Amount = Constants.DEFAULT_DECIMAL_VALUE Then
+            cmd.Parameters("@Retention2Amount").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Retention2Amount").Value = cJobRegister.Retention2Amount
+        End If
+
+        If cJobRegister.Variation1Description = String.Empty Then
+            cmd.Parameters("@Variation1Description").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Variation1Description").Value = cJobRegister.Variation1Description
+        End If
+
+        If cJobRegister.AdjustedContractValue1 = Constants.DEFAULT_DECIMAL_VALUE Then
+            cmd.Parameters("@AdjustedContractValue1").Value = DBNull.Value
+        Else
+            cmd.Parameters("@AdjustedContractValue1").Value = cJobRegister.AdjustedContractValue1
+        End If
+
+        If cJobRegister.Variation2 = Constants.DEFAULT_DECIMAL_VALUE Then
+            cmd.Parameters("@Variation2").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Variation2").Value = cJobRegister.Variation2
+        End If
+
+        If cJobRegister.Variation2Description = String.Empty Then
+            cmd.Parameters("@Variation2Description").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Variation2Description").Value = cJobRegister.Variation2Description
+        End If
+
+        If cJobRegister.AdjustedContractValue2 = Constants.DEFAULT_DECIMAL_VALUE Then
+            cmd.Parameters("@AdjustedContractValue2").Value = DBNull.Value
+        Else
+            cmd.Parameters("@AdjustedContractValue2").Value = cJobRegister.AdjustedContractValue2
+        End If
+
+        If cJobRegister.Variation3 = Constants.DEFAULT_DECIMAL_VALUE Then
+            cmd.Parameters("@Variation3").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Variation3").Value = cJobRegister.Variation3
+        End If
+
+        If cJobRegister.Variation3Description = String.Empty Then
+            cmd.Parameters("@Variation3Description").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Variation3Description").Value = cJobRegister.Variation3Description
+        End If
+
+        If cJobRegister.AdjustedContractValue3 = Constants.DEFAULT_DECIMAL_VALUE Then
+            cmd.Parameters("@AdjustedContractValue3").Value = DBNull.Value
+        Else
+            cmd.Parameters("@AdjustedContractValue3").Value = cJobRegister.AdjustedContractValue3
+        End If
+
+        If cJobRegister.Variation4 = Constants.DEFAULT_DECIMAL_VALUE Then
+            cmd.Parameters("@Variation4").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Variation4").Value = cJobRegister.Variation4
+        End If
+
+        If cJobRegister.Variation4Description = String.Empty Then
+            cmd.Parameters("@Variation4Description").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Variation4Description").Value = cJobRegister.Variation4Description
+        End If
+
+        If cJobRegister.AdjustedContractValue4 = Constants.DEFAULT_DECIMAL_VALUE Then
+            cmd.Parameters("@AdjustedContractValue4").Value = DBNull.Value
+        Else
+            cmd.Parameters("@AdjustedContractValue4").Value = cJobRegister.AdjustedContractValue4
+        End If
+
+        If cJobRegister.Quantity = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@Quantity").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Quantity").Value = cJobRegister.Quantity
+        End If
+
+        If cJobRegister.SQM = String.Empty Then
+            cmd.Parameters("@SQM").Value = DBNull.Value
+        Else
+            cmd.Parameters("@SQM").Value = cJobRegister.SQM
+        End If
+
+        If cJobRegister.ManHours = String.Empty Then
+            cmd.Parameters("@ManHours").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ManHours").Value = cJobRegister.ManHours
+        End If
+
+        If cJobRegister.ToCheckMeasure = Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@ToCheckMeasure").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ToCheckMeasure").Value = cJobRegister.ToCheckMeasure
+        End If
+
+        If cJobRegister.CheckMeasureBy = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@CheckMeasureBy").Value = DBNull.Value
+        Else
+            cmd.Parameters("@CheckMeasureBy").Value = cJobRegister.CheckMeasureBy
+        End If
+
+        If cJobRegister.CheckMeasured = Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@CheckMeasured").Value = DBNull.Value
+        Else
+            cmd.Parameters("@CheckMeasured").Value = cJobRegister.CheckMeasured
+        End If
+
+        cmd.Parameters("@CMNotReq").Value = cJobRegister.CMNotReq
+
+        If cJobRegister.ToProduction = Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@ToProduction").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ToProduction").Value = cJobRegister.ToProduction
+        End If
+
+        If cJobRegister.Cutting = Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@Cutting").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Cutting").Value = cJobRegister.Cutting
+        End If
+
+        If cJobRegister.Prep = Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@Prep").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Prep").Value = cJobRegister.Prep
+        End If
+
+        If cJobRegister.ToPowdercoating = Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@ToPowdercoating").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ToPowdercoating").Value = cJobRegister.ToPowdercoating
+        End If
+
+        If cJobRegister.ETAPC = Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@ETAPC").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ETAPC").Value = cJobRegister.ETAPC
+        End If
+
+        If cJobRegister.ReturnPC = Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@ReturnPC").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ReturnPC").Value = cJobRegister.ReturnPC
+        End If
+
+        If cJobRegister.Assembly = Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@Assembly").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Assembly").Value = cJobRegister.Assembly
+        End If
+
+        If cJobRegister.QCDone = Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@QCDone").Value = DBNull.Value
+        Else
+            cmd.Parameters("@QCDone").Value = cJobRegister.QCDone
+        End If
+
+        If cJobRegister.NoofReworks = String.Empty Then
+            cmd.Parameters("@NoofReworks").Value = DBNull.Value
+        Else
+            cmd.Parameters("@NoofReworks").Value = cJobRegister.NoofReworks
+        End If
+
+        If cJobRegister.ToDespatch = Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@ToDespatch").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ToDespatch").Value = cJobRegister.ToDespatch
+        End If
+
+        If cJobRegister.Shipped = Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@Shipped").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Shipped").Value = cJobRegister.Shipped
+        End If
+
+        If cJobRegister.ProdNotes = String.Empty Then
+            cmd.Parameters("@ProdNotes").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ProdNotes").Value = cJobRegister.ProdNotes
+        End If
+
+        If cJobRegister.InstallBooked = Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@InstallBooked").Value = DBNull.Value
+        Else
+            cmd.Parameters("@InstallBooked").Value = cJobRegister.InstallBooked
+        End If
+
+        If cJobRegister.Fitter = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@Fitter").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Fitter").Value = cJobRegister.Fitter
+        End If
+
+        If cJobRegister.FittingTime = Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@FittingTime").Value = DBNull.Value
+        Else
+            cmd.Parameters("@FittingTime").Value = cJobRegister.FittingTime
+        End If
+
+        cmd.Parameters("@InstallComplete").Value = cJobRegister.InstallComplete
+
+        If cJobRegister.FittersNotes = String.Empty Then
+            cmd.Parameters("@FittersNotes").Value = DBNull.Value
+        Else
+            cmd.Parameters("@FittersNotes").Value = cJobRegister.FittersNotes
+        End If
+
+        If cJobRegister.OnTime = String.Empty Then
+            cmd.Parameters("@OnTime").Value = DBNull.Value
+        Else
+            cmd.Parameters("@OnTime").Value = cJobRegister.OnTime
+        End If
+
+        If cJobRegister.LateReason = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@LateReason").Value = DBNull.Value
+        Else
+            cmd.Parameters("@LateReason").Value = cJobRegister.LateReason
+        End If
+
+        If cJobRegister.DIFOTNotes = String.Empty Then
+            cmd.Parameters("@DIFOTNotes").Value = DBNull.Value
+        Else
+            cmd.Parameters("@DIFOTNotes").Value = cJobRegister.DIFOTNotes
+        End If
+
+        If cJobRegister.WarrantyDateReport = Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@WarrantyDateReport").Value = DBNull.Value
+        Else
+            cmd.Parameters("@WarrantyDateReport").Value = cJobRegister.WarrantyDateReport
+        End If
+
+        If cJobRegister.CurrentProblem = String.Empty Then
+            cmd.Parameters("@CurrentProblem").Value = DBNull.Value
+        Else
+            cmd.Parameters("@CurrentProblem").Value = cJobRegister.CurrentProblem
+        End If
+
+        If cJobRegister.MaterialRequire = String.Empty Then
+            cmd.Parameters("@MaterialRequire").Value = DBNull.Value
+        Else
+            cmd.Parameters("@MaterialRequire").Value = cJobRegister.MaterialRequire
+        End If
+
+        If cJobRegister.POrderID = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@POrderID").Value = DBNull.Value
+        Else
+            cmd.Parameters("@POrderID").Value = cJobRegister.POrderID
+        End If
+
+        If cJobRegister.ScheduledDate = Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@ScheduledDate").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ScheduledDate").Value = cJobRegister.ScheduledDate
+        End If
+
+        If cJobRegister.ColourID = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@ColourID").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ColourID").Value = cJobRegister.ColourID
+        End If
+
+        If cJobRegister.OrderTypeID = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@OrderTypeID").Value = DBNull.Value
+        Else
+            cmd.Parameters("@OrderTypeID").Value = cJobRegister.OrderTypeID
+        End If
+
+
+    End Sub
+
+    Function getJobRegisterByJobRegisterID(intJobRegisterID As Integer) As OSCJobRegister
+
+        Dim dt As DataTable = getJobRegisterRecord(intJobRegisterID)
+        Dim cJobRegister As New OSCJobRegister
+        If dt.Rows.Count > 0 Then
+
+            If Not IsDBNull(dt.Rows(0)("JobRegisterID")) Then
+                cJobRegister.JobRegisterID = CInt(dt.Rows(0)("JobRegisterID"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("QuoteRegisterID")) Then
+                cJobRegister.QuoteRegisterID = CInt(dt.Rows(0)("QuoteRegisterID"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("DateSold")) Then
+                cJobRegister.DateSold = CDate(dt.Rows(0)("DateSold"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("SoldBy")) Then
+                cJobRegister.SoldBy = CInt(dt.Rows(0)("SoldBy"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Status")) Then
+                cJobRegister.Status = CInt(dt.Rows(0)("Status"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Code")) Then
+                cJobRegister.Code = dt.Rows(0)("Code").ToString
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("ContractNo")) Then
+                cJobRegister.ContractNo = dt.Rows(0)("ContractNo").ToString
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Clients_ID")) Then
+                cJobRegister.Clients_ID = CInt(dt.Rows(0)("Clients_ID"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("ProjectName")) Then
+                cJobRegister.ProjectName = dt.Rows(0)("ProjectName").ToString
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("ProjectAddress")) Then
+                cJobRegister.ProjectAddress = dt.Rows(0)("ProjectAddress").ToString
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("ProjectSuburb")) Then
+                cJobRegister.ProjectSuburb = dt.Rows(0)("ProjectSuburb").ToString
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("ProjectPostcode")) Then
+                cJobRegister.ProjectPostcode = dt.Rows(0)("ProjectPostcode").ToString
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("ProjectState")) Then
+                cJobRegister.ProjectState = dt.Rows(0)("ProjectState").ToString
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("ProjectCountry")) Then
+                cJobRegister.ProjectCountry = dt.Rows(0)("ProjectCountry").ToString
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Style")) Then
+                cJobRegister.Style = CInt(dt.Rows(0)("Style"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Type")) Then
+                cJobRegister.Type = CInt(dt.Rows(0)("Type"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Colour")) Then
+                cJobRegister.Colour = dt.Rows(0)("Colour").ToString
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("DateRequired")) Then
+                cJobRegister.DateRequired = CDate(dt.Rows(0)("DateRequired"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("BriefJobDescription")) Then
+                cJobRegister.BriefJobDescription = dt.Rows(0)("BriefJobDescription").ToString
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("JobNotes")) Then
+                cJobRegister.JobNotes = dt.Rows(0)("JobNotes").ToString
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Contact1Name")) Then
+                cJobRegister.Contact1Name = dt.Rows(0)("Contact1Name").ToString
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Contact1HmPh")) Then
+                cJobRegister.Contact1HmPh = dt.Rows(0)("Contact1HmPh").ToString
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Contact1WkPH")) Then
+                cJobRegister.Contact1WkPH = dt.Rows(0)("Contact1WkPH").ToString
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Contact1Fax")) Then
+                cJobRegister.Contact1Fax = dt.Rows(0)("Contact1Fax").ToString
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Contact1Mob")) Then
+                cJobRegister.Contact1Mob = dt.Rows(0)("Contact1Mob").ToString
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Contact1Email")) Then
+                cJobRegister.Contact1Email = dt.Rows(0)("Contact1Email").ToString
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Contact1Type")) Then
+                cJobRegister.Contact1Type = CInt(dt.Rows(0)("Contact1Type"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Contact2Name")) Then
+                cJobRegister.Contact2Name = dt.Rows(0)("Contact2Name").ToString
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Contact2HmPh")) Then
+                cJobRegister.Contact2HmPh = dt.Rows(0)("Contact2HmPh").ToString
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Contact2WkPH")) Then
+                cJobRegister.Contact2WkPH = dt.Rows(0)("Contact2WkPH").ToString
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Contact2Fax")) Then
+                cJobRegister.Contact2Fax = dt.Rows(0)("Contact2Fax").ToString
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Contact2Mob")) Then
+                cJobRegister.Contact2Mob = dt.Rows(0)("Contact2Mob").ToString
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Contact2Email")) Then
+                cJobRegister.Contact2Email = dt.Rows(0)("Contact2Email").ToString
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Contact2Type")) Then
+                cJobRegister.Contact2Type = CInt(dt.Rows(0)("Contact2Type"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Contact3Name")) Then
+                cJobRegister.Contact3Name = dt.Rows(0)("Contact3Name").ToString
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Contact3HmPh")) Then
+                cJobRegister.Contact3HmPh = dt.Rows(0)("Contact3HmPh").ToString
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Contact3WkPH")) Then
+                cJobRegister.Contact3WkPH = dt.Rows(0)("Contact3WkPH").ToString
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Contact3Fax")) Then
+                cJobRegister.Contact3Fax = dt.Rows(0)("Contact3Fax").ToString
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Contact3Mob")) Then
+                cJobRegister.Contact3Mob = dt.Rows(0)("Contact3Mob").ToString
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Contact3Email")) Then
+                cJobRegister.Contact3Email = dt.Rows(0)("Contact3Email").ToString
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Contract3Type")) Then
+                cJobRegister.Contact3Type = CInt(dt.Rows(0)("Contract3Type"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("ContractTotal")) Then
+                cJobRegister.ContractTotal = CDec(dt.Rows(0)("ContractTotal"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("PONumber")) Then
+                cJobRegister.PONumber = dt.Rows(0)("PONumber").ToString
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("DepositDate")) Then
+                cJobRegister.DepositDate = CDate(dt.Rows(0)("DepositDate"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Deposit")) Then
+                cJobRegister.Deposit = CDec(dt.Rows(0)("Deposit"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("ProgressClaim1Date")) Then
+                cJobRegister.ProgressClaim1Date = CDate(dt.Rows(0)("ProgressClaim1Date"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("ProgressClaim1")) Then
+                cJobRegister.ProgressClaim1 = CDec(dt.Rows(0)("ProgressClaim1"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("ProgressClaim2Date")) Then
+                cJobRegister.ProgressClaim2Date = CDate(dt.Rows(0)("ProgressClaim2Date"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("ProgressClaim2")) Then
+                cJobRegister.ProgressClaim2 = CDec(dt.Rows(0)("ProgressClaim2"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("ProgressClaim3Date")) Then
+                cJobRegister.ProgressClaim3Date = CDate(dt.Rows(0)("ProgressClaim3Date"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("ProgressClaim3")) Then
+                cJobRegister.ProgressClaim3 = CDec(dt.Rows(0)("ProgressClaim3"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("ProgressClaim4Date")) Then
+                cJobRegister.ProgressClaim4Date = CDate(dt.Rows(0)("ProgressClaim4Date"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("ProgressClaim4")) Then
+                cJobRegister.ProgressClaim4 = CDec(dt.Rows(0)("ProgressClaim4"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Balance")) Then
+                cJobRegister.Balance = CDec(dt.Rows(0)("Balance"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("InvoicedDate")) Then
+                cJobRegister.InvoicedDate = CDate(dt.Rows(0)("InvoicedDate"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Variation1")) Then
+                cJobRegister.Variation1 = CDec(dt.Rows(0)("Variation1"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Retention1DueDate")) Then
+                cJobRegister.Retention1DueDate = CDate(dt.Rows(0)("Retention1DueDate"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Retention1Amount")) Then
+                cJobRegister.Retention1Amount = CDec(dt.Rows(0)("Retention1Amount"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Retention2DueDate")) Then
+                cJobRegister.Retention2DueDate = CDate(dt.Rows(0)("Retention2DueDate"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Retention2Amount")) Then
+                cJobRegister.Retention2Amount = CDec(dt.Rows(0)("Retention2Amount"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Variation1Description")) Then
+                cJobRegister.Variation1Description = dt.Rows(0)("Variation1Description").ToString
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("AdjustedContractValue1")) Then
+                cJobRegister.AdjustedContractValue1 = CDec(dt.Rows(0)("AdjustedContractValue1"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Variation2")) Then
+                cJobRegister.Variation2 = CDec(dt.Rows(0)("Variation2"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Variation2Description")) Then
+                cJobRegister.Variation2Description = dt.Rows(0)("Variation2Description").ToString
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("AdjustedContractValue2")) Then
+                cJobRegister.AdjustedContractValue2 = CDec(dt.Rows(0)("AdjustedContractValue2"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Variation3")) Then
+                cJobRegister.Variation3 = CDec(dt.Rows(0)("Variation3"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Variation3Description")) Then
+                cJobRegister.Variation3Description = dt.Rows(0)("Variation3Description").ToString
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("AdjustedContractValue3")) Then
+                cJobRegister.AdjustedContractValue3 = CDec(dt.Rows(0)("AdjustedContractValue3"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Variation4")) Then
+                cJobRegister.Variation4 = CDec(dt.Rows(0)("Variation4"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Variation4Description")) Then
+                cJobRegister.Variation4Description = dt.Rows(0)("Variation4Description").ToString
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("AdjustedContractValue4")) Then
+                cJobRegister.AdjustedContractValue4 = CDec(dt.Rows(0)("AdjustedContractValue4"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Quantity")) Then
+                cJobRegister.Quantity = CInt(dt.Rows(0)("Quantity"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("SQM")) Then
+                cJobRegister.SQM = dt.Rows(0)("SQM").ToString
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("ManHours")) Then
+                cJobRegister.ManHours = dt.Rows(0)("ManHours").ToString
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("ToCheckMeasure")) Then
+                cJobRegister.ToCheckMeasure = CDate(dt.Rows(0)("ToCheckMeasure"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("CheckMeasureBy")) Then
+                cJobRegister.CheckMeasureBy = CInt(dt.Rows(0)("CheckMeasureBy"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("CheckMeasured")) Then
+                cJobRegister.CheckMeasured = CDate(dt.Rows(0)("CheckMeasured"))
+            End If
+
+            cJobRegister.CMNotReq = CBool(dt.Rows(0)("CMNotReq"))
+
+            If Not IsDBNull(dt.Rows(0)("ToProduction")) Then
+                cJobRegister.ToProduction = CDate(dt.Rows(0)("ToProduction"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Cutting")) Then
+                cJobRegister.Cutting = CDate(dt.Rows(0)("Cutting"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Prep")) Then
+                cJobRegister.Prep = CDate(dt.Rows(0)("Prep"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("ToPowdercoating")) Then
+                cJobRegister.ToPowdercoating = CDate(dt.Rows(0)("ToPowdercoating"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("ETA-PC")) Then
+                cJobRegister.ETAPC = CDate(dt.Rows(0)("ETA-PC"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("ReturnPC")) Then
+                cJobRegister.ReturnPC = CDate(dt.Rows(0)("ReturnPC"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Assembly")) Then
+                cJobRegister.Assembly = CDate(dt.Rows(0)("Assembly"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("QC Done")) Then
+                cJobRegister.QCDone = CDate(dt.Rows(0)("QC Done"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("No of Reworks")) Then
+                cJobRegister.NoofReworks = CDate(dt.Rows(0)("No of Reworks"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("To Despatch")) Then
+                cJobRegister.ToDespatch = CDate(dt.Rows(0)("To Despatch"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Shipped")) Then
+                cJobRegister.Shipped = CDate(dt.Rows(0)("Shipped"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("ProdNotes")) Then
+                cJobRegister.ProdNotes = dt.Rows(0)("ProdNotes").ToString
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("InstallBooked")) Then
+                cJobRegister.InstallBooked = CDate(dt.Rows(0)("InstallBooked"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Fitter")) Then
+                cJobRegister.Fitter = CInt(dt.Rows(0)("Fitter"))
+            End If
+
+            cJobRegister.InstallComplete = CBool(dt.Rows(0)("InstallComplete"))
+
+            If Not IsDBNull(dt.Rows(0)("FittersNotes")) Then
+                cJobRegister.FittersNotes = dt.Rows(0)("FittersNotes").ToString
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("OnTime")) Then
+                cJobRegister.OnTime = dt.Rows(0)("OnTime").ToString
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("LateReason")) Then
+                cJobRegister.LateReason = CInt(dt.Rows(0)("LateReason"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("DIFOTNotes")) Then
+                cJobRegister.DIFOTNotes = dt.Rows(0)("DIFOTNotes").ToString
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("WarrantyDateReport")) Then
+                cJobRegister.WarrantyDateReport = CDate(dt.Rows(0)("WarrantyDateReport"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Current Problem")) Then
+                cJobRegister.CurrentProblem = dt.Rows(0)("Current Problem").ToString
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("MaterialRequire")) Then
+                cJobRegister.MaterialRequire = dt.Rows(0)("MaterialRequire").ToString
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("POrderID")) Then
+                cJobRegister.POrderID = CInt(dt.Rows(0)("POrderID"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("ScheduledDate")) Then
+                cJobRegister.ScheduledDate = CDate(dt.Rows(0)("ScheduledDate"))
+            End If
+
+            If dt.Columns.Contains("ColourID") Then
+                If Not IsDBNull(dt.Rows(0)("ColourID")) Then
+                    cJobRegister.ColourID = CInt(dt.Rows(0)("ColourID"))
+                End If
+            End If
+
+            If dt.Columns.Contains("OrderTypeID") Then
+                If Not IsDBNull(dt.Rows(0)("OrderTypeID")) Then
+                    cJobRegister.OrderTypeID = CInt(dt.Rows(0)("OrderTypeID"))
+                End If
+            End If
+
+        End If
+        dt.Dispose()
+        dt = Nothing
+
+        Return cJobRegister
+
+    End Function
+
+    Function getAllJobRegisteredList() As DataTable
+
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OSCDatabase
+        dbConn = Nothing
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "Select JobRegisterID, Table1.ContractNo, Table1.BriefJobDescription, loctblDays.WeekId, Table1.Code, Table1.Status, Status.Status As StatusName, Table1.Type, Type.Type As TypeName, " &
+                                "Table1.Style, Style.Abbreviation As StyleName, " &
+                                "Colour, DateSold, ScheduledDate,(Table1.ProjectName + ' - ' + Table1.ContractNo) As Job, Table1.DateRequired, Table1.Quantity, " &
+                                "Table1.SQM, Table1.JobNotes, Table1.ProdNotes " &
+                                "From Table1 " &
+                                "Left Join Status On Table1.Status=Status.StatusId " &
+                                "Left Join Style On Table1.Style=Style.StyleId " &
+                                "Left Join Type On Table1.Type=Type.TypeId " &
+                                "Left Join loctblDays ON Table1.ScheduledDate = loctblDays.DayDate " &
+                                "Where not Table1.Status In(10,17,23) And Table1.Code='LOUVRE' And ScheduledDate is not null and Table1.Type in(2,3,6) " &
+                                "Order By loctblDays.WeekId,StatusName,Table1.ContractNo"
+            cmd.CommandType = CommandType.Text
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & Environment.NewLine & ex.Message)
+        Finally
+            cnn.Close()
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+        Return dt
+
+    End Function
+
+End Class
