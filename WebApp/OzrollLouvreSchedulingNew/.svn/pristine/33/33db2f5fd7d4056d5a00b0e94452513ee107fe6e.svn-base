@@ -1,0 +1,135 @@
+﻿Imports Microsoft.VisualBasic
+
+<Serializable()>
+Public Class QuoteExtra
+    Implements ICloneable
+
+    Private _ID As Integer
+    Private _QuoteLouvreID As Integer
+    Private _PriceIsPercentage As Boolean
+    Private _UnitsQuoted As Decimal
+    Private _PricePerUnit As Decimal
+    Private _UnitSize As Integer
+    Private _ExtraName As String
+    Private _UnitDescriptionID As Integer
+    Private _LouvreExtraPriceID As Integer
+    Private _CreationDateTime As Date
+    Private _CategoryID As Integer
+    Private _ExtraProductID As Integer
+    Private _PricePerUnitIsValid As Decimal
+
+    Public Property ID() As Integer
+        Get
+            Return _ID
+        End Get
+        Set(ByVal value As Integer)
+            _ID = value
+        End Set
+    End Property
+
+    Public Property QuoteLouvreID() As Integer
+        Get
+            Return _QuoteLouvreID
+        End Get
+        Set(ByVal value As Integer)
+            _QuoteLouvreID = value
+        End Set
+    End Property
+
+    Public Property PriceIsPercentage() As Boolean
+        Get
+            Return _PriceIsPercentage
+        End Get
+        Set(ByVal value As Boolean)
+            _PriceIsPercentage = value
+        End Set
+    End Property
+
+    Public Property UnitsQuoted() As Decimal
+        Get
+            Return _UnitsQuoted
+        End Get
+        Set(ByVal value As Decimal)
+            _UnitsQuoted = value
+        End Set
+    End Property
+
+    Public Property PricePerUnit() As Decimal
+        Get
+            Return _PricePerUnit
+        End Get
+        Set(ByVal value As Decimal)
+            _PricePerUnit = value
+        End Set
+    End Property
+
+    Public Property UnitSize() As Integer
+        Get
+            Return _UnitSize
+        End Get
+        Set(ByVal value As Integer)
+            _UnitSize = value
+        End Set
+    End Property
+
+    Public Property ExtraName() As String
+        Get
+            Return _ExtraName
+        End Get
+        Set(ByVal value As String)
+            _ExtraName = value
+        End Set
+    End Property
+
+    Public Property UnitDescriptionID() As Integer
+        Get
+            Return _UnitDescriptionID
+        End Get
+        Set(ByVal value As Integer)
+            _UnitDescriptionID = value
+        End Set
+    End Property
+
+    Public Property LouvreExtraPriceID() As Integer
+        Get
+            Return _LouvreExtraPriceID
+        End Get
+        Set(ByVal value As Integer)
+            _LouvreExtraPriceID = value
+        End Set
+    End Property
+
+    Public Property CreationDateTime() As Date
+        Get
+            Return _CreationDateTime
+        End Get
+        Set(ByVal value As Date)
+            _CreationDateTime = value
+        End Set
+    End Property
+
+    Public Property CategoryID As Integer
+        Get
+            Return _CategoryID
+        End Get
+        Set(value As Integer)
+            _CategoryID = value
+        End Set
+    End Property
+
+    Public Property ExtraProductID As Integer
+        Get
+            Return _ExtraProductID
+        End Get
+        Set(value As Integer)
+            _ExtraProductID = value
+        End Set
+    End Property
+
+    Public Function Clone() As Object Implements System.ICloneable.Clone
+
+        Return MyBase.MemberwiseClone
+
+    End Function
+
+End Class

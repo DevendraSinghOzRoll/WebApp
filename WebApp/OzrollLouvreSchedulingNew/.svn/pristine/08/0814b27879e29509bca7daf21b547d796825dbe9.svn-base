@@ -1,0 +1,290 @@
+﻿Imports Microsoft.VisualBasic
+Imports System.Data.SqlClient
+
+Public Class AddressZoneDAO
+
+    Public Function GetAddressZonesDataSet() As DataSet
+
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim ds As New DataSet
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_GetAddressZones"
+            cmd.CommandType = CommandType.StoredProcedure
+            SqlCommandBuilder.DeriveParameters(cmd)
+
+            adp.SelectCommand = cmd
+            adp.Fill(ds)
+
+            Dim dtAddressZones As DataTable = ds.Tables(0)
+
+            dtAddressZones.TableName = "tblAddressZones"
+
+            If dtAddressZones IsNot Nothing Then
+                Dim hsAddressZoneIDs As New HashSet(Of Integer)
+
+                ' Get unique quote IDs
+                For Each zoneRow As DataRow In dtAddressZones.Rows
+                    hsAddressZoneIDs.Add(CInt(zoneRow("ID")))
+                Next zoneRow
+
+                For Each id As Integer In hsAddressZoneIDs
+                    ' Get Address Zones range
+                    cmd.CommandText = "sp_GetAddressZoneRangesByParameters"
+                    SqlCommandBuilder.DeriveParameters(cmd)
+                    cmd.Parameters("@AddressZoneID").Value = id
+                    adp.SelectCommand = cmd
+                    adp.Fill(ds)
+                Next id
+
+                If ds.Tables.Count > 1 Then
+                    ds.Tables(1).TableName = "tblAddressZoneRanges"
+                End If
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Close()
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+
+        Return ds
+
+    End Function
+
+    Public Function GetAddressZones() As List(Of AddressZone)
+        Dim dsAddressZones As DataSet = GetAddressZonesDataSet()
+        Dim lAddressZones As List(Of AddressZone) = AddressZonesDataSetToAddressZoneObjects(dsAddressZones)
+
+        Return lAddressZones
+    End Function
+
+    ''' <summary>
+    ''' Converts the given <see cref="DataSet"/> into <see cref="AddressZone"/> objects.
+    ''' </summary>
+    ''' <param name="dsAddressZones">The <see cref="Dataset"/> to convert.</param>
+    ''' <returns>A <see cref="List(Of AddressZone)"/> of all the Address Zones in the given dataset.</returns>
+    Private Function AddressZonesDataSetToAddressZoneObjects(dsAddressZones As DataSet) As List(Of AddressZone)
+        Dim lAddressZones As New List(Of AddressZone)
+        Dim addressZoneIDtoAddressZone As New Dictionary(Of Integer, Integer)
+        Dim dtAddressZone As DataTable = dsAddressZones.Tables.Item("tblAddressZones")
+
+        For Each zoneRow As DataRow In dtAddressZone.Rows
+            Dim cAddressZone As New AddressZone
+
+            With cAddressZone
+                .ID = CInt(zoneRow("ID"))
+                .EffectiveDateTime = CDate(zoneRow("EffectiveDateTime"))
+                .Price = CDec(zoneRow("Price"))
+                .CreationDateTime = CDate(zoneRow("CreationDateTime"))
+                .ZoneName = zoneRow("ZoneName").ToString()
+            End With
+
+            ' Map each AddressZoneID to its list index for fast lookup.
+            addressZoneIDtoAddressZone.Add(cAddressZone.ID, lAddressZones.Count)
+
+            ' Add the Address Zone to the list to be returned.
+            lAddressZones.Add(cAddressZone)
+        Next zoneRow
+
+        ' Populate the Zone Ranges for each Address Zone.
+        Dim dtAddressZoneRanges As DataTable = dsAddressZones.Tables.Item("tblAddressZoneRanges")
+
+        If dtAddressZoneRanges IsNot Nothing Then
+            For Each rangeRow As DataRow In dtAddressZoneRanges.Rows
+                Dim addressZoneID As Integer = CInt(rangeRow("AddressZoneID"))
+
+                ' Get the zone that this range goes with.
+                Dim zoneIdx As Integer = -1
+
+                If addressZoneIDtoAddressZone.TryGetValue(addressZoneID, zoneIdx) Then
+
+                    Dim cAddressZone As AddressZone = lAddressZones(zoneIdx)
+
+                    If cAddressZone IsNot Nothing Then
+                        Dim cAddressZoneRange As New AddressZoneRange
+
+                        With cAddressZoneRange
+                            .ID = CInt(rangeRow("ID"))
+                            .AddressZoneID = CInt(rangeRow("AddressZoneID"))
+                            .End = CInt(rangeRow("RangeEnd"))
+                            .Start = CInt(rangeRow("RangeStart"))
+                        End With
+
+                        ' Add the louvre to the quote
+                        cAddressZone.AddressZoneRanges.Add(cAddressZoneRange)
+                    End If
+                End If
+            Next rangeRow
+        End If
+
+        Return lAddressZones
+    End Function
+
+    ''' <summary>
+    ''' Adds a new Address Zone to the database.
+    ''' </summary>
+    ''' <param name="cAddressZone">The <see cref="AddressZone"/> to add.</param>
+    ''' <param name="cnn">The <see cref="SqlConnection"/> to use.</param>
+    ''' <param name="trans">The <see cref="SqlTransaction"/> to use.</param>
+    ''' <returns>The ID of the new Address Zone record.</returns>
+    Public Function AddOrUpdateAddressZoneRecord(
+            cAddressZone As AddressZone,
+            Optional cnn As SqlConnection = Nothing,
+            Optional ByRef trans As SqlTransaction = Nothing
+        ) As Integer
+
+        Dim bolAddOK As Boolean = True
+        Dim cmd As New SqlCommand
+        Dim intRecordID As Integer = 0
+        Dim boolInternalTransaction As Boolean = False
+
+        If IsNothing(cnn) Then
+            bolAddOK = False
+            Dim dbConn As New DBConnection
+            cnn = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+            dbConn = Nothing
+        End If
+
+        Try
+            If Not bolAddOK Then
+                cnn.Open()
+            End If
+
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_addOrUpdateAddressZone"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            ' As this function requires a transaction, if we are not given one we must create one as use it in this scope only.
+            If trans Is Nothing Then
+                boolInternalTransaction = True
+                trans = cnn.BeginTransaction
+            End If
+
+            If bolAddOK Then
+                cmd.Transaction = trans
+            End If
+
+            ' Quote parent object
+            SetupAddressZoneCommandParameters(cAddressZone, cmd)
+            Dim ra As Integer = cmd.ExecuteNonQuery
+
+            If ra < 1 Then
+                bolAddOK = False
+            Else
+                ' Return the quote record ID
+                intRecordID = cmd.Parameters("@ID").Value.ToString()
+            End If
+
+            If ra < 1 Then
+                bolAddOK = False
+            End If
+
+            ' Address Zone range objects
+            For Each r As AddressZoneRange In cAddressZone.AddressZoneRanges
+                If bolAddOK Then
+                    cmd.CommandText = "sp_addOrUpdateAddressZoneRange"
+
+                    ' Quote parent object
+                    SetupAddressZoneRangeCommandParameters(r, cmd)
+                    ra = cmd.ExecuteNonQuery
+                End If
+
+                If ra < 1 Then
+                    bolAddOK = False
+                    Exit For
+                End If
+            Next r
+
+            If bolAddOK Then
+                If boolInternalTransaction Then
+                    trans.Commit()
+                End If
+            Else
+                EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - add record failed" & Environment.NewLine)
+                bolAddOK = False
+                intRecordID = 0
+
+                If boolInternalTransaction Then
+                    trans.Rollback()
+                End If
+
+                cnn.Close()
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+            bolAddOK = False
+            intRecordID = 0
+
+            If boolInternalTransaction Then
+                trans.Rollback()
+            End If
+
+        Finally
+            If boolInternalTransaction Then
+                trans.Dispose()
+            End If
+
+            cmd.Dispose()
+            cmd = Nothing
+
+            If Not bolAddOK Then
+                cnn.Dispose()
+                cnn = Nothing
+            End If
+        End Try
+
+        Return intRecordID
+    End Function
+
+    Private Sub SetupAddressZoneCommandParameters(cAddressZone As AddressZone, ByRef cmd As SqlCommand)
+
+        SqlCommandBuilder.DeriveParameters(cmd)
+
+        cmd.Parameters("@ID").Direction = ParameterDirection.InputOutput
+
+        With cAddressZone
+            If cAddressZone.ID > 0 Then
+                cmd.Parameters("@ID").Value = .ID
+            Else
+                cmd.Parameters("@ID").Value = DBNull.Value
+            End If
+
+            cmd.Parameters("@CreationDateTime").Value = .CreationDateTime
+            cmd.Parameters("@EffectiveDateTime").Value = .EffectiveDateTime
+            cmd.Parameters("@Price").Value = .Price
+            cmd.Parameters("@ZoneName").Value = .ZoneName
+        End With
+    End Sub
+
+    Private Sub SetupAddressZoneRangeCommandParameters(cAddressZoneRange As AddressZoneRange, ByRef cmd As SqlCommand)
+
+        SqlCommandBuilder.DeriveParameters(cmd)
+
+        With cAddressZoneRange
+            cmd.Parameters("@ID").Direction = ParameterDirection.InputOutput
+
+            If .ID > 0 Then
+                cmd.Parameters("@ID").Value = .ID
+            Else
+                cmd.Parameters("@ID").Value = DBNull.Value
+            End If
+
+            cmd.Parameters("@AddressZoneID").Value = .AddressZoneID
+            cmd.Parameters("@RangeEnd").Value = .End
+            cmd.Parameters("@RangeStart").Value = .Start
+        End With
+    End Sub
+
+End Class

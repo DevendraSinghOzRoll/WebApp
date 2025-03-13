@@ -1,0 +1,315 @@
+﻿Imports Microsoft.VisualBasic
+Imports System
+Imports System.Collections.Generic
+Imports System.Text
+Imports System.IO
+Imports OfficeOpenXml
+Imports System.Xml
+Imports System.Drawing
+Imports OfficeOpenXml.Style
+
+Public Class PlantationOrderForm
+
+    Public Shared Function generatePlantationOrderForm(ByVal stroutputDir As String, ByRef objBuffer As Byte(), ByVal intProductionScheduleID As Integer, ByVal intSShutterNo As Integer) As String
+
+        Dim outputDir As DirectoryInfo = New DirectoryInfo(stroutputDir)
+        Dim newFile As FileInfo = New FileInfo(outputDir.FullName & "\PlantationDailyProductionScheduleTemplate.xltx")
+        If Not newFile.Exists Then
+            Return "Template Not found."
+        End If
+        '
+        Dim strCurr As String = Now.ToString.Replace("/", "")
+        strCurr = strCurr.Replace(":", "")
+        strCurr = strCurr.Replace(" ", "")
+        strCurr = strCurr.Substring(0, strCurr.Length - 3)
+        strCurr = String.Empty
+        Dim strFileFullPath As String = stroutputDir & "\DailyScheduleReport-" & strCurr & ".xlsx"
+        Dim objfileVirtualPath As FileInfo = New FileInfo(strFileFullPath)
+        If objfileVirtualPath.Exists Then
+            objfileVirtualPath.Delete()
+        End If
+
+        Dim package As ExcelPackage = New ExcelPackage(newFile)
+        'Dim xlWks As ExcelWorksheet = package.Workbook.Worksheets.Add("Sheet1")
+        Dim wsxl As ExcelWorksheet = package.Workbook.Worksheets("Sheet1")
+
+        Dim strCustomerName As String = String.Empty
+        Dim strSQL As String = String.Empty
+
+        Dim intRowPerPg As Integer = 12
+        Dim bolRunAgain As Boolean = False
+        Dim bolFirstRun As Boolean = False
+        Dim intRowCounter As Integer
+
+        wsxl.Cells(7, 4).Value = strCustomerName
+        wsxl.Cells(7, 29).Value = strCustomerName
+        'Dim strTMP() As String = Split(dtModernDet.Rows(0)("CompanyAddress").ToString, ",")
+        'For i As Integer = 0 To strTMP.Length - 1
+        '    If i <= 2 Then
+        '        wsxl.Cells(8 + i, 4).Value = strTMP(i).ToString
+        '        wsxl.Cells(7 + i, 19).Value = strTMP(i).ToString
+        '        wsxl.Cells(8 + i, 29).Value = strTMP(i).ToString
+        '    End If
+        'Next
+
+        'wsxl.Cells(7, 10) = dtModernDet.Rows(0)("ADTInvTelephoneNo")
+        'wsxl.Cells(7, 36) = dtModernDet.Rows(0)("ADTInvTelephoneNo")
+
+        'wsxl.Cells(9, 10).Value = dtModernDet.Rows(0)("ADTInvFacsimileNo")
+        'wsxl.Cells(9, 36).Value = dtModernDet.Rows(0)("ADTInvFacsimileNo")
+
+        '
+        If intSShutterNo = 1 Then
+            bolFirstRun = True
+        End If
+        intRowCounter = 12
+        '
+
+        Dim service As New AppService
+        strSQL = "select * from dbo.tblProductionScheduleList where ID=" & intProductionScheduleID.ToString
+
+        Dim dtOrder As DataTable = service.runSQLScheduling(strSQL)
+        Dim strContractNo As String = String.Empty
+        Dim strLastName As String = String.Empty
+        Dim dteOrderDate As Date
+
+        If dtOrder.Rows.Count > 0 Then
+            strContractNo = dtOrder.Rows(0).Item("OrderReference").ToString
+            strLastName = dtOrder.Rows(0).Item("CustomerName").ToString
+            dteOrderDate = CDate(dtOrder.Rows(0).Item("OrderDate"))
+        End If
+
+
+        wsxl.Cells(10, 10).Value = Format(dteOrderDate, "d MMM yyyy")
+        wsxl.Cells(10, 36).Value = Format(dteOrderDate, "d MMM yyyy")
+        wsxl.Cells(9, 16).Value = strLastName
+        wsxl.Cells(9, 42).Value = strLastName
+        wsxl.Cells(8, 16).Value = strContractNo
+        wsxl.Cells(8, 42).Value = strContractNo
+
+        wsxl.Cells(2, 12).Value = "EMAIL TO ozqldorders@ozroll.com.au"
+        wsxl.Cells(4, 12).Value = ""
+
+
+        'wsxl.Cells(7, 10).value = "0288182200"
+        'wsxl.Cells(7, 36).value = "0288182200"
+        'wsxl.Cells(7, 16).value = "David Rogers"
+        'wsxl.Cells(7, 42).value = "David Rogers"
+
+        strSQL = "select * From tblPlantationJobDetails Where (Deleted IS NULL OR Deleted = 0) and PlantationScheduleListID=" & intProductionScheduleID.ToString
+        Dim dtData As DataTable = service.runSQLScheduling(strSQL)
+        dtData = SharedFunctions.performDatatableFilterSortField(dtData, String.Empty, "ShutterID ASC")
+        '
+        Dim intSpeReqCount As Integer = 0
+        For i As Integer = intSShutterNo - 1 To dtData.Rows.Count - 1
+            If i >= intSShutterNo + intRowPerPg - 1 Then
+                intSShutterNo += intRowPerPg
+                bolRunAgain = True
+                Exit For
+            End If
+
+            populateRCDsToSpreadsheet(wsxl, dtData.Rows(i), intRowCounter, intSpeReqCount)
+
+            intRowCounter += 1
+        Next
+        dtData = Nothing
+        '
+        wsxl.Name = "OrderForm"
+        wsxl.PrinterSettings.Orientation = eOrientation.Landscape
+
+
+        service = Nothing
+        '
+        objBuffer = package.GetAsByteArray()
+
+        wsxl.Dispose()
+        wsxl = Nothing
+        package = Nothing
+        Return objfileVirtualPath.Name
+
+    End Function
+
+    Public Shared Sub populateRCDsToSpreadsheet(ByRef wsxl As ExcelWorksheet, ByVal rwcurROW As DataRow, ByVal intcurRow As Integer, ByRef intSpeReqCount As Integer)
+
+        If Not IsDBNull(rwcurROW("Quantity")) Then
+            wsxl.Cells(intcurRow, 2).Value = rwcurROW("Quantity")                     'Qty
+        Else
+            wsxl.Cells(intcurRow, 2).Value = 1
+        End If
+
+        If Not IsDBNull(rwcurROW("RoomLocation")) Then
+            wsxl.Cells(intcurRow, 3).Value = rwcurROW("RoomLocation")
+            If rwcurROW("RoomLocation").ToString() = "Other" Then
+                wsxl.Cells(intcurRow, 3).Value = rwcurROW("RoomLocationOther")
+            End If
+        End If
+
+        If Not IsDBNull(rwcurROW("Width")) Then
+            wsxl.Cells(intcurRow, 4).Value = rwcurROW("Width")                        'Gross Open Width
+        End If
+
+        If Not IsDBNull(rwcurROW("Height")) Then
+            wsxl.Cells(intcurRow, 5).Value = rwcurROW("Height")                       'Gross Open Height
+        End If
+
+        If Not IsDBNull(rwcurROW("MountConfig")) Then
+            wsxl.Cells(intcurRow, 6).Value = rwcurROW("MountConfig")                  'Mount Config
+        End If
+
+        If Not IsDBNull(rwcurROW("MountStyle")) Then
+            wsxl.Cells(intcurRow, 7).Value = rwcurROW("MountStyle")                   'Mount Style
+        End If
+
+        If Not IsDBNull(rwcurROW("PanelQty")) Then
+            wsxl.Cells(intcurRow, 8).Value = rwcurROW("PanelQty")                     'Panel Qty
+        Else
+            wsxl.Cells(intcurRow, 8).Value = 0
+        End If
+
+        'If Not strManufactureLocation = String.Empty Then                              'Material
+        '    If strManufactureLocation = "Local" Then
+        '        wsxl.Cells(intcurRow, 9).Value = "Thermalite"
+        '    Else
+        '        wsxl.Cells(intcurRow, 9).Value = "Thermaview"
+        '    End If
+        'End If
+
+        If Not IsDBNull(rwcurROW("BladeSize")) Then
+            wsxl.Cells(intcurRow, 10).Value = rwcurROW("BladeSize")                   'Blade Size
+        End If
+
+        If Not IsDBNull(rwcurROW("Colour")) Then
+            wsxl.Cells(intcurRow, 11).Value = rwcurROW("Colour")                      'Colour
+        End If
+
+        If Not IsDBNull(rwcurROW("MidRailHeight")) Then
+            wsxl.Cells(intcurRow, 12).Value = rwcurROW("MidRailHeight")             'M/Rail Height & T/T Height
+        End If
+
+        If Not IsDBNull(rwcurROW("LayoutId")) Then
+            Dim intMountMethod As Integer
+
+            If Not IsDBNull(rwcurROW("MountMethodID")) Then
+                intMountMethod = CInt(rwcurROW("MountMethodID"))            'Mount Method
+            End If
+
+            If intMountMethod = 1 Or intMountMethod = 2 Or intMountMethod = 6 Then
+                wsxl.Cells(intcurRow, 13).Value = rwcurROW("Layout")   'Hinge Layout Code
+                If rwcurROW("Layout").ToString() = "Other" Then
+                    wsxl.Cells(intcurRow, 13).Value = rwcurROW("LayoutOther")
+                End If
+            ElseIf intMountMethod = 3 Or intMountMethod = 4 Or intMountMethod = 5 Then
+                wsxl.Cells(intcurRow, 15).Value = rwcurROW("Layout") 'Slide/Bif Layout
+                If rwcurROW("Layout").ToString() = "Other" Then
+                    wsxl.Cells(intcurRow, 15).Value = rwcurROW("LayoutOther")
+                End If
+            End If
+        End If
+
+        If Not IsDBNull(rwcurROW("MountMethod")) Then
+            wsxl.Cells(intcurRow, 14).Value = rwcurROW("MountMethod")            'Mount Method
+        End If
+
+        If Not IsDBNull(rwcurROW("HingeColour")) Then
+            wsxl.Cells(intcurRow, 16).Value = rwcurROW("HingeColour")               'Hinge Colour
+        End If
+
+        If Not IsDBNull(rwcurROW("FrameType")) Then
+            wsxl.Cells(intcurRow, 17).Value = rwcurROW("FrameType")                 'Frame Type
+        End If
+
+        If Not IsDBNull(rwcurROW("Sides")) Then
+            wsxl.Cells(intcurRow, 18).Value = rwcurROW("Sides")                     'Sides
+        End If
+
+        If Not IsDBNull(rwcurROW("ControlType")) Then
+            wsxl.Cells(intcurRow, 19).Value = rwcurROW("ControlType")               'Control Type
+        End If
+
+        If Not IsDBNull(rwcurROW("Track")) Then                        'Track Yes/No
+            If CInt(rwcurROW("Track")) = 1 Then
+                wsxl.Cells(intcurRow, 20).Value = "Yes"
+            End If
+        End If
+
+        If Not IsDBNull(rwcurROW("SlidingGuide")) Then
+            wsxl.Cells(intcurRow, 21).Value = rwcurROW("SlidingGuide")                'Sliding/BifoId Guide/Bot.Track
+        End If
+
+        If Not IsDBNull(rwcurROW("SlidingOpenClose")) Then
+            wsxl.Cells(intcurRow, 22).Value = rwcurROW("SlidingOpenClose")            'Sliding Open/Close
+        End If
+
+        If Not IsDBNull(rwcurROW("TPostQty")) Then
+            wsxl.Cells(intcurRow, 23).Value = rwcurROW("TPostQty")                    'T.Post Qty
+        End If
+
+        If Not IsDBNull(rwcurROW("SplitBlade")) Then
+            wsxl.Cells(intcurRow, 24).Value = rwcurROW("SplitBlade")                  'Split Blade
+            If Not rwcurROW("SplitBlade").ToString = "N" Then
+                If Not IsDBNull(rwcurROW("SplitBladeHeight")) Then
+                    wsxl.Cells(intcurRow, 24).Value = rwcurROW("SplitBladeHeight")    'Split Blade Height
+                End If
+            End If
+        End If
+
+        If Not IsDBNull(rwcurROW("HangStrip")) Then
+            wsxl.Cells(intcurRow, 26).Value = rwcurROW("HangStrip")                   'Hang Strip
+        End If
+        If Not IsDBNull(rwcurROW("LightBlock")) Then
+            wsxl.Cells(intcurRow, 27).Value = rwcurROW("LightBlock")                  'Light Block
+        End If
+        If Not IsDBNull(rwcurROW("AngleBay")) Then
+            wsxl.Cells(intcurRow, 28).Value = rwcurROW("AngleBay")                    'Angle Bay
+        End If
+
+        If Not IsDBNull(rwcurROW("FixedBlades")) Then                        'Track Yes/No
+            If CInt(rwcurROW("FixedBlades")) = 1 Then
+                wsxl.Cells(intcurRow, 29).Value = "Yes"
+            ElseIf CInt(rwcurROW("FixedBlades")) = 2 Then
+                wsxl.Cells(intcurRow, 29).Value = "No"
+            End If
+        End If
+
+        If Not IsDBNull(rwcurROW("StainlessSteelWheels")) Then                        'Track Yes/No
+            If CInt(rwcurROW("StainlessSteelWheels")) = 1 Then
+                wsxl.Cells(intcurRow, 30).Value = "Yes"
+            Else
+                wsxl.Cells(intcurRow, 30).Value = ""
+            End If
+        End If
+
+        If Not IsDBNull(rwcurROW("TPostQtyLocationID")) Then
+            If CInt(rwcurROW("TPostQtyLocationID")) = 1 Then
+                wsxl.Cells(intcurRow, 39).Value = "Centre"
+            End If
+        End If
+
+        If Not IsDBNull(rwcurROW("ToCenterTPos1")) Then
+            wsxl.Cells(intcurRow, 39).Value = rwcurROW("ToCenterTPos1")               'To Centre of 1st TPost
+        End If
+        If Not IsDBNull(rwcurROW("ToCenterTPos2")) Then
+            wsxl.Cells(intcurRow, 40).Value = rwcurROW("ToCenterTPos2")               'To Centre of 2nd TPost
+        End If
+        If Not IsDBNull(rwcurROW("ToCenterTPos3")) Then
+            wsxl.Cells(intcurRow, 41).Value = rwcurROW("ToCenterTPos3")               'To Centre of 3rd TPost
+        End If
+        If Not IsDBNull(rwcurROW("ToCenterTPos4")) Then
+            wsxl.Cells(intcurRow, 42).Value = rwcurROW("ToCenterTPos4")               'To Centre of 4th TPost
+        End If
+        If Not IsDBNull(rwcurROW("ToCenterTPos5")) Then
+            wsxl.Cells(intcurRow, 43).Value = rwcurROW("ToCenterTPos5")               'To Centre of 5th TPost
+        End If
+
+        If Not IsDBNull(rwcurROW("SpecialRequirements")) Then
+            If intSpeReqCount < 11 Then
+                wsxl.Cells(33 + (intSpeReqCount) Mod 11, 1).Value = "Shutter" + CStr(intcurRow - 11) + ": " + SharedFunctions.stripLinebreaks(rwcurROW("SpecialRequirements").ToString)
+            Else
+                wsxl.Cells(33 + (intSpeReqCount) Mod 11, 25).Value = "Shutter" + CStr(intcurRow - 11) + ": " + SharedFunctions.stripLinebreaks(rwcurROW("SpecialRequirements").ToString)
+            End If
+            intSpeReqCount = intSpeReqCount + 1
+        End If
+
+    End Sub
+
+End Class

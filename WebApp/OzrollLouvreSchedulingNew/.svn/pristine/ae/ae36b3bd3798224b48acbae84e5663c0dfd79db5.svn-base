@@ -1,0 +1,230 @@
+﻿Imports Microsoft.VisualBasic
+
+Public Class Customer
+
+    Implements ICloneable
+
+    Private _CustomerID As Integer
+    Private _CustomerName As String
+    Private _Discontinued As Integer
+    Private _SortOrder As Integer
+    Private _SiteID As Integer
+    Private _ExternalCustomer As Integer
+    Private _CollectionFromFactory As Integer
+    Private _SybizCustomerID As Integer
+    Private _CustomerAbbreviation As String
+    Private _FreightPercentage As Decimal
+    Private _FullCustomerName As String
+    Private _Plantations As Integer
+    Private _WholesaleLouvres As Integer
+    Private _RetailLouvres As Integer
+
+    Private _CustomerAddress As String
+    Private _CustomerPhone1 As String
+    Private _CustomerPhone2 As String
+    Private _CustomerPhone3 As String
+
+    Private _Discount As Integer
+
+    Public Property CustomerID() As Integer
+        Get
+            Return _CustomerID
+        End Get
+        Set(ByVal value As Integer)
+            _CustomerID = value
+        End Set
+    End Property
+
+    Public Property CustomerName() As String
+        Get
+            Return _CustomerName
+        End Get
+        Set(ByVal value As String)
+            _CustomerName = value
+        End Set
+    End Property
+
+    Public Property Discontinued() As Integer
+        Get
+            Return _Discontinued
+        End Get
+        Set(ByVal value As Integer)
+            _Discontinued = value
+        End Set
+    End Property
+
+    Public Property SortOrder() As Integer
+        Get
+            Return _SortOrder
+        End Get
+        Set(ByVal value As Integer)
+            _SortOrder = value
+        End Set
+    End Property
+
+    Public Property SiteID() As Integer
+        Get
+            Return _SiteID
+        End Get
+        Set(ByVal value As Integer)
+            _SiteID = value
+        End Set
+    End Property
+
+    Public Property ExternalCustomer() As Integer
+        Get
+            Return _ExternalCustomer
+        End Get
+        Set(ByVal value As Integer)
+            _ExternalCustomer = value
+        End Set
+    End Property
+
+    Public Property CollectionFromFactory() As Integer
+        Get
+            Return _CollectionFromFactory
+        End Get
+        Set(ByVal value As Integer)
+            _CollectionFromFactory = value
+        End Set
+    End Property
+
+    Public Property FreightPercentage() As Decimal
+        Get
+            Return _FreightPercentage
+        End Get
+        Set(ByVal value As Decimal)
+            _FreightPercentage = value
+        End Set
+    End Property
+
+    Public Property SybizCustomerID() As Integer
+        Get
+            Return _SybizCustomerID
+        End Get
+        Set(ByVal value As Integer)
+            _SybizCustomerID = value
+        End Set
+    End Property
+
+    Public Property CustomerAbbreviation() As String
+        Get
+            Return _CustomerAbbreviation
+        End Get
+        Set(ByVal value As String)
+            _CustomerAbbreviation = value
+        End Set
+    End Property
+
+    Public Property FullCustomerName() As String
+        Get
+            Return _FullCustomerName
+        End Get
+        Set(ByVal value As String)
+            _FullCustomerName = value
+        End Set
+    End Property
+
+    Public Property Plantations() As Integer
+        Get
+            Return _Plantations
+        End Get
+        Set(ByVal value As Integer)
+            _Plantations = value
+        End Set
+    End Property
+    Public Property WholesaleLouvres() As Integer
+        Get
+            Return _WholesaleLouvres
+        End Get
+        Set(ByVal value As Integer)
+            _WholesaleLouvres = value
+        End Set
+    End Property
+
+    Public Property RetailLouvres() As Integer
+        Get
+            Return _RetailLouvres
+        End Get
+        Set(ByVal value As Integer)
+            _RetailLouvres = value
+        End Set
+    End Property
+
+    Public Property CustomerAddress() As String
+        Get
+            Return _CustomerAddress
+        End Get
+        Set(ByVal value As String)
+            _CustomerAddress = value
+        End Set
+    End Property
+
+    Public Property CustomerPhone1() As String
+        Get
+            Return _CustomerPhone1
+        End Get
+        Set(ByVal value As String)
+            _CustomerPhone1 = value
+        End Set
+    End Property
+
+    Public Property CustomerPhone2() As String
+        Get
+            Return _CustomerPhone2
+        End Get
+        Set(ByVal value As String)
+            _CustomerPhone2 = value
+        End Set
+    End Property
+
+    Public Property CustomerPhone3() As String
+        Get
+            Return _CustomerPhone3
+        End Get
+        Set(ByVal value As String)
+            _CustomerPhone3 = value
+        End Set
+    End Property
+
+    Public Property Discount() As Integer
+        Get
+            Return _Discount
+        End Get
+        Set(ByVal value As Integer)
+            _Discount = value
+        End Set
+    End Property
+
+    Public Sub New()
+
+        _CustomerID = Constants.DEFAULT_INTEGER_VALUE
+        _CustomerName = String.Empty
+        _Discontinued = Constants.DEFAULT_INTEGER_VALUE
+        _SortOrder = Constants.DEFAULT_INTEGER_VALUE
+        _SiteID = Constants.DEFAULT_INTEGER_VALUE
+        _ExternalCustomer = Constants.DEFAULT_INTEGER_VALUE
+        _CollectionFromFactory = Constants.DEFAULT_INTEGER_VALUE
+        _SybizCustomerID = Constants.DEFAULT_INTEGER_VALUE
+        _CustomerAbbreviation = String.Empty
+        _FullCustomerName = String.Empty
+        _Plantations = Constants.DEFAULT_INTEGER_VALUE
+        _WholesaleLouvres = Constants.DEFAULT_INTEGER_VALUE
+        _RetailLouvres = Constants.DEFAULT_INTEGER_VALUE
+
+        _CustomerAddress = String.Empty
+        _CustomerPhone1 = String.Empty
+        _CustomerPhone2 = String.Empty
+        _CustomerPhone3 = String.Empty
+
+        _Discount = Constants.DEFAULT_INTEGER_VALUE
+
+    End Sub
+
+    Public Function Clone() As Object Implements System.ICloneable.Clone
+
+        Return MyBase.MemberwiseClone
+
+    End Function
+
+End Class

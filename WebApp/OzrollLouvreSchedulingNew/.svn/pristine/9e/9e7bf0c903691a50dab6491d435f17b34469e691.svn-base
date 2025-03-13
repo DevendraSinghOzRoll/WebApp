@@ -1,0 +1,304 @@
+﻿Imports System.IO
+
+Partial Class PhotoChecklist
+    Inherits System.Web.UI.Page
+
+    Dim service As New AppService
+    'Private strPhotoPath As String = ConfigurationManager.AppSettings("PhotosFilePath")
+
+    Protected Sub Page_Load(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.Load
+        If Not IsPostBack Then
+
+            If Session("sessSiteID") = String.Empty Or Session("sessUserID") = String.Empty Then
+                Response.Redirect("Logout.aspx", False)
+                Exit Sub
+            Else
+                If Not IsNumeric(Session("sessSiteID")) Or Not IsNumeric(Session("sessUserID")) Then
+                    Response.Redirect("Logout.aspx", False)
+                    Exit Sub
+                End If
+            End If
+
+            Dim intPlantationGRAID As Integer = Constants.DEFAULT_INTEGER_VALUE
+            Dim intSiteID As Integer = Constants.DEFAULT_INTEGER_VALUE
+            Dim intUserID As Integer = Constants.DEFAULT_INTEGER_VALUE
+            If IsNumeric(Session("sessSiteID")) Then
+                intSiteID = CInt(Session("sessSiteID"))
+            End If
+            If IsNumeric(Session("sessUserID")) Then
+                intUserID = CInt(Session("sessUserID"))
+            End If
+
+            txtCurSiteID.Text = CStr(intSiteID)
+            txtCurUserID.Text = CStr(intUserID)
+
+            Try
+
+                Dim strPlantationGRAID As String = String.Empty
+                Dim strSiteID As String = String.Empty
+
+                Dim strSQL As String = String.Empty
+                Dim dtData As DataTable
+                Dim intAppointmentID As Integer = Constants.DEFAULT_INTEGER_VALUE
+                Dim intQuoteID As Integer = Constants.DEFAULT_INTEGER_VALUE
+                Dim dteEffectiveDate As Date = Today
+                Dim intSubDepartmentID As Integer = Constants.DEFAULT_INTEGER_VALUE
+                Dim strSubDepartmentID As String = String.Empty
+                Dim strSubDepartment As String = String.Empty
+
+                If Not Request.QueryString.Count = 0 Then
+                    If Not IsNothing(Request.Params("ScheduleId")) Then
+                        strPlantationGRAID = Request.Params("ScheduleId")
+                        If Not strPlantationGRAID = String.Empty Then
+                            If IsNumeric(strPlantationGRAID) Then
+                                intPlantationGRAID = CInt(strPlantationGRAID)
+                            End If
+                        End If
+                    End If
+                End If
+                If intPlantationGRAID < 1 Then
+                    Response.Redirect("Login.aspx", False)
+                End If
+
+                txtCurPlantationGRAID.Text = CStr(intPlantationGRAID)
+                'strSQL = "SELECT * FROM tblPlantationGRAPhotos WHERE (PlantationGRAID = " & CStr(intScheduleId) & ")"
+                'dtData = service.runSQLScheduling(strSQL)
+                lblChecklist.Text = String.Empty
+                dtData = service.getPlantationGRAPhotosDetailsByID(intPlantationGRAID)
+                If dtData.Rows.Count > 0 Then
+                    lblContractNumber.Text = CStr(SharedFunctions.nz(dtData.Rows(0).Item("ReferenceNumber"), String.Empty))
+                    'intPlantationGRAID = CInt(SharedFunctions.nz(dtData.Rows(0).Item("ID"), Constants.DEFAULT_INTEGER_VALUE))
+                    lblChecklist.Text &= "<h2>" & CStr(SharedFunctions.nz(dtData.Rows(0).Item("ReferenceName"), String.Empty)) & "</h2>"
+                    lblChecklist.Text &= "<h3>"
+                    If Not IsDBNull(dtData.Rows(0).Item("ID")) Then
+                        lblChecklist.Text &= "<img alt=""photos completed"" title=""photos completed"" src=""images/completed.png"" width=""24"" height=""24"" />&nbsp;&nbsp;"
+                    Else
+                        lblChecklist.Text &= "<img alt=""photos outstanding"" title=""photos outstanding"" src=""images/outstanding.png"" width=""24"" height=""24"" />&nbsp;&nbsp;"
+                    End If
+                    lblChecklist.Text &= "</h3>"
+                    Dim drWindows() As DataRow = dtData.Select("Deleted Is Null or Deleted<1")
+                    If drWindows.Length > 0 Then
+                        For i As Integer = 0 To drWindows.Length - 1
+                            createPhotoChecklist(drWindows(i))
+                        Next
+                    Else
+                        lblChecklist.Text &= "<h2>"
+                        lblChecklist.Text &= "<img alt=""photos outstanding"" title=""photos outstanding"" src=""images/outstanding.png"" width=""24"" height=""24"" />&nbsp;...&nbsp;"
+                        lblChecklist.Text &= CStr(SharedFunctions.nz(dtData.Rows.Count, String.Empty)) & "</h2>"
+                    End If
+                End If
+
+                '----
+                Dim strAppointment As String = CStr(intAppointmentID)
+                lblChecklist.Text &= "<h2>"
+                'If File.Exists(strPhotoPath & "\*.png") Then
+                '    lblChecklist.Text &= "<img alt=""photos completed"" title=""photos completed"" src=""images/completed.png"" />"
+                'Else
+                '    lblChecklist.Text &= "<img alt=""photos outstanding"" title=""photos outstanding"" src=""images/outstanding.png"" />"
+                'End If
+                lblChecklist.Text &= "Photos&nbsp;...&nbsp;Uploaded</h2>"
+
+                lblChecklist.Text &= "<table class=""form-table"" cellspacing=""0"" summary="""">"
+                lblChecklist.Text &= "<tr>"
+                lblChecklist.Text &= "<td class=""form-label-td"" style=""width: 240px; text-align: right;"">"
+                lblChecklist.Text &= "<input id=""btnUpload"" type=""button"" class=""uploadbutton"" value=""Upload"" onclick=""return UploadPhoto();"" /></td>"
+                lblChecklist.Text &= "</tr>"
+                'lblChecklist.Text &= "<tr>"
+                'lblChecklist.Text &= "<td class=""form-label-td"" style=""width: 100%"">"
+                'If File.Exists(strPhotoPath & "\*.png") Then
+                '    lblChecklist.Text &= "<div style=""text-align: center;""><img src=""photos/*.png"" alt=""Site Plan"" width=""720px"" height=""720px"" /></div>"
+                'Else
+                '    lblChecklist.Text &= "There is no site plan available. Please contact the Admin Department. "
+                'End If
+                'lblChecklist.Text &= "</td>"
+                'lblChecklist.Text &= "</tr>"
+                lblChecklist.Text &= "</table>"
+
+        Dim bolEdit As Boolean = False
+        Dim strType As String = "install"
+
+        If Not Request.QueryString.Count = 0 Then
+            If Not IsNothing(Request.Params("action")) Then
+                If Strings.LCase(Request.Params("action")) = "edit" Then
+                    bolEdit = True
+                End If
+            End If
+            If Not IsNothing(Request.Params("type")) Then
+                If Strings.LCase(Request.Params("type")) = "check" Then
+                    strType = "check"
+                End If
+            End If
+        End If
+
+        If bolEdit Then
+            'SharedFunctions.SetButtonEnable(intSiteID, intJobNumber, intSubDepartmentID, btnData, btnPanels, btnChecklist, btnForms)
+        Else
+            btnSave.Visible = False
+        End If
+
+            Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine & getPageInfo())
+        End Try
+
+            'If Not Constants.LIVE_SITE Then
+            '    lblWarning.Text = "<div style=""width: 100%; height: 30px; padding-top: 10px;""></div><div style=""width: 100%; height: 30px; position: fixed; left: 0px; top: 0px; z-index: 100; background-color: Red; color: White; font-weight: bold; text-align: center; padding-top: 10px;"">This is the Playground Site! Changes here WILL NOT affect the HIVE!</div>"
+            'End If
+
+        End If
+    End Sub
+
+    Private Function getPageInfo() As String
+
+        Dim strPageInfo As String = String.Empty
+
+        Dim strName As String = String.Empty
+        If Session.Contents.Count > 0 Then
+            strPageInfo &= "Session Variables" & Environment.NewLine
+            For Each strName In Session.Contents
+                strPageInfo &= strName & ": " & CStr(Session.Contents(strName)) & Environment.NewLine
+            Next
+        Else
+            strPageInfo &= "No Session Variables" & Environment.NewLine
+        End If
+
+        strPageInfo &= Environment.NewLine
+
+        If Me.HasControls Then
+            strPageInfo &= "Form Controls" & Environment.NewLine
+            getPageControls(Me, strPageInfo)
+        Else
+            strPageInfo &= "No Form Controls" & Environment.NewLine
+        End If
+        Return strPageInfo
+
+    End Function
+
+    Private Sub getPageControls(ByVal ctrl As Control, ByRef strPageControls As String)
+
+        If ctrl.HasControls Then
+            For Each childCtrl As Control In ctrl.Controls
+                getPageControls(childCtrl, strPageControls)
+            Next
+        Else
+            Select Case ctrl.GetType.Name
+                Case "TextBox"
+                    Dim frmTxt As TextBox
+                    frmTxt = DirectCast(ctrl, TextBox)
+                    strPageControls &= frmTxt.ID & ": " & Left(frmTxt.Text, 100) & Environment.NewLine
+                Case "DropDownList"
+                    Dim frmCbo As DropDownList
+                    frmCbo = DirectCast(ctrl, DropDownList)
+                    If frmCbo.Items.Count > 0 Then
+                        strPageControls &= frmCbo.ID & ": " & frmCbo.SelectedItem.Text & " (" & frmCbo.SelectedValue & ")" & Environment.NewLine
+                    Else
+                        strPageControls &= frmCbo.ID & ": Not Populated" & Environment.NewLine
+                    End If
+                Case "CheckBox"
+                    Dim frmChk As CheckBox
+                    frmChk = DirectCast(ctrl, CheckBox)
+                    strPageControls &= frmChk.ID & ": " & frmChk.Checked & Environment.NewLine
+                Case "RadioButton"
+                    Dim frmRdo As RadioButton
+                    frmRdo = DirectCast(ctrl, RadioButton)
+                    strPageControls &= frmRdo.ID & ": " & frmRdo.Checked & Environment.NewLine
+                Case "RadioButtonList"
+                    Dim frmRdoLst As RadioButtonList
+                    frmRdoLst = DirectCast(ctrl, RadioButtonList)
+                    If frmRdoLst.SelectedIndex >= 0 Then
+                        strPageControls &= frmRdoLst.ID & ": " & frmRdoLst.SelectedItem.Text & " (" & frmRdoLst.SelectedValue & ")" & Environment.NewLine
+                    Else
+                        strPageControls &= frmRdoLst.ID & ": Not Selected" & Environment.NewLine
+                    End If
+            End Select
+        End If
+
+    End Sub
+
+    Protected Sub btnHome_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles btnHome.Click
+
+        Response.Redirect("ProductionScheduleList.aspx?", False)
+
+    End Sub
+
+    Protected Sub btnLogout_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles btnLogout.Click
+        Response.Redirect("Logout.aspx", False)
+    End Sub
+
+    Protected Sub btnDelete_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles btnDelete.Click
+
+        Dim intID As Integer = CInt(Request("__EVENTARGUMENT"))
+        Dim bolDelete As Boolean = service.deletePlantationGRAPhotoByID(intID)
+        'Dim cQuoteFiles As QuoteUploadedFiles = service.getQuoteUploadedFilesByID(CInt(txtCurSiteID.Text), intID)
+        'cQuoteFiles.DeletedDateTime = Now
+        'service.updateQuoteUploadedFilesRecord(CInt(txtCurSiteID.Text), cQuoteFiles)
+        Response.Redirect("PhotoChecklist.aspx?" & Request.QueryString.ToString(), False)
+
+    End Sub
+
+    Protected Sub btnSave_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles btnSave.Click
+
+        Dim strSQL As String = "Select * FROM tblPlantationGRAPhotos WHERE (ID = " & CStr(txtCurPlantationGRAID.Text) & ")"
+        Dim dtData As DataTable = service.runSQLScheduling(strSQL)
+        If dtData.Rows.Count > 0 Then
+
+        End If
+        Response.Redirect("ProductionScheduleList.aspx?" & Request.QueryString.ToString(), False)
+
+    End Sub
+
+    Protected Sub btnCancel_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles btnCancel.Click
+        Response.Redirect("ProductionScheduleList.aspx?", False)
+    End Sub
+
+    Private Sub createPhotoChecklist(ByVal dr As DataRow)
+
+        'Dim strPhotoPath As String = ConfigurationManager.AppSettings("PhotosFilePath")
+        lblChecklist.Text &= "<h3>"
+        lblChecklist.Text &= CStr(SharedFunctions.nz(dr.Item("Description"), "&nbsp;...")) & "</h3>"
+        Try
+            If Not IsDBNull(dr.Item("PhotoFileName")) Then
+                lblChecklist.Text &= "<table class=""form-table"" cellspacing=""0"" summary="""">"
+                lblChecklist.Text &= "<tr>"
+
+                If IsDBNull(dr.Item("UploadedDateTime")) Then
+                    lblChecklist.Text &= "<td class=""form-label-td"" style=""width: 240px"">" & CInt(SharedFunctions.nz(dr.Item("UploadedDateTime"))) & " Photo Required" & "</td>"
+                    lblChecklist.Text &= "<td class=""form-label-td"" style=""width: 240px; text-align: right;""><input id=""btnUpload" & CInt(SharedFunctions.nz(dr.Item("PlantationGRAID"))) & """ type=""button"" class=""uploadbutton"" value=""Upload"" onclick=""return UploadPhoto(" & CStr(dr.Item("PlantationGRAID")) & ");"" /></td>"
+                Else
+                    lblChecklist.Text &= "<td class=""form-label-td"" style=""width: 240px"">Photo uploaded on " & Format(CDate(dr.Item("UploadedDateTime")), "d MMM yyyy") & "</td>"
+                    lblChecklist.Text &= "<td class=""form-label-td"" style=""width: 240px; text-align: right;"">&nbsp;</td>"
+                End If
+                lblChecklist.Text &= "</tr>"
+
+                lblChecklist.Text &= "<tr>"
+                lblChecklist.Text &= "<td class=""form-label-td"" colspan=""2"">"
+                lblChecklist.Text &= "<div style=""float: left;"">"
+                Dim strFilePath As String = String.Empty 'strPhotoPath & "\" & CStr(dr.Item("PhotoFileName"))
+                strFilePath = Server.MapPath("~\PlantationImages") & "\" & CStr(dr.Item("PhotoFileName"))
+                If File.Exists(strFilePath) Then
+                    lblChecklist.Text &= "<a class=""photo"" href=""" & "PlantationImages/" & CStr(dr.Item("PhotoFileName")) & """ border=""1"" margin=""0"" width=""150px"" height=""200px"">"
+                    lblChecklist.Text &= "<img src=""" & "PlantationImages/" & CStr(dr.Item("PhotoFileName")).Replace("resized", "size2") & """ width=""100"" height=""75"" /></a>&nbsp;&nbsp;&nbsp;"
+                Else
+                    lblChecklist.Text &= "<img src=""images/Image_Coming_Soon.jpg"" width=""100"" height=""75"" />&nbsp;&nbsp;&nbsp;"
+                End If
+                lblChecklist.Text &= "<br />"
+                lblChecklist.Text &= "<div style=""float: right;""><input id=""btnDelete" & CStr(dr.Item("ID")) & """ type=""button"" class=""deleteImageButton"" value=""Delete"" onclick=""return DeletePhoto(" & CStr(dr.Item("ID")) & ");"" />&nbsp;&nbsp;&nbsp;</div>"
+                lblChecklist.Text &= "</div>"
+                lblChecklist.Text &= "</td>"
+                lblChecklist.Text &= "</tr>"
+                lblChecklist.Text &= "</table>"
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine & getPageInfo())
+        End Try
+
+    End Sub
+
+    Private Function returnPhotoCheckLST() As DataTable
+
+        Dim dtPhotoCheckLST As New DataTable
+        Return dtPhotoCheckLST
+
+    End Function
+
+End Class

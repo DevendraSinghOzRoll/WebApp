@@ -1,0 +1,85 @@
+﻿Imports Microsoft.VisualBasic
+
+<Serializable>
+Public Class ProdScheduleNote
+
+    Implements ICloneable
+
+    Private _ID As Integer
+    Private _ProdScheduleID As Integer
+    Private _NoteTypeID As Integer
+    Private _NoteDetails As String
+    Private _EntryDate As Date
+    Private _UserID As Integer
+    Private _VisibleToCustomer As Boolean
+
+    Public Property ProdScheduleID() As Integer
+        Get
+            Return _ProdScheduleID
+        End Get
+        Set(ByVal value As Integer)
+            _ProdScheduleID = value
+        End Set
+    End Property
+
+    Public Property NoteTypeID() As Integer
+        Get
+            Return _NoteTypeID
+        End Get
+        Set(ByVal value As Integer)
+            _NoteTypeID = value
+        End Set
+    End Property
+
+    Public Property NoteDetails() As String
+        Get
+            Return _NoteDetails
+        End Get
+        Set(ByVal value As String)
+            _NoteDetails = value
+        End Set
+    End Property
+
+    Public Property EntryDate() As Date
+        Get
+            Return _EntryDate
+        End Get
+        Set(ByVal value As Date)
+            _EntryDate = value
+        End Set
+    End Property
+
+    Public Property UserID() As Integer
+        Get
+            Return _UserID
+        End Get
+        Set(ByVal value As Integer)
+            _UserID = value
+        End Set
+    End Property
+
+    Public Property VisibleToCustomer() As Boolean
+        Get
+            Return _VisibleToCustomer
+        End Get
+        Set(ByVal value As Boolean)
+            _VisibleToCustomer = value
+        End Set
+    End Property
+
+    Public Property ID As Integer
+        Get
+            Return _ID
+        End Get
+        Set(value As Integer)
+            _ID = value
+        End Set
+    End Property
+
+    Public Function Clone() As Object Implements System.ICloneable.Clone
+
+        Return MyBase.MemberwiseClone
+
+    End Function
+
+End Class

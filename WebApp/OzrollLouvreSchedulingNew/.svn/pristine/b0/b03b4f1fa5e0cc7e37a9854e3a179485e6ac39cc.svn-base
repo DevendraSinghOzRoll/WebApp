@@ -1,0 +1,310 @@
+﻿<%@ WebHandler Language="VB" Class="DataUpload" %>
+
+Imports System
+Imports System.Web
+Imports System.IO
+Imports System.Data.SqlClient
+Imports System.Drawing
+Imports System.Drawing.Imaging
+
+Public Class DataUpload : Implements IHttpHandler
+
+    Dim strPhotosPath As String = "C:\PlantationImages"
+    Public Sub ProcessRequest(ByVal context As HttpContext) Implements IHttpHandler.ProcessRequest
+        
+        Try
+
+            Dim intPlantationGRAId As Integer = CInt(context.Request.Params("PlantationGRAId"))
+            Dim intRandomNumber As Integer = CInt(context.Request.Params("RandomNumber"))
+            Dim strDataType As String = CStr(context.Request.Params("DataType"))
+            Dim bolContinue As Boolean = True
+            'Dim strPhotosPath As String = "C:\PlantationImages"
+
+            Dim intresumableChunkNumber As Integer = CInt(context.Request.Params("resumableChunkNumber"))
+            Dim intresumableChunkSize As Integer = CInt(context.Request.Params("resumableChunkSize"))
+            Dim lngresumableTotalSize As Long = CLng(context.Request.Params("resumableTotalSize"))
+            Dim strresumableChunkData As String = CStr(context.Request.Params("resumableChunkData"))
+
+            If bolContinue Then
+                If Not Directory.Exists(strPhotosPath & "\Temp") Then
+                    bolContinue = False
+                    EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - Could not find the C:\ContractImages\Temp directory")
+                End If
+            End If
+
+            If bolContinue Then
+                If Not Directory.Exists(strPhotosPath & "\Temp\" & intPlantationGRAId & "_" & strDataType & "_" & CStr(intRandomNumber)) Then
+                    Try
+                        Directory.CreateDirectory(strPhotosPath & "\Temp\" & intPlantationGRAId & "_" & strDataType & "_" & CStr(intRandomNumber))
+                    Catch ex As Exception
+                        bolContinue = False
+                        EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - Could not create the C:\ContractImages\Temp\" & intPlantationGRAId & "_" & strDataType & "_" & CStr(intRandomNumber) & " directory")
+                    End Try
+                End If
+            End If
+
+            If bolContinue Then
+                If Not Directory.Exists(strPhotosPath & "\Temp\" & intPlantationGRAId & "_" & strDataType & "_" & CStr(intRandomNumber)) Then
+                    bolContinue = False
+                    EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - Could not find the C:\ContractImages\Temp\" & intPlantationGRAId & "_" & strDataType & "_" & CStr(intRandomNumber) & " directory")
+                End If
+            End If
+
+            If bolContinue Then
+                Try
+                    Dim objStreamWriter As StreamWriter
+                    objStreamWriter = File.CreateText(strPhotosPath & "\Temp\" & intPlantationGRAId & "_" & strDataType & "_" & CStr(intRandomNumber) & "\" & String.Format("{0:d4}", intresumableChunkNumber) & ".part")
+
+                    objStreamWriter.WriteLine(strresumableChunkData)
+
+                    objStreamWriter.Close()
+                Catch ex As Exception
+                    EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - Location: #1 - " & ex.Message)
+                End Try
+            End If
+
+            createPhotoFromChunks(intPlantationGRAId, strDataType, strPhotosPath & "\Temp\" & intPlantationGRAId & "_" & strDataType & "_" & CStr(intRandomNumber), intresumableChunkSize, lngresumableTotalSize)
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - Location: #2 - " & ex.Message)
+        End Try
+    End Sub
+
+    Public ReadOnly Property IsReusable() As Boolean Implements IHttpHandler.IsReusable
+        Get
+            Return False
+        End Get
+    End Property
+
+    Private Sub createPhotoFromChunks(ByVal intPlantationGRAId As Integer, ByVal strDataType As String, ByVal strPath As String, ByVal lngChunkSize As Long, ByVal lngTotalSize As Long)
+        
+        Dim objStreamReader As StreamReader = Nothing
+        Dim bolOK As Boolean = True
+        Try
+
+            Dim intTotalFiles As Integer = 0
+            Dim cFiles As String() = Directory.GetFiles(strPath)
+            Dim strFinalData As String = String.Empty
+            'Dim strPhotosPath As String = "C:\PlantationImages"
+            
+            Array.Sort(cFiles)
+
+            For Each cFile As String In cFiles
+                intTotalFiles += 1
+            Next
+
+            If CLng(intTotalFiles) * lngChunkSize >= lngTotalSize Then
+
+                Dim dteNow As Date = Now
+                Dim strPlantationGRA As String = intPlantationGRAId & "-" & dteNow.Ticks
+                For Each cFile As String In cFiles
+                    Try
+                        objStreamReader = File.OpenText(cFile)
+
+                        strFinalData &= objStreamReader.ReadToEnd()
+
+                        objStreamReader.Close()
+                    Catch ex As Exception
+                        EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - Location: #1 - " & ex.Message)
+                    End Try
+                Next
+
+                ' Write To Database
+                Dim dbConn As New DBConnection
+                Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+                Dim trans As SqlTransaction = Nothing
+
+                Dim service As New AppService
+                Dim bolError As Boolean = False
+
+                Try
+                    cnn.Open()
+                    trans = cnn.BeginTransaction
+
+                    If bolOK = True Then
+                        Dim strError As String = "intPlantationGRAId:" & CStr(intPlantationGRAId) & " strDataType:" & strDataType & " strPath:" & strPath & " lngChunkSize:" & CStr(lngChunkSize) & " lngTotalSize:" & CStr(lngTotalSize)
+
+                        Dim imageToBeResized As Image = Base64ToImage(Strings.Replace(strFinalData, "data:image/jpeg;base64,", String.Empty), bolError, strError)
+
+                        If bolError Then
+                            trans.Rollback()
+                        Else
+                            Try
+
+                                Dim intOrientationID As Integer = &H112
+                                Dim bytExifOrientation As Byte = 0 ' Unknown
+                                Dim intOrientationIndex As Integer = Array.IndexOf(imageToBeResized.PropertyIdList, intOrientationID)
+
+                                If (intOrientationIndex >= 0) Then
+                                    bytExifOrientation = imageToBeResized.GetPropertyItem(intOrientationID).Value(0)
+                                End If
+
+                                Select Case bytExifOrientation
+                                    Case 0 ' Unknown
+                                    Case 1 ' TopLeft
+                                    Case 2 ' TopRight
+                                        imageToBeResized.RotateFlip(RotateFlipType.RotateNoneFlipX)
+                                    Case 3 ' BottomRight
+                                        imageToBeResized.RotateFlip(RotateFlipType.Rotate180FlipNone)
+                                    Case 4 ' BottomLeft
+                                        imageToBeResized.RotateFlip(RotateFlipType.RotateNoneFlipY)
+                                    Case 5 ' LeftTop
+                                        imageToBeResized.RotateFlip(RotateFlipType.Rotate90FlipX)
+                                    Case 6 ' RightTop
+                                        imageToBeResized.RotateFlip(RotateFlipType.Rotate90FlipNone)
+                                    Case 7 ' RightBottom
+                                        imageToBeResized.RotateFlip(RotateFlipType.Rotate90FlipY)
+                                    Case 8 ' LeftBottom
+                                        imageToBeResized.RotateFlip(RotateFlipType.Rotate270FlipNone)
+                                End Select
+
+                                If (intOrientationIndex >= 0) Then
+                                    Dim item As PropertyItem = imageToBeResized.GetPropertyItem(intOrientationID)
+                                    item.Value(0) = 1 ' TopLeft
+                                    imageToBeResized.SetPropertyItem(item)
+                                End If
+
+                                Dim intWidth1 As Integer = 720 ' Landscape
+                                Dim intHeight1 As Integer = 538 ' Landscape
+                                Dim intWidth2 As Integer = 100 ' Landscape
+                                Dim intHeight2 As Integer = 75 ' Landscape
+
+                                If imageToBeResized.Height > imageToBeResized.Width Then
+                                    intWidth1 = 402 ' Portrait
+                                    intHeight1 = 538 ' Portrait
+                                    intWidth2 = 56 ' Portrait
+                                    intHeight2 = 75 ' Portrait
+                                End If
+
+                                Dim bitmap1 As New Bitmap(imageToBeResized, intWidth1, intHeight1)
+                                bitmap1.Save(strPhotosPath & "\" & strPlantationGRA & "-size1.jpeg")
+
+                                Dim bitmap2 As New Bitmap(imageToBeResized, intWidth2, intHeight2)
+                                bitmap2.Save(strPhotosPath & "\" & strPlantationGRA & "-size2.jpeg")
+
+                            Catch ex As Exception
+                                EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - Location: #8 - " & ex.Message)
+                            End Try
+                            imageToBeResized.Save(strPhotosPath & "\" & strPlantationGRA & "-resized.jpeg", System.Drawing.Imaging.ImageFormat.Jpeg)
+                            
+                            Dim clsPlanGRAPhotos As New PlantationGRAPhotos
+                            clsPlanGRAPhotos.PhotoFileName = strPlantationGRA & "-resized.jpeg"
+                            clsPlanGRAPhotos.PlantationGRAID = intPlantationGRAId
+                            clsPlanGRAPhotos.UploadedDateTime = Now()
+                            bolOK = service.addPlatationGRAPhotosRecord(clsPlanGRAPhotos, cnn, trans)
+
+                            If bolOK Then
+                                trans.Commit()
+                            Else
+                                trans.Rollback()
+                            End If
+                        End If
+                    Else
+                        EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - Transaction Rolled Back")
+                        trans.Rollback()
+                    End If
+
+                    cnn.Close()
+
+                Catch ex As Exception
+                    EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - Location: #9 - " & ex.Message)
+                    If Not IsNothing(trans) Then
+                        trans.Rollback()
+                    End If
+                    If cnn.State = ConnectionState.Open Then
+                        cnn.Close()
+                    End If
+
+                Finally
+                    trans.Dispose()
+                    trans = Nothing
+                    cnn.Dispose()
+                    cnn = Nothing
+                End Try
+
+                service = Nothing
+                dbConn = Nothing
+                
+                ' Delete Part Data Folder
+                Try
+                    If Not bolError Then
+                        Directory.Delete(strPath, True)
+                    End If
+                Catch ex As Exception
+                    ' do nothing
+                    'EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - Location: #7 - " & ex.Message, String.Empty)
+                End Try
+
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - Location: #3 - " & ex.Message)
+        End Try
+
+    End Sub
+
+    Function Base64ToImage(ByVal base64string As String, ByRef bolError As Boolean, ByVal strError As String) As System.Drawing.Image
+
+        'Setup image and get data stream together
+        Dim img As System.Drawing.Image = Nothing
+
+        Dim intSection As Integer = 0
+        Dim lngb64Len As Long = 0
+        Dim intLen As Integer = 0
+        Dim intOrigString As Integer = base64string.Length
+
+        Try
+
+            Dim MS As System.IO.MemoryStream = New System.IO.MemoryStream
+
+            base64string = Trim(base64string)
+
+            Dim b64 As String = base64string.Replace(" ", "+")
+            Dim b() As Byte
+
+            intSection = 1
+            'check length of base64 string
+            lngb64Len = b64.Length
+            intLen = b64.Length Mod 4
+
+            If intLen = 3 Then
+                intSection = 2
+                EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - Base64 String is not correct length - adding padding")
+                'if not correct length then pad with an equals sign
+                b64 = b64.PadRight(b64.Length + 1, "=")
+                intSection = 3
+            End If
+
+            'check for invalid characters...
+            If invalidBase64Characters(b64) = True Then
+                intSection = 4
+                EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - Invalid Characters")
+            End If
+
+            'Converts the base64 encoded msg to image data
+            b = Convert.FromBase64String(b64)
+            intSection = 5
+            MS = New System.IO.MemoryStream(b)
+            intSection = 6
+            'creates image
+            img = System.Drawing.Image.FromStream(MS)
+
+            'EventLog.addEventLogEmail_Debug(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - Section:" & intSection & " b64Length:" & lngb64Len & " Origb64Length:" & intOrigString & " MODLen:" & intLen & " " & strError, String.Empty)
+
+        Catch ex As Exception
+            bolError = True
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & vbCrLf & vbCrLf & ex.StackTrace & vbCrLf & vbCrLf & "Section:" & intSection & " b64Length:" & lngb64Len & " Origb64Length:" & intOrigString & " MODLen:" & intLen & " " & strError)
+        End Try
+        Return img
+
+    End Function
+
+    Function invalidBase64Characters(ByVal b64 As String) As Boolean
+        If Regex.IsMatch(b64, "^[a-zA-Z0-9\+/]*={0,3}$") Then
+            Return True
+        Else
+            Return False
+        End If
+    End Function
+
+End Class

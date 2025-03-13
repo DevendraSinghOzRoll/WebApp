@@ -1,0 +1,132 @@
+﻿<%@ Page Language="VB" AutoEventWireup="false" CodeFile="JobStockUsage.aspx.vb" Inherits="JobStockUsage" Theme="SknGridView"%>
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head runat="server">
+    <title>Job Stock Usage</title>
+        
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <meta http-equiv="expires" content="0" />
+    <meta http-equiv="pragma" content="no-cache" />
+    <meta http-equiv="cache-control" content="no-cache" />
+    <meta name="format-detection" content="telephone=no" />
+    
+    <link href="stylesheets/reset.css" rel="stylesheet" type="text/css" media="screen" />
+    <!--[if IE]><link href="stylesheets/explorer.css" rel="stylesheet" type="text/css" media="screen" /><![endif]-->
+    <link href="stylesheets/style.css?version=<%= Now.Year() & Now.Month & Now.Day() %>" rel="stylesheet" type="text/css" media="screen" />
+
+
+    <link href="stylesheets/jquery.fancybox.css" rel="stylesheet" type="text/css" />
+    <link href="stylesheets/smoothness/jquery-ui-1.10.2.custom.min.css" rel="stylesheet" type="text/css" />
+
+    <!--[if lt IE 8]><script src="javascript/IE-fix.js" type="text/javascript"></script><![endif]-->
+
+    <script src="javascript/jquery-1.9.1.js" type="text/javascript"></script>
+
+    <script src="javascript/jquery-ui-1.10.2.custom.min.js" type="text/javascript"></script>
+   
+    <link href="favicon.ico" rel="shortcut icon" type="image/x-icon" />
+    
+        <script language="javascript" type="text/javascript">
+
+            (function (document, navigator, standalone) {
+                if ((standalone in navigator) && navigator[standalone]) {
+                    var curnode, location = document.location, stop = /^(a|html)$/i;
+                    document.addEventListener('click', function (e) {
+                        curnode = e.target;
+                        while (!(stop).test(curnode.nodeName))
+                            curnode = curnode.parentNode;
+                        if ('href' in curnode) {
+                            e.preventDefault();
+                            location.href = curnode.href;
+                        }
+                    }, false);
+                }
+            })(document, window.navigator, 'standalone');
+
+
+            if (window.history.forward(1) != null)
+                window.history.forward(1);
+
+            function ConfirmLeave() {
+                document.getElementById("dialog-confirm-message").innerHTML = "Are you sure you want to logout?";
+                $("#dialog-confirm").dialog("open");
+                return false;
+            }
+
+    </script>
+</head>
+<body>
+    <form id="form1" runat="server">
+
+
+    <asp:ScriptManager ID="ScriptManager1" runat="server" EnablePartialRendering="true">
+    <Scripts>
+    <asp:ScriptReference Path="javascript/fixfocus.js" />
+    </Scripts>
+    </asp:ScriptManager>
+    <div id="middle-container" >
+
+        <div id="logo" style="height: 100px; text-align: center;" ></div>
+        <div style="height: 50px; text-align: center;">
+            <asp:Button ID="btnLogout" runat="server" CssClass="form-button" Visible="true" Text="Logout" OnClientClick="javascript:return ConfirmLeave();" UseSubmitBehavior="false" />
+	    </div>
+        
+        <h1>Stock Usage for <asp:Label runat="server" ID="lblHeading" Text="OWL3003"></asp:Label></h1>
+
+        <div class="form" style="text-align: center;">
+        
+            <div style="text-align: center;">
+                Extrusions
+
+                <div style="text-align: center; width: 100%;">
+                    <asp:gridview runat="server" ID="dgvExtrusions" AutoGenerateColumns="false" CellPadding="4" ForeColor="#333333">
+                        <RowStyle BackColor="#F7F6F3" ForeColor="#333333" />
+                        <FooterStyle BackColor="#0059A9" ForeColor="White" />
+                        <PagerStyle BackColor="#284775" ForeColor="White" HorizontalAlign="Center" />
+                        <SelectedRowStyle BackColor="#E2DED6" Font-Bold="True" ForeColor="#333333" />
+                        <HeaderStyle BackColor="#0059A9" ForeColor="White" />
+                        <EditRowStyle BackColor="#999999" />
+                        <AlternatingRowStyle BackColor="White" ForeColor="#284775" />
+                        <Columns>
+                            <asp:BoundField DataField="StockUsageID" Visible="false" /> 
+                            <asp:BoundField DataField="Description" SortExpression="StockCode" HeaderText="Description" />
+                            <asp:BoundField DataField="ActualQuantity" SortExpression="Quantity" HeaderText="Quantity" />
+                        </Columns>
+                    </asp:gridview>
+                </div>
+
+                Hardware
+
+                <div style="text-align: center; width: 100%;">
+                    <asp:gridview runat="server" ID="dgvHardware" AutoGenerateColumns="false" CellPadding="4" ForeColor="#333333">
+                        <RowStyle BackColor="#F7F6F3" ForeColor="#333333" />
+                        <FooterStyle BackColor="#0059A9" ForeColor="White" />
+                        <PagerStyle BackColor="#284775" ForeColor="White" HorizontalAlign="Center" />
+                        <SelectedRowStyle BackColor="#E2DED6" Font-Bold="True" ForeColor="#333333" />
+                        <HeaderStyle BackColor="#0059A9" ForeColor="White" />
+                        <EditRowStyle BackColor="#999999" />
+                        <AlternatingRowStyle BackColor="White" ForeColor="#284775" />
+                        <Columns>
+                            <asp:BoundField DataField="StockUsageID" Visible="false" /> 
+                            <asp:BoundField DataField="Description" SortExpression="StockCode" HeaderText="Description" />
+                            <asp:BoundField DataField="ActualQuantity" SortExpression="Quantity" HeaderText="Quantity" />
+                        </Columns>
+                    </asp:gridview>
+                </div>
+
+            </div>
+        </div>
+    </div>
+        
+    <div runat="server" id="DivCur1" style="display:none;">
+        ID:<asp:TextBox ID="txtId" runat="server" TabIndex="-1" Text="0" />
+        <br />
+        ProductTypeID<asp:TextBox id="txtProductTypeID" runat="server" TabIndex="-1" Text="0"></asp:TextBox>
+        <br />
+    </div>
+
+    </form>
+</body>
+</html>

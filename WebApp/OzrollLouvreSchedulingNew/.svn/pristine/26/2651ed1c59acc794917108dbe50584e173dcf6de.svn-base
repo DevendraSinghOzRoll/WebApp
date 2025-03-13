@@ -1,0 +1,188 @@
+﻿Imports Microsoft.VisualBasic
+Imports System.Data.SqlClient
+
+Public Class TempAddRequirementsDAO
+
+    Function addTempAddRequirementsRecord(cRequirement As AdditionalRequirements, cnn As SqlConnection, ByRef trans As SqlTransaction) As Integer
+
+        Dim cmd As New SqlCommand
+
+        Try
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_addTempAddRequirementsRecord"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            cmd.Transaction = trans
+
+            setupCommandParameters(cRequirement, cmd)
+
+            cmd.ExecuteNonQuery()
+
+            Return CInt(cmd.Parameters("@AdditionalRequirementsID").Value)
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - add record failed" & Environment.NewLine)
+            Return Constants.DEFAULT_INTEGER_VALUE
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+        End Try
+
+    End Function
+
+    Function updateTempAddRequirementsRecord(cRequirement As AdditionalRequirements, cnn As SqlConnection, ByRef trans As SqlTransaction) As Boolean
+
+        Dim cmd As New SqlCommand
+
+        Try
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_updateTempAddRequirementsRecord"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            cmd.Transaction = trans
+
+            setupCommandParameters(cRequirement, cmd)
+
+            cmd.ExecuteNonQuery()
+
+            Return True
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - add record failed" & Environment.NewLine)
+            Return False
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+        End Try
+
+    End Function
+
+    Function getTempAddRequirementsRecord(intAdditonalRequirementID As Integer) As DataTable
+
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        dbConn = Nothing
+
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "select * from dbo.tblTempAddRequirements where AdditionalRequirementsID = " & intAdditonalRequirementID.ToString
+            cmd.CommandType = CommandType.Text
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+
+            cnn.Close()
+
+            Return dt
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - add record failed" & Environment.NewLine)
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+
+    End Function
+
+    Protected Sub setupCommandParameters(cRequirement As AdditionalRequirements, ByRef cmd As SqlCommand)
+
+        SqlCommandBuilder.DeriveParameters(cmd)
+
+        If cRequirement.AdditionalRequirementsID <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@AdditionalRequirementsID").Value = cRequirement.AdditionalRequirementsID
+        Else
+            cmd.Parameters("@AdditionalRequirementsID").Direction = ParameterDirection.Output
+            cmd.Parameters("@AdditionalRequirementsID").Value = DBNull.Value
+        End If
+
+        If cRequirement.TempGUID <> String.Empty Then
+            cmd.Parameters("@TempGUID").Value = cRequirement.TempGUID
+        Else
+            cmd.Parameters("@TempGUID").Value = DBNull.Value
+        End If
+
+        If cRequirement.OriginalAddRequirementsID <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@OriginalAddRequirementsID").Value = cRequirement.OriginalAddRequirementsID
+        Else
+            cmd.Parameters("@OriginalAddRequirementsID").Value = DBNull.Value
+        End If
+
+        If cRequirement.ProductionScheduleID <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@ProductionScheduleID").Value = cRequirement.ProductionScheduleID
+        Else
+            cmd.Parameters("@ProductionScheduleID").Value = DBNull.Value
+        End If
+
+        If cRequirement.AdditionalRequirementTypeID <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@AdditionalRequirementTypeID").Value = cRequirement.AdditionalRequirementTypeID
+        Else
+            cmd.Parameters("@AdditionalRequirementTypeID").Value = DBNull.Value
+        End If
+
+        If cRequirement.DescriptionText <> String.Empty Then
+            cmd.Parameters("@DescriptionText").Value = cRequirement.DescriptionText
+        Else
+            cmd.Parameters("@DescriptionText").Value = DBNull.Value
+        End If
+
+        If cRequirement.StartDate <> Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@StartDate").Value = cRequirement.StartDate
+        Else
+            cmd.Parameters("@StartDate").Value = DBNull.Value
+        End If
+
+        If cRequirement.ETADate <> Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@ETADate").Value = cRequirement.ETADate
+        Else
+            cmd.Parameters("@ETADate").Value = DBNull.Value
+        End If
+
+        If cRequirement.CompleteDate <> Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@CompleteDate").Value = cRequirement.CompleteDate
+        Else
+            cmd.Parameters("@CompleteDate").Value = DBNull.Value
+        End If
+
+        If cRequirement.StatusID <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@StatusID").Value = cRequirement.StatusID
+        Else
+            cmd.Parameters("@StatusID").Value = DBNull.Value
+        End If
+
+        If cRequirement.PowdercoaterID <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@PowdercoaterID").Value = cRequirement.PowdercoaterID
+        Else
+            cmd.Parameters("@PowdercoaterID").Value = DBNull.Value
+        End If
+
+        If cRequirement.PurchaseOrderNo <> String.Empty Then
+            cmd.Parameters("@PurchaseOrderNo").Value = cRequirement.PurchaseOrderNo
+        Else
+            cmd.Parameters("@PurchaseOrderNo").Value = DBNull.Value
+        End If
+
+        If cRequirement.CostPrice <> Constants.DEFAULT_DECIMAL_VALUE Then
+            cmd.Parameters("@CostPrice").Value = cRequirement.CostPrice
+        Else
+            cmd.Parameters("@CostPrice").Value = DBNull.Value
+        End If
+
+        If cRequirement.PickDate <> Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@PickDate").Value = cRequirement.PickDate
+        Else
+            cmd.Parameters("@PickDate").Value = DBNull.Value
+        End If
+
+    End Sub
+
+End Class

@@ -1,0 +1,152 @@
+﻿Imports Microsoft.VisualBasic
+
+Public Class PlantationJob
+
+    Implements ICloneable
+
+    Private _SiteID As Integer
+    Private _JobNumber As Integer
+    Private _ContractNo As String
+    Private _CustomerName As String
+    Private _SoldDate As Date
+    Private _OrderedDate As Date
+    Private _ScheduledDate As Date
+    Private _CalculatedScheduledDate As Date
+    Private _StatusID As Integer
+    Private _NoOfShutters As Integer
+    Private _NoOfPanels As Integer
+    Private _TotalSqM As Decimal
+
+
+    Public Property SiteID() As Integer
+        Get
+            Return _SiteID
+        End Get
+        Set(ByVal value As Integer)
+            _SiteID = value
+        End Set
+    End Property
+
+    Public Property JobNumber() As Integer
+        Get
+            Return _JobNumber
+        End Get
+        Set(ByVal value As Integer)
+            _JobNumber = value
+        End Set
+    End Property	
+	
+    Public Property ContractNo() As String
+        Get
+            Return _ContractNo
+        End Get
+        Set(ByVal value As String)
+            _ContractNo = value
+        End Set
+    End Property
+
+    Public Property CustomerName() As String
+        Get
+            Return _CustomerName
+        End Get
+        Set(ByVal value As String)
+            _CustomerName = value
+        End Set
+    End Property
+	
+    Public Property SoldDate() As Date
+        Get
+            Return _SoldDate
+        End Get
+        Set(ByVal value As Date)
+            _SoldDate = value
+        End Set
+    End Property
+
+    Public Property OrderedDate() As Date
+        Get
+            Return _OrderedDate
+        End Get
+        Set(ByVal value As Date)
+            _OrderedDate = value
+        End Set
+    End Property
+
+    Public Property ScheduledDate() As Date
+        Get
+            Return _ScheduledDate
+        End Get
+        Set(ByVal value As Date)
+            _ScheduledDate = value
+        End Set
+    End Property
+
+    Public Property CalculatedScheduledDate() As Date
+        Get
+            Return _CalculatedScheduledDate
+        End Get
+        Set(ByVal value As Date)
+            _CalculatedScheduledDate = value
+        End Set
+    End Property
+
+    Public Property StatusID() As Integer
+        Get
+            Return _StatusID
+        End Get
+        Set(ByVal value As Integer)
+            _StatusID = value
+        End Set
+    End Property
+
+    Public Property NoOfShutters() As Integer
+        Get
+            Return _NoOfShutters
+        End Get
+        Set(ByVal value As Integer)
+            _NoOfShutters = value
+        End Set
+    End Property
+
+    Public Property NoOfPanels() As Integer
+        Get
+            Return _NoOfPanels
+        End Get
+        Set(ByVal value As Integer)
+            _NoOfPanels = value
+        End Set
+    End Property
+
+    Public Property TotalSqM() As Decimal
+        Get
+            Return _TotalSqM
+        End Get
+        Set(ByVal value As Decimal)
+            _TotalSqM = value
+        End Set
+    End Property
+
+    Public Sub New()
+
+        _SiteID = Constants.DEFAULT_INTEGER_VALUE
+        _JobNumber = Constants.DEFAULT_INTEGER_VALUE
+        _ContractNo = String.Empty
+        _CustomerName = String.Empty
+        _SoldDate = Constants.DEFAULT_DATE_VALUE
+        _OrderedDate = Constants.DEFAULT_DATE_VALUE
+        _ScheduledDate = Constants.DEFAULT_DATE_VALUE
+        _CalculatedScheduledDate = Constants.DEFAULT_DATE_VALUE
+        _StatusID = Constants.DEFAULT_INTEGER_VALUE
+        _NoOfShutters = Constants.DEFAULT_INTEGER_VALUE
+        _NoOfPanels = Constants.DEFAULT_INTEGER_VALUE
+        _TotalSqM = Constants.DEFAULT_DECIMAL_VALUE
+
+    End Sub
+
+    Public Function Clone() As Object Implements System.ICloneable.Clone
+
+        Return MyBase.MemberwiseClone
+
+    End Function
+
+End Class

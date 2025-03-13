@@ -1,0 +1,374 @@
+﻿Imports System.Data.SqlClient
+Imports Microsoft.VisualBasic
+
+Public Class PlantationGRADAO
+
+    Function getPlantationGRAHistroyNewChgID() As Integer
+
+        Dim service As New AppService
+        Dim intMaxChangedID As Integer = 0
+        Dim dtMaxChanged As DataTable = service.runSQLScheduling("Select max(ChangedID) as MaxChangedID From tblProductionScheduleHistory")
+        If dtMaxChanged.Rows.Count > 0 Then
+            If Not IsDBNull(dtMaxChanged.Rows(0)("MaxChangedID")) Then
+                intMaxChangedID = dtMaxChanged.Rows(0)("MaxChangedID")
+            End If
+        End If
+        intMaxChangedID += 1
+        service = Nothing
+        Return intMaxChangedID
+
+    End Function
+
+    Function getPlantationGRAByID(ByVal intNewID As Integer) As DataTable
+
+        Dim service As New AppService
+        Dim dtPlantationGRATBL As DataTable = service.runSQLScheduling("Select * From tblPlantationGRA Where ID = " & intNewID)
+        service = Nothing
+        Return dtPlantationGRATBL
+
+    End Function
+
+    Function getPlantationGRAClassByID(ByVal intPlantationGRADID As Integer) As PlantationGRAObj
+
+        Dim dtPlantationGRATBL As DataTable = getPlantationGRAByID(intPlantationGRADID)
+        Dim clsPlantationGRA As New PlantationGRAObj
+        If dtPlantationGRATBL.Rows.Count < 0 Then
+            clsPlantationGRA = ConvertRcdToPlantationGRACls(dtPlantationGRATBL.Rows(0))
+        End If
+        Return clsPlantationGRA
+
+    End Function
+
+
+    'Add Table Plantation GRA
+    Function addPlantationGRAByID(ByVal clsPlantationGRA As PlantationGRAObj, ByVal cnn As SqlConnection, ByRef trans As SqlTransaction) As Boolean
+
+        Dim bolAddOk As Integer = Constants.DEFAULT_INTEGER_VALUE
+        Dim cmd As New SqlCommand
+        Try
+            cmd.Connection = cnn
+            cmd.Transaction = trans
+            cmd.CommandText = "sp_addPlantationGRA"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            'SqlCommandBuilder.DeriveParameters(cmd)
+            'return id
+            cmd.Parameters.Add("@PlantationGRAID", SqlDbType.Int)
+            cmd.Parameters("@PlantationGRAID").Direction = ParameterDirection.Output
+
+            '' This Line
+            populatePlantationGRACMD(cmd, clsPlantationGRA)
+
+            cmd.ExecuteNonQuery()
+            bolAddOk = CInt(cmd.Parameters("@PlantationGRAID").Value)
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+        End Try
+        Return bolAddOk
+
+    End Function
+
+    'Update Table Plantation GRA
+
+    Function updatePlantationGRAByID(ByVal clsPlantationGRA As PlantationGRAObj, ByVal cnn As SqlConnection, ByRef trans As SqlTransaction) As Boolean
+
+        Dim bolUpdateOK As Boolean = True
+        Dim cmd As New SqlCommand
+        Try
+            cmd.Connection = cnn
+            cmd.Transaction = trans
+            cmd.CommandText = "sp_updatePlantationGRAByID"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            'SqlCommandBuilder.DeriveParameters(cmd)
+
+            populatePlantationGRACMD(cmd, clsPlantationGRA)
+
+            cmd.Parameters.Add("@PlantationGRAID", SqlDbType.Int)
+            cmd.Parameters("@PlantationGRAID").Value = clsPlantationGRA.ID
+            'The Code Jumps to the Catch Below after the cmd.ExectuteNonQuery line is exected.
+            cmd.Parameters("@PlantationGRAID").Value = cmd.Parameters("@PlantationGRAID").Value
+            cmd.Parameters("@DateEntered").Value = cmd.Parameters("@DateEntered").Value
+            cmd.Parameters("@DateReceived").Value = cmd.Parameters("@DateReceived").Value
+            cmd.Parameters("@ReferenceNumber").Value = cmd.Parameters("@ReferenceNumber").Value
+            cmd.Parameters("@ReferenceName").Value = cmd.Parameters("@ReferenceName").Value
+            cmd.Parameters("@CustomerID").Value = cmd.Parameters("@CustomerID").Value
+            cmd.Parameters("@PlantationScheduleID").Value = cmd.Parameters("@PlantationScheduleID").Value
+            cmd.Parameters("@JobNumber").Value = cmd.Parameters("@JobNumber").Value
+            cmd.Parameters("@ShutterNo").Value = cmd.Parameters("@ShutterNo").Value
+            cmd.Parameters("@PanelNo").Value = cmd.Parameters("@PanelNo").Value
+            cmd.Parameters("@ReasonID").Value = cmd.Parameters("@ReasonID").Value
+            cmd.Parameters("@IssueDescription").Value = cmd.Parameters("@IssueDescription").Value
+            cmd.Parameters("@LiablePartyID").Value = cmd.Parameters("@LiablePartyID").Value
+
+            Dim ra As Integer = cmd.ExecuteNonQuery
+            If ra < 1 Then
+                EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - update record failed" & Environment.NewLine)
+                bolUpdateOK = False
+            End If
+            'This try catch block is entered, in ProductionScheduleDetails it is not entered
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+            bolUpdateOK = False
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+        End Try
+        Return bolUpdateOK
+
+    End Function
+
+    Function ConvertRcdToPlantationGRACls(ByVal dwPlantationGRATBL As DataRow) As PlantationGRAObj
+
+        Dim clsPlantationGRA As New PlantationGRAObj
+        If Not IsDBNull(dwPlantationGRATBL("PlantationGRAID")) Then
+            clsPlantationGRA.ID = CInt(dwPlantationGRATBL("PlantationGRAID"))
+        End If
+        If Not IsDBNull(dwPlantationGRATBL("DateEntered")) Then
+            clsPlantationGRA.DateEntered = CDate(dwPlantationGRATBL("DateEntered"))
+        End If
+        If Not IsDBNull(dwPlantationGRATBL("DateReceived")) Then
+            clsPlantationGRA.DateReceived = CDate(dwPlantationGRATBL("DateReceived"))
+        End If
+        If Not IsDBNull(dwPlantationGRATBL("ReferenceNumber")) Then
+            clsPlantationGRA.ReferenceNumber = CStr(dwPlantationGRATBL("ReferenceNumber"))
+        End If
+        If Not IsDBNull(dwPlantationGRATBL("ReferenceName")) Then
+            clsPlantationGRA.ReferenceName = CStr(dwPlantationGRATBL("ReferenceName"))
+        End If
+        If Not IsDBNull(dwPlantationGRATBL("CustomerID")) Then
+            clsPlantationGRA.CustomerID = CInt(dwPlantationGRATBL("CustomerID"))
+        End If
+        If Not IsDBNull(dwPlantationGRATBL("PlantationScheduleID")) Then
+            clsPlantationGRA.PlantationScheduleID = CInt(dwPlantationGRATBL("PlantationScheduleID"))
+        End If
+        If Not IsDBNull(dwPlantationGRATBL("JobNumber")) Then
+            clsPlantationGRA.JobNumber = CInt(dwPlantationGRATBL("JobNumber"))
+        End If
+        If Not IsDBNull(dwPlantationGRATBL("ShutterNo")) Then
+            clsPlantationGRA.ShutterNo = CInt(dwPlantationGRATBL("ShutterNo"))
+        End If
+        If Not IsDBNull(dwPlantationGRATBL("PanelNo")) Then
+            clsPlantationGRA.PanelNo = CInt(dwPlantationGRATBL("PanelNo"))
+        End If
+        If Not IsDBNull(dwPlantationGRATBL("ReasonID")) Then
+            clsPlantationGRA.ReasonID = CInt(dwPlantationGRATBL("ReasonID"))
+        End If
+        If Not IsDBNull(dwPlantationGRATBL("IssueDescription")) Then
+            clsPlantationGRA.IssueDescription = CStr(dwPlantationGRATBL("IssueDescription"))
+        End If
+        If Not IsDBNull(dwPlantationGRATBL("StatusID")) Then
+            clsPlantationGRA.StatusID = CInt(dwPlantationGRATBL("StatusID"))
+        End If
+        If Not IsDBNull(dwPlantationGRATBL("LiablePartyID")) Then
+            clsPlantationGRA.LiablePartyID = CInt(dwPlantationGRATBL("LiablePartyID"))
+        End If
+        Return clsPlantationGRA
+
+    End Function
+
+    Friend Function addPlantGBAHistoryRcd(intChangedID As Integer, clsPlantGRA As PlantationGRAObj, cnn As SqlConnection, trans As SqlTransaction) As Boolean
+        Dim bolAddOK As Boolean = True
+        Dim cmd As New SqlCommand
+        Try
+            cmd.Connection = cnn
+            cmd.Transaction = trans
+            cmd.CommandText = "sp_addPlantationGRA"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            'SqlCommandBuilder.DeriveParameters(cmd)
+            'return id
+            cmd.Parameters.Add("@ChangedID", SqlDbType.Int)
+            cmd.Parameters("@ChangedID").Value = intChangedID
+            cmd.Parameters.Add("@ChangedDateTime", Data.SqlDbType.DateTime)
+            cmd.Parameters("@ChangedDateTime").Value = Now()
+            cmd.Parameters.Add("@ID", SqlDbType.Int)
+            cmd.Parameters("@ID").Value = clsPlantGRA.ID
+
+            populatePlantationGRACMD(cmd, clsPlantGRA)
+            Dim ra As Integer = cmd.ExecuteNonQuery
+            If ra < 1 Then
+                EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - add record failed" & Environment.NewLine)
+                bolAddOK = False
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+            bolAddOK = False
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+        End Try
+        Return bolAddOK
+        ''
+
+    End Function
+
+    Sub populatePlantationGRACMD(ByRef cmd As SqlCommand, ByVal clsPlantationGRA As PlantationGRAObj)
+
+        cmd.Parameters.Add("@CustomerID", SqlDbType.Int)
+        If clsPlantationGRA.CustomerID <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@CustomerID").Value = clsPlantationGRA.CustomerID
+        Else
+            cmd.Parameters("@CustomerID").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@DateReceived", SqlDbType.DateTime)
+        If clsPlantationGRA.DateReceived <> Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@DateReceived").Value = clsPlantationGRA.DateReceived
+        Else
+            cmd.Parameters("@DateReceived").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@DateEntered", Data.SqlDbType.DateTime)
+        If clsPlantationGRA.DateEntered <> Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@DateEntered").Value = clsPlantationGRA.DateEntered
+        Else
+            cmd.Parameters("@DateEntered").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@ReferenceName", Data.SqlDbType.VarChar)
+        If clsPlantationGRA.ReferenceName <> String.Empty Then
+            cmd.Parameters("@ReferenceName").Value = clsPlantationGRA.ReferenceName
+        Else
+            cmd.Parameters("@ReferenceName").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@ReferenceNumber", Data.SqlDbType.VarChar)
+        If clsPlantationGRA.ReferenceNumber <> String.Empty Then
+            cmd.Parameters("@ReferenceNumber").Value = clsPlantationGRA.ReferenceNumber
+        Else
+            cmd.Parameters("@ReferenceNumber").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@ShutterNo", Data.SqlDbType.Int)
+        If clsPlantationGRA.ShutterNo <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@ShutterNo").Value = clsPlantationGRA.ShutterNo
+        Else
+            cmd.Parameters("@ShutterNo").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@PanelNo", Data.SqlDbType.Int)
+        If clsPlantationGRA.PanelNo <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@PanelNo").Value = clsPlantationGRA.PanelNo
+        Else
+            cmd.Parameters("@PanelNo").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@PlantationScheduleID", Data.SqlDbType.Int)
+        If clsPlantationGRA.PlantationScheduleID <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@PlantationScheduleID").Value = clsPlantationGRA.PlantationScheduleID
+        Else
+            cmd.Parameters("@PlantationScheduleID").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@ReasonID", Data.SqlDbType.Int)
+        If clsPlantationGRA.ReasonID <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@ReasonID").Value = clsPlantationGRA.ReasonID
+        Else
+            cmd.Parameters("@ReasonID").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@StatusID", SqlDbType.Int)
+        If clsPlantationGRA.StatusID <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@StatusID").Value = clsPlantationGRA.StatusID
+        Else
+            cmd.Parameters("@StatusID").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@JobNumber", SqlDbType.Int)
+        If clsPlantationGRA.JobNumber <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@JobNumber").Value = clsPlantationGRA.JobNumber
+        Else
+            cmd.Parameters("@JobNumber").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@LiablePartyID", SqlDbType.Int)
+        If clsPlantationGRA.LiablePartyID <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@LiablePartyID").Value = clsPlantationGRA.LiablePartyID
+        Else
+            cmd.Parameters("@LiablePartyID").Value = DBNull.Value
+        End If
+
+        cmd.Parameters.Add("@IssueDescription", SqlDbType.VarChar)
+        If clsPlantationGRA.IssueDescription <> String.Empty Then
+            cmd.Parameters("@IssueDescription").Value = clsPlantationGRA.IssueDescription
+        Else
+            cmd.Parameters("@IssueDescription").Value = DBNull.Value
+        End If
+
+
+
+
+    End Sub
+
+    Function addPlantationGRARecord(clsPlantGRA As PlantationGRAObj, cnn As SqlConnection, trans As SqlTransaction) As Integer
+
+        Dim intProdScheduleRcdId As Integer = Constants.DEFAULT_INTEGER_VALUE
+        Dim cmd As New SqlCommand
+        Try
+            cmd.Connection = cnn
+            cmd.Transaction = trans
+            cmd.CommandText = "sp_addPlantationGRA"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            'SqlCommandBuilder.DeriveParameters(cmd)
+            'return id
+            cmd.Parameters.Add("@ID", SqlDbType.Int)
+            cmd.Parameters("@ID").Direction = ParameterDirection.Output
+
+            populatePlantationGRACMD(cmd, clsPlantGRA)
+
+            cmd.ExecuteNonQuery()
+            intProdScheduleRcdId = CInt(cmd.Parameters("@ID").Value)
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+        End Try
+        Return intProdScheduleRcdId
+    End Function
+
+
+
+    Function addPlantNoteRcd(ByVal clsPlantGRANote As PlantationGRAObj, ByVal cnn As SqlConnection, ByRef trans As SqlTransaction) As Boolean
+
+        Dim bolAddOK As Boolean = True
+        Dim cmd As New SqlCommand
+        Try
+            cmd.Connection = cnn
+            cmd.Transaction = trans
+            cmd.CommandText = "sp_addPlantationGRA"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            'SqlCommandBuilder.DeriveParameters(cmd)
+            cmd.Parameters.Add("@CustomerID", SqlDbType.Int)
+            cmd.Parameters("@CurstomerID").Value = clsPlantGRANote.CustomerID
+
+            Dim ra As Integer = cmd.ExecuteNonQuery
+            If ra < 1 Then
+                EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - add record failed" & Environment.NewLine)
+                bolAddOK = False
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+            bolAddOK = False
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+        End Try
+        Return bolAddOK
+        ''
+
+    End Function
+
+End Class

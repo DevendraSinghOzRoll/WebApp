@@ -1,0 +1,513 @@
+﻿Imports System.Data
+Imports System.Net
+Imports System.Data.SqlClient
+
+Partial Class PlantationGRAOzRoll
+    Inherits System.Web.UI.Page
+
+    Dim arrStates As String() = {"", "NSW", "QLD", "VIC", "TAS", "WA", "SA"}
+    Dim arrStateIds() As Integer = {0, 1, 2, 3, 4, 5, 6}
+    Dim arrSiteIds() As Integer = {0, 1, 7, 2, 44, 4, 3}
+    Dim intSScheduleYear As Integer = 2015
+
+
+    Dim strState As String = ""
+    Dim intStateId As Integer = 1
+    Dim intSiteID As Integer = 1
+    Dim intViewType As Integer = 1
+    Dim intPlantID As Integer = Constants.DEFAULT_INTEGER_VALUE
+    Dim dtCustomers As New DataTable
+    Dim dtReason As New DataTable
+    Dim dtStatus As New DataTable
+    Dim dtLiable As New DataTable
+    Dim clsPGRA As New PlantationGRAObj
+
+
+    Protected Sub Page_Load(ByVal sender As Object, ByVal e As EventArgs) Handles Me.Load
+
+        cboLiable.Items.Insert(0, "111")
+        cboPanelNo.Items.Insert(0, "111")
+        cboReason.Items.Insert(0, "111")
+        cboShutterNo.Items.Insert(0, "111")
+
+        If Not IsPostBack Then
+
+
+            Dim service As New AppService
+            Try
+
+                If Not Request.QueryString.Count = 0 Then
+                    If Not IsNothing(Request.Params("PlantationGRAID")) Then
+                        intPlantID = CInt(Request.Params("PlantationGRAID"))
+                    End If
+                    If Not IsNothing(Request.Params("ViewType")) Then
+                        intViewType = CInt(Request.Params("ViewType"))
+                    End If
+                End If
+                Me.txtViewType.Text = intViewType.ToString
+
+                If Session("sessUserID") Is Nothing Then
+                    Response.Redirect("PlantationGRA.aspx", False)
+                    Exit Sub
+                End If
+
+                Me.lblStatus.Text = String.Empty
+
+                Me.cboCustomer.Attributes.Add("onclick", "this.currentvalue = this.value;")
+                Me.cboReason.Attributes.Add("onclick", "this.currentvalue = this.value;")
+                Me.cboStatus.Attributes.Add("onclick", "this.currentvalue = this.value;")
+                Me.cboLiable.Attributes.Add("onclick", "this.currentvalue = this.value;")
+                Me.txtDateReceived.Attributes.Add("autocorrect", "off")
+                Me.txtReferenceName.Attributes.Add("autocorrect", "off")
+                Me.txtReferenceNum.Attributes.Add("autocorrect", "off")
+                Me.cboShutterNo.Attributes.Add("autocorrect", "off")
+                Me.cboPanelNo.Attributes.Add("autocorrect", "off")
+                '
+                Dim strOrderReference As String = String.Empty
+                initCtrls()
+                populateDetails(intPlantID, strOrderReference)
+                Me.cboCustomer.Text = strOrderReference
+
+            Catch ex As Exception
+                EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine & getPageInfo())
+            End Try
+            service = Nothing
+
+        End If
+
+    End Sub
+
+    Private Function getPageInfo() As String
+
+        Dim strPageInfo As String = String.Empty
+
+        Dim strName As String = String.Empty
+        If Session.Contents.Count > 0 Then
+            strPageInfo &= "Session Variables" & Environment.NewLine
+            For Each strName In Session.Contents
+                strPageInfo &= strName & ": " & CStr(Session.Contents(strName)) & Environment.NewLine
+            Next
+        Else
+            strPageInfo &= "No Session Variables" & Environment.NewLine
+        End If
+
+        strPageInfo &= Environment.NewLine
+
+        If Me.HasControls Then
+            strPageInfo &= "Form Controls" & Environment.NewLine
+            getPageControls(Me, strPageInfo)
+        Else
+            strPageInfo &= "No Form Controls" & Environment.NewLine
+        End If
+        Return strPageInfo
+
+    End Function
+
+    Private Sub getPageControls(ByVal ctrl As Control, ByRef strPageControls As String)
+
+        If ctrl.HasControls Then
+            For Each childCtrl As Control In ctrl.Controls
+                getPageControls(childCtrl, strPageControls)
+            Next
+        Else
+            Select Case ctrl.GetType.Name
+                Case "TextBox"
+                    Dim frmTxt As TextBox
+                    frmTxt = DirectCast(ctrl, TextBox)
+                    strPageControls &= frmTxt.ID & ": " & Left(frmTxt.Text, 100) & Environment.NewLine
+                Case "DropDownList"
+                    Dim frmCbo As DropDownList
+                    frmCbo = DirectCast(ctrl, DropDownList)
+                    If frmCbo.Items.Count > 0 Then
+                        strPageControls &= frmCbo.ID & ": " & frmCbo.SelectedItem.Text & " (" & frmCbo.SelectedValue & ")" & Environment.NewLine
+                    Else
+                        strPageControls &= frmCbo.ID & ": Not Populated" & Environment.NewLine
+                    End If
+                Case "CheckBox"
+                    Dim frmChk As CheckBox
+                    frmChk = DirectCast(ctrl, CheckBox)
+                    strPageControls &= frmChk.ID & ": " & frmChk.Checked & Environment.NewLine
+                Case "RadioButton"
+                    Dim frmRdo As RadioButton
+                    frmRdo = DirectCast(ctrl, RadioButton)
+                    strPageControls &= frmRdo.ID & ": " & frmRdo.Checked & Environment.NewLine
+                Case "RadioButtonList"
+                    Dim frmRdoLst As RadioButtonList
+                    frmRdoLst = DirectCast(ctrl, RadioButtonList)
+                    If frmRdoLst.SelectedIndex >= 0 Then
+                        strPageControls &= frmRdoLst.ID & ": " & frmRdoLst.SelectedItem.Text & " (" & frmRdoLst.SelectedValue & ")" & Environment.NewLine
+                    Else
+                        strPageControls &= frmRdoLst.ID & ": Not Selected" & Environment.NewLine
+                    End If
+            End Select
+        End If
+
+    End Sub
+
+    Protected Sub btnSave_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles btnSave.Click
+
+
+        If Not Request.QueryString.Count = 0 Then
+            If Not IsNothing(Request.Params("PlantationGRAID")) Then
+                intPlantID = CInt(Request.Params("PlantationGRAID"))
+            End If
+            If Not IsNothing(Request.Params("ViewType")) Then
+                intViewType = CInt(Request.Params("ViewType"))
+            End If
+        End If
+
+
+        Dim service As New AppService
+        'Dim intMaxChangeId As Integer = service.getPlantationGRAHistoryNewChgID()
+        clsPGRA = service.getPlantationGRAClassByID(intPlantID)
+
+        Dim clsNewPGRA As New PlantationGRAObj
+        UpdatePlantGRA(clsNewPGRA)
+
+        Dim bolContinue As Boolean = True
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim trans As SqlTransaction = Nothing
+        dbConn = Nothing
+        btnSave.Enabled = False
+        btnSave.CssClass = "form-button-disabled"
+        lblStatus.Text = String.Empty
+
+        Try
+
+            cnn.Open()
+            trans = cnn.BeginTransaction
+
+            Dim intPlantationGRAID As Integer = clsNewPGRA.ID
+
+            If bolContinue Then
+                If intViewType = 1 Then
+
+                    intPlantationGRAID = service.updatePlantationGRAByID(clsNewPGRA, cnn, trans)
+                    If intPlantationGRAID = Constants.DEFAULT_INTEGER_VALUE Then
+                        bolContinue = False
+                    Else
+                        bolContinue = True
+                    End If
+                Else
+                    bolContinue = service.addPlantationGRARecord(clsNewPGRA, cnn, trans)
+                End If
+            End If
+
+            'If intViewType = 1 And bolContinue Then
+
+            '    bolContinue = service.addPlantGBAHistroyRcd(intMaxChangeId, clsNewPGRA, cnn, trans)
+
+            'End If
+
+
+            If bolContinue Then
+                trans.Commit()
+                Response.Redirect("PlantationGRAOzRoll.aspx", False)
+            Else
+                'EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - Transaction Rolled Back" & Environment.NewLine & getPageInfo())
+                trans.Rollback()
+                If lblStatus.Text = String.Empty Then
+                    lblStatus.Text = "Error saving details. Please try again."
+                End If
+                btnSave.Enabled = True
+                btnSave.CssClass = "form-button"
+            End If
+
+        Catch ex As Exception
+            If Not trans Is Nothing Then
+                trans.Rollback()
+            End If
+            If cnn.State = ConnectionState.Open Then
+                cnn.Close()
+            End If
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine & getPageInfo())
+            bolContinue = False
+        Finally
+            trans.Dispose()
+            trans = Nothing
+            If cnn.State = ConnectionState.Open Then
+                cnn.Close()
+            End If
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+        dbConn = Nothing
+        service = Nothing
+    End Sub
+
+    Protected Sub UpdatePlantGRA(ByRef clsNewPlantationGRA As PlantationGRAObj)
+
+        Dim service As New AppService
+        If CInt(Me.txtViewType.Text) = 1 Then
+            clsNewPlantationGRA.ID = Me.txtId.Text
+        Else
+            intSiteID = arrSiteIds(CInt(Me.txtStateId.Text))
+        End If
+        'dtCustomers = service.runSQLScheduling("Select CustomerID,CustomerName from tblCustomers Order By SortOrder")
+        'Dim dwTMPs() As DataRow = dtCustomers.Select("CustomerName='" & Me.cboCustomer.SelectedItem.Text & "'")
+        'If dwTMPs.Length > 0 Then
+        '    clsNewProdSchedule.CustomerID = dwTMPs(0)("CustomerID")
+        'End If
+        'clsNewProdSchedule.Customer = Me.cboCustomer.SelectedItem.Text
+        service = Nothing
+
+        If Me.cboCustomer.Text <> String.Empty Then
+            clsPGRA.CustomerID = CInt(Me.cboCustomer.Text)
+        End If
+
+        If Me.txtDateReceived.Text <> String.Empty Then
+            clsPGRA.DateReceived = CDate(Me.txtDateReceived.Text)
+        End If
+
+        If Me.txtReferenceNum.Text <> String.Empty Then
+            clsPGRA.ReferenceNumber = CStr(Me.txtReferenceNum.Text)
+        End If
+        If Me.txtReferenceName.Text <> String.Empty Then
+            clsPGRA.ReferenceName = CStr(Me.txtReferenceName.Text)
+        End If
+        If Me.cboShutterNo.Text <> String.Empty Then
+            clsPGRA.ShutterNo = CInt(Me.cboShutterNo.Text)
+        End If
+        If Me.cboPanelNo.Text <> String.Empty Then
+            clsPGRA.PanelNo = CInt(Me.cboPanelNo.Text)
+        End If
+        If Me.cboReason.Text <> String.Empty Then
+            clsPGRA.ReasonID = CInt(Me.cboReason.Text)
+        End If
+        If Me.cboStatus.Text <> String.Empty Then
+            clsPGRA.StatusID = CInt(Me.cboStatus.Text)
+        End If
+        If Me.cboLiable.Text <> String.Empty Then
+            clsPGRA.LiablePartyID = CInt(Me.cboLiable.Text)
+        End If
+        If Me.txtIssueDescription.Text <> String.Empty Then
+            clsPGRA.IssueDescription = CStr(Me.txtIssueDescription.Text)
+        End If
+
+
+    End Sub
+
+    Protected Sub initCtrls()
+
+        Dim service As New AppService
+
+        If Me.txtViewType.Text = "0" Then
+            dtCustomers = service.runSQLScheduling("Select CustomerID,CustomerName,SiteID from tblCustomers Where Discontinued=0 and SiteID is null Order By SortOrder")
+        Else
+            dtCustomers = service.runSQLScheduling("Select CustomerID,CustomerName,SiteID from tblCustomers Order By SortOrder")
+        End If
+
+        Dim drow As DataRow = dtCustomers.NewRow
+        drow("CustomerID") = 0
+        dtCustomers.Rows.InsertAt(drow, 0)
+        Me.cboCustomer.DataSource = dtCustomers
+        Me.cboCustomer.DataValueField = "CustomerID"
+        Me.cboCustomer.DataTextField = "CustomerName"
+        Me.cboCustomer.DataBind()
+        Me.cboCustomer.SelectedIndex = 0
+        '
+
+        Dim dtData As DataTable = service.createOrderStatusTBL()
+        Me.cboStatus.DataSource = dtData
+        Me.cboStatus.DataValueField = "OrderStatusID"
+        Me.cboStatus.DataTextField = "OrderStatus"
+        Me.cboStatus.DataBind()
+        Me.cboStatus.SelectedIndex = 0
+        '
+        'Dim drowReason As DataRow = dtReason.NewRow
+        'drowReason("ReasonID") = 0
+        'dtReason.Rows.InsertAt(drowReason, 0)
+        'Me.cboReason.DataSource = dtReason
+        'Me.cboReason.DataValueField = "ReasonID"
+        'Me.cboReason.DataTextField = "ReasonName"
+        'Me.cboReason.DataBind()
+        'Me.cboReason.SelectedIndex = 0
+        '
+        Dim drowLiable As DataRow = dtLiable.NewRow
+        drowLiable("LiableID") = 0
+        dtLiable.Rows.InsertAt(drowLiable, 0)
+        Me.cboLiable.DataSource = dtStatus
+        Me.cboLiable.DataValueField = "LiableID"
+        Me.cboLiable.DataTextField = "LiableName"
+        Me.cboLiable.DataBind()
+        Me.cboLiable.SelectedIndex = 0
+
+        service = Nothing
+
+
+    End Sub
+
+    Protected Sub populateDetails(ByVal intPlantID As Integer, ByRef strOrderReference As String)
+
+        If Not Request.QueryString.Count = 0 Then
+            If Not IsNothing(Request.Params("ViewType")) Then
+                intViewType = CInt(Request.Params("ViewType"))
+            End If
+        End If
+        Me.txtViewType.Text = intViewType
+
+        If intViewType = 1 Then
+            Dim service As New AppService
+            clsPGRA = service.getPlantationGRAClassByID(intPlantID)
+            service = Nothing
+        End If
+
+        Me.txtId.Text = clsPGRA.ID
+        Me.txtEnteredDatetime.Enabled = False
+        If clsPGRA.ID <> Constants.DEFAULT_INTEGER_VALUE Then
+
+            If clsPGRA.CustomerID > 0 Then
+                Me.cboCustomer.SelectedValue = 1
+            Else
+                Me.cboCustomer.SelectedValue = 0
+            End If
+
+            If intViewType = 1 Then
+                If clsPGRA.DateReceived <> Constants.DEFAULT_DATE_VALUE Then
+                    Me.txtDateReceived.Text = Format(clsPGRA.DateReceived, "d MMM yyyy")
+                Else
+                    txtDateReceived.Text = Format(Now, "d MMM yyyy")
+                End If
+            End If
+            If clsPGRA.ReferenceName <> String.Empty Then
+                Me.txtReferenceName.Text = clsPGRA.ReferenceName
+            End If
+
+            If clsPGRA.ReferenceNumber <> String.Empty Then
+                Me.txtReferenceNum.Text = clsPGRA.ReferenceNumber
+            End If
+            If clsPGRA.ShutterNo > 0 Then
+                Me.cboShutterNo.SelectedValue = 1
+            Else
+                Me.cboShutterNo.SelectedValue = 0
+            End If
+            If clsPGRA.PanelNo > 0 Then
+                Me.cboPanelNo.SelectedValue = 1
+            Else
+                Me.cboPanelNo.SelectedValue = 0
+            End If
+            If clsPGRA.ReasonID > 0 Then
+                Me.cboReason.SelectedValue = 1
+            Else
+                Me.cboReason.SelectedValue = 0
+            End If
+            If clsPGRA.StatusID > 0 Then
+                Me.cboStatus.SelectedValue = 1
+            Else
+                Me.cboStatus.SelectedValue = 0
+            End If
+            If clsPGRA.LiablePartyID > 0 Then
+                Me.cboLiable.SelectedValue = 1
+            Else
+                Me.cboLiable.SelectedValue = 0
+            End If
+
+        Else
+            'Me.lblStatus.Text = "No Records Found."
+            Me.txtDateReceived.Text = Format(Now, "d MMM yyyy")
+
+        End If
+        '
+
+    End Sub
+
+
+
+    Protected Sub btnLogout_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles btnLogout.Click
+
+        Response.Redirect("Logout.aspx", False)
+
+    End Sub
+
+    Protected Sub btnCancel_Click(sender As Object, e As EventArgs) Handles btnCancel.Click
+        Response.Redirect("PlantationGRAOzRoll.aspx", False)
+    End Sub
+
+    Protected Sub btnAddSchedule_Click(sender As Object, e As System.EventArgs) Handles btnAddSchedule.Click
+
+        Dim bolSaveOK As Boolean = True
+
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim trans As SqlTransaction
+
+        Try
+            cnn.Open()
+            trans = cnn.BeginTransaction
+
+
+
+
+            If bolSaveOK Then
+                trans.Commit()
+            Else
+                trans.Rollback()
+            End If
+
+        Catch ex As Exception
+
+        Finally
+
+        End Try
+
+
+
+    End Sub
+
+    Protected Function addPlantationGRAToSchedule(intPlantationGRAID As Integer, cnn As SqlClient.SqlConnection, ByRef trans As SqlClient.SqlTransaction) As Integer
+        Dim service As New AppService
+
+        Dim cPlantationGRA As PlantationGRAObj = service.getPlantationGRAClassByID(intPlantationGRAID)
+        Dim cPlantationSchedule As ProductionSchedule = New ProductionSchedule
+
+
+        cPlantationSchedule.ID = Constants.DEFAULT_INTEGER_VALUE
+        cPlantationSchedule.CustomerID = cPlantationGRA.CustomerID
+        cPlantationSchedule.JobNumber = cPlantationGRA.JobNumber
+        cPlantationSchedule.EnteredDatetime = DateTime.Now
+        cPlantationSchedule.OrderDate = DateTime.Now
+        cPlantationSchedule.OrderReference = cPlantationGRA.ReferenceNumber
+        cPlantationSchedule.CustomerName = cPlantationGRA.ReferenceName
+        cPlantationSchedule.State = String.Empty
+        cPlantationSchedule.OrderStatus = 0
+        cPlantationSchedule.InvoiceMonth = Constants.DEFAULT_INTEGER_VALUE
+        cPlantationSchedule.InvoiceWeek = Constants.DEFAULT_INTEGER_VALUE
+        cPlantationSchedule.CostPrice = Constants.DEFAULT_DECIMAL_VALUE
+        cPlantationSchedule.CostPriceGST = Constants.DEFAULT_DECIMAL_VALUE
+        cPlantationSchedule.TotalSQM = Constants.DEFAULT_DECIMAL_VALUE
+        cPlantationSchedule.TotalPanels = Constants.DEFAULT_INTEGER_VALUE
+        cPlantationSchedule.PanelsLess700 = Constants.DEFAULT_INTEGER_VALUE
+        cPlantationSchedule.PanelsMore700 = Constants.DEFAULT_INTEGER_VALUE
+        cPlantationSchedule.QtyHinges = Constants.DEFAULT_INTEGER_VALUE
+        cPlantationSchedule.QtySliding = Constants.DEFAULT_INTEGER_VALUE
+        cPlantationSchedule.QtyBifold = Constants.DEFAULT_INTEGER_VALUE
+        cPlantationSchedule.QtyFixed = Constants.DEFAULT_INTEGER_VALUE
+        cPlantationSchedule.QtyZFrame = Constants.DEFAULT_INTEGER_VALUE
+        cPlantationSchedule.QtyLFrame = Constants.DEFAULT_INTEGER_VALUE
+        cPlantationSchedule.OffWhite = Constants.DEFAULT_INTEGER_VALUE
+        cPlantationSchedule.BrightWhite = Constants.DEFAULT_INTEGER_VALUE
+        cPlantationSchedule.GRARemakes = String.Empty
+        cPlantationSchedule.UpdatesText = String.Empty
+        cPlantationSchedule.BOMCosted = String.Empty
+        cPlantationSchedule.ShutterPro = String.Empty
+        cPlantationSchedule.ShippingDetails = String.Empty
+        cPlantationSchedule.PlannedShippingDate = String.Empty
+        cPlantationSchedule.ActualShippingDate = Constants.DEFAULT_DATE_VALUE
+
+        Dim intID As Integer = service.addProductionScheduleRecord(cPlantationSchedule, cnn, trans)
+        Dim bolSavedOK As Boolean = True
+
+        If intID = Constants.DEFAULT_INTEGER_VALUE Then
+            bolSavedOK = False
+        End If
+
+        If bolSavedOK Then
+            bolSavedOK = service.addProdScheduleHistoryRcd(0, cPlantationSchedule, cnn, trans)
+        End If
+
+        Return intID
+
+    End Function
+
+End Class

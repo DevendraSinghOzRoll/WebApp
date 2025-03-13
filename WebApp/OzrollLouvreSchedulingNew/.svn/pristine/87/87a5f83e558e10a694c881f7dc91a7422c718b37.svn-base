@@ -1,0 +1,10 @@
+/* stupid explorer 6 & 7
+-------------------------------------------------------------- */
+
+.form-field, .form-textarea, .form-select, .form-field-left, .form-field-right {
+ width: 97%;
+}
+
+.form-field-left, .form-field-right {
+ width: 46%;
+}

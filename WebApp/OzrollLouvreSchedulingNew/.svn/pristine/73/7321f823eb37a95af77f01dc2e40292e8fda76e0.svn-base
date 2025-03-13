@@ -1,0 +1,245 @@
+﻿
+Partial Class AcceptOrder
+    Inherits System.Web.UI.Page
+
+    Protected Sub Page_Load(sender As Object, e As System.EventArgs) Handles Me.Load
+
+        If Not IsPostBack Then
+
+            If Session("sessUserID") = String.Empty Then
+                Response.Redirect("Logout.aspx", False)
+                Exit Sub
+            Else
+                If Not IsNumeric(Session("sessUserID")) Then
+                    Response.Redirect("Logout.aspx", False)
+                    Exit Sub
+                End If
+            End If
+
+            Me.txtProductTypeID.Text = Session("sessProductTypeID").ToString
+
+            Dim intScheduleID As Integer = 0
+
+            If Not Request.QueryString.Count = 0 Then
+                If Not IsNothing(Request.Params("ScheduleID")) Then
+                    intScheduleID = CInt(Request.Params("ScheduleID"))
+                End If
+            End If
+            Me.txtID.Text = intScheduleID.ToString
+
+            Dim service As New AppService
+            service.addWebsitePageAccess("Ozroll Plantation Scheduling", CInt(Session("sessUserID")), Session("sessUserName").ToString, System.IO.Path.GetFileName(Request.PhysicalPath), Request.QueryString.ToString(), Now)
+            service = Nothing
+
+            populateDetails(intScheduleID)
+
+        End If
+
+    End Sub
+
+    Private Sub Page_Error(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.Error
+        Dim objErr1 As Exception = Server.GetLastError().GetBaseException()
+
+        Dim strErrorMessage As String = String.Empty
+
+        strErrorMessage &= "Error In: " & Request.Url.ToString() & Environment.NewLine & Environment.NewLine
+
+        strErrorMessage &= "Server.GetLastError().GetBaseException()" & Environment.NewLine & Environment.NewLine
+
+        strErrorMessage &= "Error Message: " & objErr1.Message & Environment.NewLine
+        strErrorMessage &= "Stack Trace:" & Environment.NewLine
+        strErrorMessage &= objErr1.StackTrace & Environment.NewLine & Environment.NewLine
+
+        Dim objErr2 As Exception = Server.GetLastError()
+
+        strErrorMessage &= "Server.GetLastError()" & Environment.NewLine & Environment.NewLine
+
+        strErrorMessage &= "Error Message: " & objErr2.Message & Environment.NewLine
+        strErrorMessage &= "Stack Trace:" & Environment.NewLine
+        strErrorMessage &= objErr2.StackTrace & Environment.NewLine
+
+        EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & strErrorMessage)
+
+        Server.ClearError()
+
+        Response.Redirect("GenericErrorPage.aspx", False)
+    End Sub
+
+    Private Function getPageInfo() As String
+
+        Dim strPageInfo As String = String.Empty
+        Dim strName As String = String.Empty
+        If Session.Contents.Count > 0 Then
+            strPageInfo &= "Session Variables" & Environment.NewLine
+            For Each strName In Session.Contents
+                strPageInfo &= strName & ": " & CStr(Session.Contents(strName)) & Environment.NewLine
+            Next
+        Else
+            strPageInfo &= "No Session Variables" & Environment.NewLine
+        End If
+
+        strPageInfo &= Environment.NewLine
+        If Me.HasControls Then
+            strPageInfo &= "Form Controls" & Environment.NewLine
+            getPageControls(Me, strPageInfo)
+        Else
+            strPageInfo &= "No Form Controls" & Environment.NewLine
+        End If
+        Return strPageInfo
+
+    End Function
+
+    Private Sub getPageControls(ByVal ctrl As Control, ByRef strPageControls As String)
+
+        If ctrl.HasControls Then
+            For Each childCtrl As Control In ctrl.Controls
+                getPageControls(childCtrl, strPageControls)
+            Next
+        Else
+            Select Case ctrl.GetType.Name
+                Case "TextBox"
+                    Dim frmTxt As TextBox
+                    frmTxt = DirectCast(ctrl, TextBox)
+                    strPageControls &= frmTxt.ID & ": " & Left(frmTxt.Text, 100) & Environment.NewLine
+                Case "DropDownList"
+                    Dim frmCbo As DropDownList
+                    frmCbo = DirectCast(ctrl, DropDownList)
+                    If frmCbo.Items.Count > 0 Then
+                        strPageControls &= frmCbo.ID & ": " & frmCbo.SelectedItem.Text & " (" & frmCbo.SelectedValue & ")" & Environment.NewLine
+                    Else
+                        strPageControls &= frmCbo.ID & ": Not Populated" & Environment.NewLine
+                    End If
+                Case "CheckBox"
+                    Dim frmChk As CheckBox
+                    frmChk = DirectCast(ctrl, CheckBox)
+                    strPageControls &= frmChk.ID & ": " & frmChk.Checked & Environment.NewLine
+                Case "RadioButton"
+                    Dim frmRdo As RadioButton
+                    frmRdo = DirectCast(ctrl, RadioButton)
+                    strPageControls &= frmRdo.ID & ": " & frmRdo.Checked & Environment.NewLine
+                Case "RadioButtonList"
+                    Dim frmRdoLst As RadioButtonList
+                    frmRdoLst = DirectCast(ctrl, RadioButtonList)
+                    If frmRdoLst.SelectedIndex >= 0 Then
+                        strPageControls &= frmRdoLst.ID & ": " & frmRdoLst.SelectedItem.Text & " (" & frmRdoLst.SelectedValue & ")" & Environment.NewLine
+                    Else
+                        strPageControls &= frmRdoLst.ID & ": Not Selected" & Environment.NewLine
+                    End If
+            End Select
+        End If
+
+    End Sub
+
+    Private Sub populateDetails(ProductionScheduleID As Integer)
+
+        Dim strLabel As String = String.Empty
+
+        strLabel = "<table cellspacing=""0"" class=""form-table"" summary="""">"
+
+        Dim service As New AppService
+        Dim strSQL As String = String.Empty
+        strSQL = "Select * from tblLouvreDetails where Deleted=0 and ProductionScheduleID=" & ProductionScheduleID
+        Dim dtAcceptOrder As DataTable = service.runSQLScheduling(strSQL)
+        service = Nothing
+
+        For i As Integer = 0 To dtAcceptOrder.Rows.Count - 1
+            strLabel &= "<tr>"
+            strLabel &= "<td class=""form-label-td"" style=""width: 20%; text-align: center;"">"
+            strLabel &= "<a href=""LouvreJobDetails.aspx?ScheduleID=" & dtAcceptOrder.Rows(0).Item("ProductionScheduleID").ToString & """ class=""updatebutton"">View Details</a>"
+            strLabel &= "</td>"
+            strLabel &= "<td class=""form-label-td"" style=""text-align: left;"">"
+            strLabel &= "<b>Opening Type:</b> " & dtAcceptOrder.Rows(0).Item("ShutterType").ToString & " "
+            strLabel &= "<b>Product:</b> " & dtAcceptOrder.Rows(0).Item("Product").ToString & " "
+            strLabel &= "<b>Height:</b> " & dtAcceptOrder.Rows(0).Item("Height").ToString & " "
+            strLabel &= "<b>Width:</b> " & dtAcceptOrder.Rows(0).Item("Width").ToString
+            strLabel &= "<br/ >"
+
+            'double bottom rail
+            strLabel &= "Double Bottom Rail Required? <input id=""chk" & dtAcceptOrder.Rows(0).Item("LouvreDetailID").ToString & """ type=""checkbox"" />"
+
+            'special requirements
+            If Not IsDBNull(dtAcceptOrder.Rows(0).Item("SpecialRequirements")) Then
+                strLabel &= "<br/ >"
+                strLabel &= "Width:" & dtAcceptOrder.Rows(0).Item("SpecialRequirements").ToString
+            End If
+
+            strLabel &= "</td>"
+            strLabel &= "</tr>"
+        Next
+
+        strLabel &= "</table>"
+
+        Me.lblOpenings.Text = strLabel
+
+    End Sub
+    Protected Sub btnHome_Click(sender As Object, e As EventArgs) Handles btnHome.Click
+        Response.Redirect("Home.aspx")
+    End Sub
+    Protected Sub btnLogout_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles btnLogout.Click
+        Response.Redirect("Logout.aspx", False)
+    End Sub
+
+    Private Sub btnBack_Click(sender As Object, e As EventArgs) Handles btnBack.Click
+        Response.Redirect("UpdateAwaitingAcceptance.aspx", False)
+    End Sub
+
+    Private Sub btnProcessProdSheet_Click(sender As Object, e As EventArgs) Handles btnProcessProdSheet.Click
+
+
+        Dim service As New AppService
+        Dim bolContinue As Boolean = True
+
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlClient.SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim trans As SqlClient.SqlTransaction = Nothing
+        dbConn = Nothing
+
+        Try
+
+            cnn.Open()
+            trans = cnn.BeginTransaction
+
+            'update orderstatus to invoiced plus set invoiced date
+            Dim cProductionSchedule As ProductionSchedule = service.getProdScheduleClsByID(CInt(Me.txtID.Text), cnn, trans)
+            Dim cNewProductionSchedule As ProductionSchedule = CType(cProductionSchedule.Clone, ProductionSchedule)
+            cNewProductionSchedule.OrderStatus = 2 'received - accepted
+            cNewProductionSchedule.ReceivedDate = DateTime.Today.Date
+
+            bolContinue = service.updateProductionScheduleByID(cNewProductionSchedule, cnn, trans)
+
+            If bolContinue Then
+                bolContinue = service.addProdScheduleHistoryRcd(0, cProductionSchedule, cnn, trans)
+            End If
+
+
+            If bolContinue Then
+                trans.Commit()
+                Response.Redirect("UpdateAwaitingAcceptance.aspx", False)
+            Else
+                EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - Transaction Rolled Back" & Environment.NewLine & getPageInfo())
+                trans.Rollback()
+            End If
+
+        Catch ex As Exception
+            If Not trans Is Nothing Then
+                trans.Rollback()
+            End If
+            If cnn.State = ConnectionState.Open Then
+                cnn.Close()
+            End If
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine & getPageInfo())
+            bolContinue = False
+        Finally
+            trans.Dispose()
+            trans = Nothing
+            If cnn.State = ConnectionState.Open Then
+                cnn.Close()
+            End If
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+        service = Nothing
+
+
+    End Sub
+End Class

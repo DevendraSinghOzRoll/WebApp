@@ -1,0 +1,430 @@
+﻿
+Partial Class TobeDespatchedUpdate
+    Inherits System.Web.UI.Page
+
+    Protected Sub Page_Load(sender As Object, e As System.EventArgs) Handles Me.Load
+
+        If Not IsPostBack Then
+
+            If Session("sessUserID") = String.Empty Then
+                Response.Redirect("Logout.aspx", False)
+                Exit Sub
+            Else
+                If Not IsNumeric(Session("sessUserID")) Then
+                    Response.Redirect("Logout.aspx", False)
+                    Exit Sub
+                End If
+            End If
+
+            Me.txtProductTypeID.Text = Session("sessProductTypeID").ToString
+
+            Dim service As New AppService
+            service.addWebsitePageAccess("Ozroll Plantation Scheduling", CInt(Session("sessUserID")), Session("sessUserName").ToString, System.IO.Path.GetFileName(Request.PhysicalPath), Request.QueryString.ToString(), Now)
+            service = Nothing
+
+            Me.txtDespatchDate.Text = Format(DateTime.Now, "d MMM yyyy")
+
+            Dim dt As DataTable = loadDatatable()
+            Me.dgvDespatchedList.DataSource = dt
+            Me.dgvDespatchedList.DataBind()
+
+        End If
+
+    End Sub
+
+    Private Sub Page_Error(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.Error
+        Dim objErr1 As Exception = Server.GetLastError().GetBaseException()
+
+        Dim strErrorMessage As String = String.Empty
+
+        strErrorMessage &= "Error In: " & Request.Url.ToString() & Environment.NewLine & Environment.NewLine
+
+        strErrorMessage &= "Server.GetLastError().GetBaseException()" & Environment.NewLine & Environment.NewLine
+
+        strErrorMessage &= "Error Message: " & objErr1.Message & Environment.NewLine
+        strErrorMessage &= "Stack Trace:" & Environment.NewLine
+        strErrorMessage &= objErr1.StackTrace & Environment.NewLine & Environment.NewLine
+
+        Dim objErr2 As Exception = Server.GetLastError()
+
+        strErrorMessage &= "Server.GetLastError()" & Environment.NewLine & Environment.NewLine
+
+        strErrorMessage &= "Error Message: " & objErr2.Message & Environment.NewLine
+        strErrorMessage &= "Stack Trace:" & Environment.NewLine
+        strErrorMessage &= objErr2.StackTrace & Environment.NewLine
+
+        EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & strErrorMessage)
+
+        Server.ClearError()
+
+        Response.Redirect("GenericErrorPage.aspx", False)
+    End Sub
+
+    Private Function getPageInfo() As String
+
+        Dim strPageInfo As String = String.Empty
+        Dim strName As String = String.Empty
+        If Session.Contents.Count > 0 Then
+            strPageInfo &= "Session Variables" & Environment.NewLine
+            For Each strName In Session.Contents
+                strPageInfo &= strName & ": " & CStr(Session.Contents(strName)) & Environment.NewLine
+            Next
+        Else
+            strPageInfo &= "No Session Variables" & Environment.NewLine
+        End If
+
+        strPageInfo &= Environment.NewLine
+        If Me.HasControls Then
+            strPageInfo &= "Form Controls" & Environment.NewLine
+            getPageControls(Me, strPageInfo)
+        Else
+            strPageInfo &= "No Form Controls" & Environment.NewLine
+        End If
+        Return strPageInfo
+
+    End Function
+
+    Private Sub getPageControls(ByVal ctrl As Control, ByRef strPageControls As String)
+
+        If ctrl.HasControls Then
+            For Each childCtrl As Control In ctrl.Controls
+                getPageControls(childCtrl, strPageControls)
+            Next
+        Else
+            Select Case ctrl.GetType.Name
+                Case "TextBox"
+                    Dim frmTxt As TextBox
+                    frmTxt = DirectCast(ctrl, TextBox)
+                    strPageControls &= frmTxt.ID & ": " & Left(frmTxt.Text, 100) & Environment.NewLine
+                Case "DropDownList"
+                    Dim frmCbo As DropDownList
+                    frmCbo = DirectCast(ctrl, DropDownList)
+                    If frmCbo.Items.Count > 0 Then
+                        strPageControls &= frmCbo.ID & ": " & frmCbo.SelectedItem.Text & " (" & frmCbo.SelectedValue & ")" & Environment.NewLine
+                    Else
+                        strPageControls &= frmCbo.ID & ": Not Populated" & Environment.NewLine
+                    End If
+                Case "CheckBox"
+                    Dim frmChk As CheckBox
+                    frmChk = DirectCast(ctrl, CheckBox)
+                    strPageControls &= frmChk.ID & ": " & frmChk.Checked & Environment.NewLine
+                Case "RadioButton"
+                    Dim frmRdo As RadioButton
+                    frmRdo = DirectCast(ctrl, RadioButton)
+                    strPageControls &= frmRdo.ID & ": " & frmRdo.Checked & Environment.NewLine
+                Case "RadioButtonList"
+                    Dim frmRdoLst As RadioButtonList
+                    frmRdoLst = DirectCast(ctrl, RadioButtonList)
+                    If frmRdoLst.SelectedIndex >= 0 Then
+                        strPageControls &= frmRdoLst.ID & ": " & frmRdoLst.SelectedItem.Text & " (" & frmRdoLst.SelectedValue & ")" & Environment.NewLine
+                    Else
+                        strPageControls &= frmRdoLst.ID & ": Not Selected" & Environment.NewLine
+                    End If
+            End Select
+        End If
+
+    End Sub
+
+    Protected Sub btnLogout_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles btnLogout.Click
+
+        Response.Redirect("Logout.aspx", False)
+
+    End Sub
+
+    Protected Function loadDatatable() As DataTable
+
+        Dim service As New AppService
+        Dim dt As DataTable = createDatatable()
+        Dim dtMain As DataTable = service.getToBeDespatchedList(CInt(Me.txtProductTypeID.Text))
+        service = Nothing
+
+        For i As Integer = 0 To dtMain.Rows.Count - 1
+            Dim drow As DataRow = dt.NewRow
+
+            drow("ScheduleID") = dtMain.Rows(i)("ID")
+            drow("BranchName") = dtMain.Rows(i)("BranchName")
+            drow("ReferenceNumber") = dtMain.Rows(i)("OrderReference")
+            drow("ReferenceName") = dtMain.Rows(i)("CustomerName")
+            drow("NoOfPanels") = dtMain.Rows(i)("TotalPanels")
+            drow("TotalSQM") = dtMain.Rows(i)("TotalSQM")
+
+            drow("hidDespatchID") = dtMain.Rows(i)("DespatchID")
+            drow("hidDespatchStatus") = dtMain.Rows(i)("DespatchStatus")
+            drow("hidDespatchDate") = dtMain.Rows(i)("DespatchDate")
+            drow("Despatch") = False
+            If Not IsDBNull(dtMain.Rows(i)("DespatchStatus")) Then
+                If CInt(dtMain.Rows(i)("DespatchStatus")) > 0 Then
+                    drow("Despatch") = True
+                End If
+            End If
+            dt.Rows.Add(drow)
+            drow = Nothing
+        Next
+        Return dt
+
+    End Function
+
+    Protected Function createDatatable() As DataTable
+
+        Dim dt As DataTable = New DataTable
+        Dim col As DataColumn = New DataColumn
+        col.ColumnName = "ScheduleID"
+        col.DataType = System.Type.GetType("System.Int32")
+        dt.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "BranchName"
+        col.DataType = System.Type.GetType("System.String")
+        dt.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "ReferenceNumber"
+        col.DataType = System.Type.GetType("System.String")
+        dt.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "ReferenceName"
+        col.DataType = System.Type.GetType("System.String")
+        dt.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "NoOfPanels"
+        col.DataType = System.Type.GetType("System.Int32")
+        dt.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "TotalSQM"
+        col.DataType = System.Type.GetType("System.Decimal")
+        dt.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "hidDespatchID"
+        col.DataType = System.Type.GetType("System.Int32")
+        dt.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "hidDespatchStatus"
+        col.DataType = System.Type.GetType("System.Int32")
+        dt.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "hidDespatchDate"
+        col.DataType = System.Type.GetType("System.DateTime")
+        dt.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "Despatch"
+        col.DataType = System.Type.GetType("System.Boolean")
+        dt.Columns.Add(col)
+        col = Nothing
+        Return dt
+
+    End Function
+
+    Protected Sub btnSave_Click(sender As Object, e As System.EventArgs) Handles btnSave.Click
+
+        Dim service As New AppService
+        Dim bolContinue As Boolean = True
+
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlClient.SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim trans As SqlClient.SqlTransaction = Nothing
+        dbConn = Nothing
+        btnSave.Enabled = False
+        btnSave.CssClass = "form-button-disabled"
+        lblStatus.Text = String.Empty
+
+        Try
+
+            cnn.Open()
+            trans = cnn.BeginTransaction
+
+            Dim dt As DataTable = setJobStagesValues()
+            For i As Integer = 0 To dt.Rows.Count - 1
+                Dim cJobStages As New JobStages
+                cJobStages.JobStagesID = CInt(dt.Rows(i)("JobStagesID"))
+                cJobStages.StageID = CInt(dt.Rows(i)("StageID"))
+                cJobStages.StageStatus = CInt(dt.Rows(i)("StageStatus"))
+                cJobStages.ScheduleID = CInt(dt.Rows(i)("ScheduleID"))
+                If cJobStages.StageStatus = 3 Then
+                    cJobStages.CompletedDateTime = CDate(Me.txtDespatchDate.Text)
+                Else
+                    cJobStages.CompletedDateTime = Constants.DEFAULT_DATE_VALUE
+                End If
+
+                If cJobStages.JobStagesID = Constants.DEFAULT_INTEGER_VALUE Then
+                    Dim intID As Integer = service.addJobStages(cJobStages, cnn, trans)
+                    If intID = Constants.DEFAULT_INTEGER_VALUE Then
+                        bolContinue = False
+                    End If
+                Else
+                    bolContinue = service.updateJobStages(cJobStages, cnn, trans)
+                End If
+
+                If bolContinue Then
+                    bolContinue = service.addJobStagesHistoryRecord(cJobStages, CInt(Session("sessUserID")), cnn, trans)
+                End If
+
+                If bolContinue Then
+                    'update orderstatus to despatched
+                    Dim cProductionSchedule As ProductionSchedule = service.getProdScheduleClsByID(CInt(dt.Rows(i)("ScheduleID")), cnn, trans)
+                    Dim cNewProductionSchedule As ProductionSchedule = CType(cProductionSchedule.Clone, ProductionSchedule)
+                    cNewProductionSchedule.OrderStatus = 4
+
+                    bolContinue = service.updateProductionScheduleByID(cNewProductionSchedule, cnn, trans)
+
+                    If bolContinue Then
+                        bolContinue = service.addProdScheduleHistoryRcd(0, cProductionSchedule, cnn, trans)
+                    End If
+                End If
+
+                If bolContinue = False Then
+                    Exit For
+                End If
+            Next
+
+            If bolContinue Then
+                trans.Commit()
+                Response.Redirect("ToBeDespatchedUpdate.aspx", False)
+            Else
+                EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - Transaction Rolled Back" & Environment.NewLine & getPageInfo())
+                trans.Rollback()
+                If lblStatus.Text = String.Empty Then
+                    lblStatus.Text = "Error saving details. Please try again."
+                End If
+                btnSave.Enabled = True
+                btnSave.CssClass = "form-button"
+            End If
+
+        Catch ex As Exception
+            If Not trans Is Nothing Then
+                trans.Rollback()
+            End If
+            If cnn.State = ConnectionState.Open Then
+                cnn.Close()
+            End If
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine & getPageInfo())
+            bolContinue = False
+        Finally
+            trans.Dispose()
+            trans = Nothing
+            If cnn.State = ConnectionState.Open Then
+                cnn.Close()
+            End If
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+        service = Nothing
+
+    End Sub
+
+    Protected Function setJobStagesValues() As DataTable
+
+        Dim intStageCompleted As Integer = 3
+        Dim intStageNotStarted As Integer = 0
+
+        Dim dt As DataTable = New DataTable
+
+        Dim col As DataColumn = New DataColumn
+        col.ColumnName = "AutoID"
+        col.DataType = System.Type.GetType("System.Int32")
+        col.AutoIncrement = True
+        dt.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "ScheduleID"
+        col.DataType = System.Type.GetType("System.Int32")
+        dt.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "JobStagesID"
+        col.DataType = System.Type.GetType("System.Int32")
+        dt.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "StageID"
+        col.DataType = System.Type.GetType("System.Int32")
+        dt.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "StageStatus"
+        col.DataType = System.Type.GetType("System.Int32")
+        dt.Columns.Add(col)
+        col = Nothing
+
+        Dim intID As Integer = Constants.DEFAULT_INTEGER_VALUE
+        Dim intStageID As Integer = 7
+        Dim drow As DataRow = Nothing
+        For Each gvr As GridViewRow In Me.dgvDespatchedList.Rows
+            intID = CInt(dgvDespatchedList.DataKeys(gvr.RowIndex).Value)
+            'despatch stage checks
+            Dim chk As CheckBox = DirectCast(gvr.FindControl("chkDespatch"), CheckBox)
+            Dim hfStatus As HiddenField = DirectCast(gvr.FindControl("hidDespatchStatus"), HiddenField)
+            Dim hfID As HiddenField = DirectCast(gvr.FindControl("hidDespatchID"), HiddenField)
+            If hfID.Value <> String.Empty Then
+                If hfStatus.Value <> 3 Then
+                    If chk.Checked Then
+                        'update to completed
+                        drow = dt.NewRow
+                        drow("ScheduleID") = intID
+                        drow("JobStagesID") = hfID.Value
+                        drow("StageID") = intStageID
+                        drow("StageStatus") = intStageCompleted
+                        dt.Rows.Add(drow)
+                    End If
+                Else
+                    If chk.Checked = False Then
+                        'update to not started
+                        drow = dt.NewRow
+                        drow("ScheduleID") = intID
+                        drow("JobStagesID") = hfID.Value
+                        drow("StageID") = intStageID
+                        drow("StageStatus") = intStageNotStarted
+                        dt.Rows.Add(drow)
+                    End If
+                End If
+            Else
+                'add new record 
+                drow = dt.NewRow
+                drow("ScheduleID") = intID
+                drow("JobStagesID") = Constants.DEFAULT_INTEGER_VALUE
+                drow("StageID") = intStageID
+                If chk.Checked = True Then
+                    drow("StageStatus") = intStageCompleted
+                Else
+                    drow("StageStatus") = intStageNotStarted
+                End If
+                dt.Rows.Add(drow)
+            End If
+            drow = Nothing
+        Next
+        Return dt
+
+    End Function
+
+    Protected Sub btnCancel_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles btnCancel.Click
+
+        Response.Redirect("Home.aspx", False)
+
+    End Sub
+
+    Protected Sub btnHome_Click(sender As Object, e As System.EventArgs) Handles btnHome.Click
+
+        Response.Redirect("Home.aspx", False)
+
+    End Sub
+
+End Class

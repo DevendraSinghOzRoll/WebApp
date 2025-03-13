@@ -1,0 +1,45 @@
+﻿
+Partial Class PlantationRemakeDetails
+    Inherits System.Web.UI.Page
+
+    Protected Sub Page_Load(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.Load
+
+        If Not IsPostBack Then
+
+            Dim intJobNumber As Integer = Constants.DEFAULT_INTEGER_VALUE
+            Dim intSiteID As Integer = Constants.DEFAULT_INTEGER_VALUE
+
+            If Not Request.QueryString.Count = 0 Then
+                If Not IsNothing(Request.Params("JobNumber")) Then
+                    intJobNumber = CInt(Request.Params("JobNumber"))
+                End If
+            End If
+
+            If Not Request.QueryString.Count = 0 Then
+                If Not IsNothing(Request.Params("SiteID")) Then
+                    intSiteID = CInt(Request.Params("SiteID"))
+                End If
+            End If
+
+
+
+
+        End If
+
+    End Sub
+
+    Protected Sub btnHome_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles btnHome.Click
+        Response.Redirect("Home.aspx", False)
+    End Sub
+
+    Protected Sub btnBack_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles btnback.Click
+
+        Response.Redirect("PlantationJobList.aspx", False)
+
+    End Sub
+
+    Protected Sub btnLogout_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles btnLogout.Click
+        Response.Redirect("Logout.aspx", False)
+    End Sub
+
+End Class

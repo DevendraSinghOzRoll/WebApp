@@ -1,0 +1,165 @@
+﻿Imports Microsoft.VisualBasic
+
+Public Class SharedEnums
+
+    Enum AddressType
+        ALL = 0
+        Postal = 1
+        Physical = 2
+        Delivery = 3
+    End Enum
+
+    Enum JobType
+        NONE = 0
+        Retail = 1
+        Wholesale = 2
+        Commercial = 3
+    End Enum
+
+    Enum QuoteType
+        NONE = 0
+        Quick = 1
+        Normal = 2
+    End Enum
+
+    Enum CoatingType
+        NONE = 0
+        StandardPowderCoat = 1
+        PremiumPowderCoat = 2
+        PrestigePowderCoat = 3
+        Knotwood = 4
+    End Enum
+
+    ''' <summary>
+    ''' Matches PK ID in tblLouvreExtraPrices.
+    ''' </summary>
+    Enum LouvreExtraPrices
+        VerticalBlades = 1
+        GlassInfills
+        Blades150mm
+        RakedPanelsWithFlatSheetInfillPC
+        RakedPanelsWithFixedBlades
+        ExtraColours
+        CurvedTrack
+        MadeToMeasureFlashing
+        BladeLock
+        ExtraTrack
+        LockableDoorHandle
+        TwinBoltFlushBolt
+        StandoffFeet
+        UChannel25mmOr50mm
+        HSection
+        AluminiumBox50x50x3
+        AluminiumAngle50x50x3
+        AluminuimFlatBar50x3
+        AluminiumFlatBar100x3
+        InsectScreen
+        PremiumLockableDoorHandle
+        FlushBolt
+    End Enum
+
+    Enum InsertTypes
+        NONE = 0
+        HorizontalBlade
+        VerticalBlade
+        ClearGlass
+        GreyGlass
+    End Enum
+
+    Enum BladeSizes
+        NONE = 0
+        Blade90mm
+        Blade150mm
+    End Enum
+
+    Enum LockOptions
+        NONE = 0
+        HandleLockInsideAndOut
+        PremiumHandleLockInsideAndOut
+        KnobsetLockInsideAndOut
+        TwinFlushBoltLocking
+        TwinFlushBoltNonLocking
+    End Enum
+
+    Enum FixedPanelChannel
+        NONE = 1
+        AngleSides
+        Sides25mm
+        Sides50mm
+    End Enum
+
+    Enum LouvreTypes
+        NONE = 0
+        BiFold
+        Sliding1Track
+        Sliding2Track
+        Sliding3Track
+        Sliding4Track
+        Stacker
+        Fixed
+        FixedBladeFixedPanel
+        FixedBladesInAngle
+        Frame
+        HingedPanelLeft
+        HingedPanelRight
+        Hinged2Panels
+        StandOff
+    End Enum
+
+    Enum FlushBolts
+        Short35mm = 1
+        Long30mm
+        ExLong890mm
+        'TwinFlushBolt - REMOVED
+        Short35mmWithExtendedTip = 5
+        Long30mmWithExtendedTip
+        ExLong890mmWithExtendedTip
+    End Enum
+
+    Enum TopTrackTypes
+        NONE = 0
+        CL
+        DLiWithSubHead
+        DLiWithoutSubHead
+        Box60x40
+        RollerTrack
+    End Enum
+
+    Enum LouvreStyles
+        NONE = 0
+        'DL = 1 ' DISCONTINUED
+        DLi = 2
+        CL
+    End Enum
+
+    Enum MakeOpen
+        NONE = 0
+        Make
+        Opening
+    End Enum
+
+    <Flags>
+    Enum ExtraProductPageVisibility
+        ALL = 0
+        Portal_AddLouvreOrder
+        OZRoll_AcceptOrder
+        Portal_LouvreQuickCalculator
+    End Enum
+
+    Enum ProductionScheduleStatus
+        Quote = 0
+        AwaitingAcceptance
+        PaperworkProcessing
+        InProduction
+        Despatch
+        Invoiced
+        EnteredIntoShutterPro
+        Collected
+        Cancelled
+        Picking
+        PreProduction
+        CheckMeasure
+        Installed
+    End Enum
+
+End Class

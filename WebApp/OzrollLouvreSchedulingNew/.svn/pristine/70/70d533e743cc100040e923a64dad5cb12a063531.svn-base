@@ -1,0 +1,1176 @@
+﻿Imports Microsoft.VisualBasic
+
+Public Class OSCJobRegister
+
+    Implements ICloneable
+
+    Private _JobRegisterID As Integer
+    Private _QuoteRegisterID As Integer
+    Private _DateSold As Date
+    Private _SoldBy As Integer
+    Private _Status As Integer
+    Private _Code As String
+    Private _ContractNo As String
+    Private _Clients_ID As Integer
+    Private _ProjectName As String
+    Private _ProjectAddress As String
+    Private _ProjectSuburb As String
+    Private _ProjectPostcode As String
+    Private _ProjectState As String
+    Private _ProjectCountry As String
+    Private _Style As Integer
+    Private _Type As Integer
+    Private _Colour As String
+    Private _DateRequired As Date
+    Private _BriefJobDescription As String
+    Private _JobNotes As String
+    Private _Contact1Name As String
+    Private _Contact1HmPh As String
+    Private _Contact1WkPH As String
+    Private _Contact1Fax As String
+    Private _Contact1Mob As String
+    Private _Contact1Email As String
+    Private _Contact1Type As Integer
+    Private _Contact2Name As String
+    Private _Contact2HmPh As String
+    Private _Contact2WkPH As String
+    Private _Contact2Fax As String
+    Private _Contact2Mob As String
+    Private _Contact2Email As String
+    Private _Contact2Type As Integer
+    Private _Contact3Name As String
+    Private _Contact3HmPh As String
+    Private _Contact3WkPH As String
+    Private _Contact3Fax As String
+    Private _Contact3Mob As String
+    Private _Contact3Email As String
+    Private _Contact3Type As Integer
+    Private _ContractTotal As Decimal
+    Private _PONumber As String
+    Private _DepositDate As Date
+    Private _Deposit As Decimal
+    Private _ProgressClaim1Date As Date
+    Private _ProgressClaim1 As Decimal
+    Private _ProgressClaim2Date As Date
+    Private _ProgressClaim2 As Decimal
+    Private _ProgressClaim3Date As Date
+    Private _ProgressClaim3 As Decimal
+    Private _ProgressClaim4Date As Date
+    Private _ProgressClaim4 As Decimal
+    Private _Balance As Decimal
+    Private _InvoicedDate As Date
+    Private _Variation1 As Decimal
+    Private _Retention1DueDate As Date
+    Private _Retention1Amount As Decimal
+    Private _Retention2DueDate As Date
+    Private _Retention2Amount As Decimal
+    Private _Variation1Description As String
+    Private _AdjustedContractValue1 As Decimal
+    Private _Variation2 As Decimal
+    Private _Variation2Description As String
+    Private _AdjustedContractValue2 As Decimal
+    Private _Variation3 As Decimal
+    Private _Variation3Description As String
+    Private _AdjustedContractValue3 As Decimal
+    Private _Variation4 As Decimal
+    Private _Variation4Description As String
+    Private _AdjustedContractValue4 As Decimal
+    Private _Quantity As Integer
+    Private _SQM As String
+    Private _ManHours As String
+    Private _ToCheckMeasure As Date
+    Private _CheckMeasureBy As Integer
+    Private _CheckMeasured As Date
+    Private _CMNotReq As Boolean
+    Private _ToProduction As Date
+    Private _Cutting As Date
+    Private _Prep As Date
+    Private _ToPowdercoating As Date
+    Private _ETAPC As Date
+    Private _ReturnPC As Date
+    Private _Assembly As Date
+    Private _QCDone As Date
+    Private _NoofReworks As String
+    Private _ToDespatch As Date
+    Private _Shipped As Date
+    Private _ProdNotes As String
+    Private _InstallBooked As Date
+    Private _Fitter As Integer
+    Private _FittingTime As Date
+    Private _InstallComplete As Boolean
+    Private _FittersNotes As String
+    Private _OnTime As String
+    Private _LateReason As Integer
+    Private _DIFOTNotes As String
+    Private _WarrantyDateReport As Date
+    Private _CurrentProblem As String
+    Private _MaterialRequire As String
+    Private _POrderID As Integer
+    Private _ScheduledDate As Date
+
+    Private _ColourID As Integer
+    Private _OrderTypeID As Integer
+
+    Public Property JobRegisterID() As Integer
+        Get
+            Return _JobRegisterID
+        End Get
+        Set(ByVal value As Integer)
+            _JobRegisterID = value
+        End Set
+    End Property
+
+    Public Property QuoteRegisterID() As Integer
+        Get
+            Return _QuoteRegisterID
+        End Get
+        Set(ByVal value As Integer)
+            _QuoteRegisterID = value
+        End Set
+    End Property
+
+    Public Property DateSold() As Date
+        Get
+            Return _DateSold
+        End Get
+        Set(ByVal value As Date)
+            _DateSold = value
+        End Set
+    End Property
+
+    Public Property SoldBy() As Integer
+        Get
+            Return _SoldBy
+        End Get
+        Set(ByVal value As Integer)
+            _SoldBy = value
+        End Set
+    End Property
+
+    Public Property Status() As Integer
+        Get
+            Return _Status
+        End Get
+        Set(ByVal value As Integer)
+            _Status = value
+        End Set
+    End Property
+
+    Public Property Code() As String
+        Get
+            Return _Code
+        End Get
+        Set(ByVal value As String)
+            _Code = value
+        End Set
+    End Property
+
+    Public Property ContractNo() As String
+        Get
+            Return _ContractNo
+        End Get
+        Set(ByVal value As String)
+            _ContractNo = value
+        End Set
+    End Property
+
+    Public Property Clients_ID() As Integer
+        Get
+            Return _Clients_ID
+        End Get
+        Set(ByVal value As Integer)
+            _Clients_ID = value
+        End Set
+    End Property
+
+    Public Property ProjectName() As String
+        Get
+            Return _ProjectName
+        End Get
+        Set(ByVal value As String)
+            _ProjectName = value
+        End Set
+    End Property
+
+    Public Property ProjectAddress() As String
+        Get
+            Return _ProjectAddress
+        End Get
+        Set(ByVal value As String)
+            _ProjectAddress = value
+        End Set
+    End Property
+
+    Public Property ProjectSuburb() As String
+        Get
+            Return _ProjectSuburb
+        End Get
+        Set(ByVal value As String)
+            _ProjectSuburb = value
+        End Set
+    End Property
+
+    Public Property ProjectPostcode() As String
+        Get
+            Return _ProjectPostcode
+        End Get
+        Set(ByVal value As String)
+            _ProjectPostcode = value
+        End Set
+    End Property
+
+    Public Property ProjectState() As String
+        Get
+            Return _ProjectState
+        End Get
+        Set(ByVal value As String)
+            _ProjectState = value
+        End Set
+    End Property
+
+    Public Property ProjectCountry() As String
+        Get
+            Return _ProjectCountry
+        End Get
+        Set(ByVal value As String)
+            _ProjectCountry = value
+        End Set
+    End Property
+
+    Public Property Style() As Integer
+        Get
+            Return _Style
+        End Get
+        Set(ByVal value As Integer)
+            _Style = value
+        End Set
+    End Property
+
+    Public Property Type() As Integer
+        Get
+            Return _Type
+        End Get
+        Set(ByVal value As Integer)
+            _Type = value
+        End Set
+    End Property
+
+    Public Property Colour() As String
+        Get
+            Return _Colour
+        End Get
+        Set(ByVal value As String)
+            _Colour = value
+        End Set
+    End Property
+
+    Public Property DateRequired() As Date
+        Get
+            Return _DateRequired
+        End Get
+        Set(ByVal value As Date)
+            _DateRequired = value
+        End Set
+    End Property
+
+    Public Property BriefJobDescription() As String
+        Get
+            Return _BriefJobDescription
+        End Get
+        Set(ByVal value As String)
+            _BriefJobDescription = value
+        End Set
+    End Property
+
+    Public Property JobNotes() As String
+        Get
+            Return _JobNotes
+        End Get
+        Set(ByVal value As String)
+            _JobNotes = value
+        End Set
+    End Property
+
+    Public Property Contact1Name() As String
+        Get
+            Return _Contact1Name
+        End Get
+        Set(ByVal value As String)
+            _Contact1Name = value
+        End Set
+    End Property
+
+    Public Property Contact1HmPh() As String
+        Get
+            Return _Contact1HmPh
+        End Get
+        Set(ByVal value As String)
+            _Contact1HmPh = value
+        End Set
+    End Property
+
+    Public Property Contact1WkPH() As String
+        Get
+            Return _Contact1WkPH
+        End Get
+        Set(ByVal value As String)
+            _Contact1WkPH = value
+        End Set
+    End Property
+
+    Public Property Contact1Fax() As String
+        Get
+            Return _Contact1Fax
+        End Get
+        Set(ByVal value As String)
+            _Contact1Fax = value
+        End Set
+    End Property
+
+    Public Property Contact1Mob() As String
+        Get
+            Return _Contact1Mob
+        End Get
+        Set(ByVal value As String)
+            _Contact1Mob = value
+        End Set
+    End Property
+
+    Public Property Contact1Email() As String
+        Get
+            Return _Contact1Email
+        End Get
+        Set(ByVal value As String)
+            _Contact1Email = value
+        End Set
+    End Property
+
+    Public Property Contact1Type() As Integer
+        Get
+            Return _Contact1Type
+        End Get
+        Set(ByVal value As Integer)
+            _Contact1Type = value
+        End Set
+    End Property
+
+    Public Property Contact2Name() As String
+        Get
+            Return _Contact2Name
+        End Get
+        Set(ByVal value As String)
+            _Contact2Name = value
+        End Set
+    End Property
+
+    Public Property Contact2HmPh() As String
+        Get
+            Return _Contact2HmPh
+        End Get
+        Set(ByVal value As String)
+            _Contact2HmPh = value
+        End Set
+    End Property
+
+    Public Property Contact2WkPH() As String
+        Get
+            Return _Contact2WkPH
+        End Get
+        Set(ByVal value As String)
+            _Contact2WkPH = value
+        End Set
+    End Property
+
+    Public Property Contact2Fax() As String
+        Get
+            Return _Contact2Fax
+        End Get
+        Set(ByVal value As String)
+            _Contact2Fax = value
+        End Set
+    End Property
+
+    Public Property Contact2Mob() As String
+        Get
+            Return _Contact2Mob
+        End Get
+        Set(ByVal value As String)
+            _Contact2Mob = value
+        End Set
+    End Property
+
+    Public Property Contact2Email() As String
+        Get
+            Return _Contact2Email
+        End Get
+        Set(ByVal value As String)
+            _Contact2Email = value
+        End Set
+    End Property
+
+    Public Property Contact2Type() As Integer
+        Get
+            Return _Contact2Type
+        End Get
+        Set(ByVal value As Integer)
+            _Contact2Type = value
+        End Set
+    End Property
+
+    Public Property Contact3Name() As String
+        Get
+            Return _Contact3Name
+        End Get
+        Set(ByVal value As String)
+            _Contact3Name = value
+        End Set
+    End Property
+
+    Public Property Contact3HmPh() As String
+        Get
+            Return _Contact3HmPh
+        End Get
+        Set(ByVal value As String)
+            _Contact3HmPh = value
+        End Set
+    End Property
+
+    Public Property Contact3WkPH() As String
+        Get
+            Return _Contact3WkPH
+        End Get
+        Set(ByVal value As String)
+            _Contact3WkPH = value
+        End Set
+    End Property
+
+    Public Property Contact3Fax() As String
+        Get
+            Return _Contact3Fax
+        End Get
+        Set(ByVal value As String)
+            _Contact3Fax = value
+        End Set
+    End Property
+
+    Public Property Contact3Mob() As String
+        Get
+            Return _Contact3Mob
+        End Get
+        Set(ByVal value As String)
+            _Contact3Mob = value
+        End Set
+    End Property
+
+    Public Property Contact3Email() As String
+        Get
+            Return _Contact3Email
+        End Get
+        Set(ByVal value As String)
+            _Contact3Email = value
+        End Set
+    End Property
+
+    Public Property Contact3Type() As Integer
+        Get
+            Return _Contact3Type
+        End Get
+        Set(ByVal value As Integer)
+            _Contact3Type = value
+        End Set
+    End Property
+
+    Public Property ContractTotal() As Decimal
+        Get
+            Return _ContractTotal
+        End Get
+        Set(ByVal value As Decimal)
+            _ContractTotal = value
+        End Set
+    End Property
+
+    Public Property PONumber() As String
+        Get
+            Return _PONumber
+        End Get
+        Set(ByVal value As String)
+            _PONumber = value
+        End Set
+    End Property
+
+    Public Property DepositDate() As Date
+        Get
+            Return _DepositDate
+        End Get
+        Set(ByVal value As Date)
+            _DepositDate = value
+        End Set
+    End Property
+
+    Public Property Deposit() As Decimal
+        Get
+            Return _Deposit
+        End Get
+        Set(ByVal value As Decimal)
+            _Deposit = value
+        End Set
+    End Property
+
+    Public Property ProgressClaim1Date() As Date
+        Get
+            Return _ProgressClaim1Date
+        End Get
+        Set(ByVal value As Date)
+            _ProgressClaim1Date = value
+        End Set
+    End Property
+
+    Public Property ProgressClaim1() As Decimal
+        Get
+            Return _ProgressClaim1
+        End Get
+        Set(ByVal value As Decimal)
+            _ProgressClaim1 = value
+        End Set
+    End Property
+
+    Public Property ProgressClaim2Date() As Date
+        Get
+            Return _ProgressClaim2Date
+        End Get
+        Set(ByVal value As Date)
+            _ProgressClaim2Date = value
+        End Set
+    End Property
+
+    Public Property ProgressClaim2() As Decimal
+        Get
+            Return _ProgressClaim2
+        End Get
+        Set(ByVal value As Decimal)
+            _ProgressClaim2 = value
+        End Set
+    End Property
+
+    Public Property ProgressClaim3Date() As Date
+        Get
+            Return _ProgressClaim3Date
+        End Get
+        Set(ByVal value As Date)
+            _ProgressClaim3Date = value
+        End Set
+    End Property
+
+    Public Property ProgressClaim3() As Decimal
+        Get
+            Return _ProgressClaim3
+        End Get
+        Set(ByVal value As Decimal)
+            _ProgressClaim3 = value
+        End Set
+    End Property
+
+    Public Property ProgressClaim4Date() As Date
+        Get
+            Return _ProgressClaim4Date
+        End Get
+        Set(ByVal value As Date)
+            _ProgressClaim4Date = value
+        End Set
+    End Property
+
+    Public Property ProgressClaim4() As Decimal
+        Get
+            Return _ProgressClaim4
+        End Get
+        Set(ByVal value As Decimal)
+            _ProgressClaim4 = value
+        End Set
+    End Property
+
+    Public Property Balance() As Decimal
+        Get
+            Return _Balance
+        End Get
+        Set(ByVal value As Decimal)
+            _Balance = value
+        End Set
+    End Property
+
+    Public Property InvoicedDate() As Date
+        Get
+            Return _InvoicedDate
+        End Get
+        Set(ByVal value As Date)
+            _InvoicedDate = value
+        End Set
+    End Property
+
+    Public Property Variation1() As Decimal
+        Get
+            Return _Variation1
+        End Get
+        Set(ByVal value As Decimal)
+            _Variation1 = value
+        End Set
+    End Property
+
+    Public Property Retention1DueDate() As Date
+        Get
+            Return _Retention1DueDate
+        End Get
+        Set(ByVal value As Date)
+            _Retention1DueDate = value
+        End Set
+    End Property
+
+    Public Property Retention1Amount() As Decimal
+        Get
+            Return _Retention1Amount
+        End Get
+        Set(ByVal value As Decimal)
+            _Retention1Amount = value
+        End Set
+    End Property
+
+    Public Property Variation1Description() As String
+        Get
+            Return _Variation1Description
+        End Get
+        Set(ByVal value As String)
+            _Variation1Description = value
+        End Set
+    End Property
+
+    Public Property AdjustedContractValue1() As Decimal
+        Get
+            Return _AdjustedContractValue1
+        End Get
+        Set(ByVal value As Decimal)
+            _AdjustedContractValue1 = value
+        End Set
+    End Property
+
+    Public Property Variation2() As Decimal
+        Get
+            Return _Variation2
+        End Get
+        Set(ByVal value As Decimal)
+            _Variation2 = value
+        End Set
+    End Property
+
+    Public Property Retention2DueDate() As Date
+        Get
+            Return _Retention2DueDate
+        End Get
+        Set(ByVal value As Date)
+            _Retention2DueDate = value
+        End Set
+    End Property
+
+    Public Property Retention2Amount() As Decimal
+        Get
+            Return _Retention2Amount
+        End Get
+        Set(ByVal value As Decimal)
+            _Retention2Amount = value
+        End Set
+    End Property
+
+    Public Property Variation2Description() As String
+        Get
+            Return _Variation2Description
+        End Get
+        Set(ByVal value As String)
+            _Variation2Description = value
+        End Set
+    End Property
+
+    Public Property AdjustedContractValue2() As Decimal
+        Get
+            Return _AdjustedContractValue2
+        End Get
+        Set(ByVal value As Decimal)
+            _AdjustedContractValue2 = value
+        End Set
+    End Property
+
+    Public Property Variation3() As Decimal
+        Get
+            Return _Variation3
+        End Get
+        Set(ByVal value As Decimal)
+            _Variation3 = value
+        End Set
+    End Property
+
+    Public Property Variation3Description() As String
+        Get
+            Return _Variation3Description
+        End Get
+        Set(ByVal value As String)
+            _Variation3Description = value
+        End Set
+    End Property
+
+    Public Property AdjustedContractValue3() As Decimal
+        Get
+            Return _AdjustedContractValue3
+        End Get
+        Set(ByVal value As Decimal)
+            _AdjustedContractValue3 = value
+        End Set
+    End Property
+
+    Public Property Variation4() As Decimal
+        Get
+            Return _Variation4
+        End Get
+        Set(ByVal value As Decimal)
+            _Variation4 = value
+        End Set
+    End Property
+
+    Public Property Variation4Description() As String
+        Get
+            Return _Variation4Description
+        End Get
+        Set(ByVal value As String)
+            _Variation4Description = value
+        End Set
+    End Property
+
+    Public Property AdjustedContractValue4() As Decimal
+        Get
+            Return _AdjustedContractValue4
+        End Get
+        Set(ByVal value As Decimal)
+            _AdjustedContractValue4 = value
+        End Set
+    End Property
+
+    Public Property Quantity() As Integer
+        Get
+            Return _Quantity
+        End Get
+        Set(ByVal value As Integer)
+            _Quantity = value
+        End Set
+    End Property
+
+    Public Property SQM() As String
+        Get
+            Return _SQM
+        End Get
+        Set(ByVal value As String)
+            _SQM = value
+        End Set
+    End Property
+
+    Public Property ManHours() As String
+        Get
+            Return _ManHours
+        End Get
+        Set(ByVal value As String)
+            _ManHours = value
+        End Set
+    End Property
+
+    Public Property ToCheckMeasure() As Date
+        Get
+            Return _ToCheckMeasure
+        End Get
+        Set(ByVal value As Date)
+            _ToCheckMeasure = value
+        End Set
+    End Property
+
+    Public Property CheckMeasureBy() As Integer
+        Get
+            Return _CheckMeasureBy
+        End Get
+        Set(ByVal value As Integer)
+            _CheckMeasureBy = value
+        End Set
+    End Property
+
+    Public Property CheckMeasured() As Date
+        Get
+            Return _CheckMeasured
+        End Get
+        Set(ByVal value As Date)
+            _CheckMeasured = value
+        End Set
+    End Property
+
+    Public Property CMNotReq() As Boolean
+        Get
+            Return _CMNotReq
+        End Get
+        Set(ByVal value As Boolean)
+            _CMNotReq = value
+        End Set
+    End Property
+
+    Public Property ToProduction() As Date
+        Get
+            Return _ToProduction
+        End Get
+        Set(ByVal value As Date)
+            _ToProduction = value
+        End Set
+    End Property
+
+    Public Property Cutting() As Date
+        Get
+            Return _Cutting
+        End Get
+        Set(ByVal value As Date)
+            _Cutting = value
+        End Set
+    End Property
+
+    Public Property Prep() As Date
+        Get
+            Return _Prep
+        End Get
+        Set(ByVal value As Date)
+            _Prep = value
+        End Set
+    End Property
+
+    Public Property ToPowdercoating() As Date
+        Get
+            Return _ToPowdercoating
+        End Get
+        Set(ByVal value As Date)
+            _ToPowdercoating = value
+        End Set
+    End Property
+
+    Public Property ETAPC() As Date
+        Get
+            Return _ETAPC
+        End Get
+        Set(ByVal value As Date)
+            _ETAPC = value
+        End Set
+    End Property
+
+    Public Property ReturnPC() As Date
+        Get
+            Return _ReturnPC
+        End Get
+        Set(ByVal value As Date)
+            _ReturnPC = value
+        End Set
+    End Property
+
+    Public Property Assembly() As Date
+        Get
+            Return _Assembly
+        End Get
+        Set(ByVal value As Date)
+            _Assembly = value
+        End Set
+    End Property
+
+    Public Property QCDone() As Date
+        Get
+            Return _QCDone
+        End Get
+        Set(ByVal value As Date)
+            _QCDone = value
+        End Set
+    End Property
+
+    Public Property NoofReworks() As String
+        Get
+            Return _NoofReworks
+        End Get
+        Set(ByVal value As String)
+            _NoofReworks = value
+        End Set
+    End Property
+
+    Public Property ToDespatch() As Date
+        Get
+            Return _ToDespatch
+        End Get
+        Set(ByVal value As Date)
+            _ToDespatch = value
+        End Set
+    End Property
+
+    Public Property Shipped() As Date
+        Get
+            Return _Shipped
+        End Get
+        Set(ByVal value As Date)
+            _Shipped = value
+        End Set
+    End Property
+
+    Public Property ProdNotes() As String
+        Get
+            Return _ProdNotes
+        End Get
+        Set(ByVal value As String)
+            _ProdNotes = value
+        End Set
+    End Property
+
+    Public Property InstallBooked() As Date
+        Get
+            Return _InstallBooked
+        End Get
+        Set(ByVal value As Date)
+            _InstallBooked = value
+        End Set
+    End Property
+
+    Public Property Fitter() As Integer
+        Get
+            Return _Fitter
+        End Get
+        Set(ByVal value As Integer)
+            _Fitter = value
+        End Set
+    End Property
+
+    Public Property FittingTime() As Date
+        Get
+            Return _FittingTime
+        End Get
+        Set(ByVal value As Date)
+            _FittingTime = value
+        End Set
+    End Property
+
+    Public Property InstallComplete() As Boolean
+        Get
+            Return _InstallComplete
+        End Get
+        Set(ByVal value As Boolean)
+            _InstallComplete = value
+        End Set
+    End Property
+
+    Public Property FittersNotes() As String
+        Get
+            Return _FittersNotes
+        End Get
+        Set(ByVal value As String)
+            _FittersNotes = value
+        End Set
+    End Property
+
+    Public Property OnTime() As String
+        Get
+            Return _OnTime
+        End Get
+        Set(ByVal value As String)
+            _OnTime = value
+        End Set
+    End Property
+
+    Public Property LateReason() As Integer
+        Get
+            Return _LateReason
+        End Get
+        Set(ByVal value As Integer)
+            _LateReason = value
+        End Set
+    End Property
+
+    Public Property DIFOTNotes() As String
+        Get
+            Return _DIFOTNotes
+        End Get
+        Set(ByVal value As String)
+            _DIFOTNotes = value
+        End Set
+    End Property
+
+    Public Property WarrantyDateReport() As Date
+        Get
+            Return _WarrantyDateReport
+        End Get
+        Set(ByVal value As Date)
+            _WarrantyDateReport = value
+        End Set
+    End Property
+
+    Public Property CurrentProblem() As String
+        Get
+            Return _CurrentProblem
+        End Get
+        Set(ByVal value As String)
+            _CurrentProblem = value
+        End Set
+    End Property
+
+    Public Property MaterialRequire() As String
+        Get
+            Return _MaterialRequire
+        End Get
+        Set(ByVal value As String)
+            _MaterialRequire = value
+        End Set
+    End Property
+
+    Public Property POrderID() As Integer
+        Get
+            Return _POrderID
+        End Get
+        Set(ByVal value As Integer)
+            _POrderID = value
+        End Set
+    End Property
+
+    Public Property ScheduledDate() As Date
+        Get
+            Return _ScheduledDate
+        End Get
+        Set(ByVal value As Date)
+            _ScheduledDate = value
+        End Set
+    End Property
+
+    Public Property ColourID() As Integer
+        Get
+            Return _ColourID
+        End Get
+        Set(ByVal value As Integer)
+            _ColourID = value
+        End Set
+    End Property
+
+    Public Property OrderTypeID() As Integer
+        Get
+            Return _OrderTypeID
+        End Get
+        Set(ByVal value As Integer)
+            _OrderTypeID = value
+        End Set
+    End Property
+
+    Public Sub New()
+
+        _JobRegisterID = Constants.DEFAULT_INTEGER_VALUE
+        _QuoteRegisterID = Constants.DEFAULT_INTEGER_VALUE
+        _DateSold = Constants.DEFAULT_DATE_VALUE
+        _SoldBy = Constants.DEFAULT_INTEGER_VALUE
+        _Status = Constants.DEFAULT_INTEGER_VALUE
+        _Code = String.Empty
+        _ContractNo = String.Empty
+        _Clients_ID = Constants.DEFAULT_INTEGER_VALUE
+        _ProjectName = String.Empty
+        _ProjectAddress = String.Empty
+        _ProjectSuburb = String.Empty
+        _ProjectPostcode = String.Empty
+        _ProjectState = String.Empty
+        _ProjectCountry = String.Empty
+        _Style = Constants.DEFAULT_INTEGER_VALUE
+        _Type = Constants.DEFAULT_INTEGER_VALUE
+        _Colour = String.Empty
+        _DateRequired = Constants.DEFAULT_DATE_VALUE
+        _BriefJobDescription = String.Empty
+        _JobNotes = String.Empty
+        _Contact1Name = String.Empty
+        _Contact1HmPh = String.Empty
+        _Contact1WkPH = String.Empty
+        _Contact1Fax = String.Empty
+        _Contact1Mob = String.Empty
+        _Contact1Email = String.Empty
+        _Contact1Type = Constants.DEFAULT_INTEGER_VALUE
+        _Contact2Name = String.Empty
+        _Contact2HmPh = String.Empty
+        _Contact2WkPH = String.Empty
+        _Contact2Fax = String.Empty
+        _Contact2Mob = String.Empty
+        _Contact2Email = String.Empty
+        _Contact2Type = Constants.DEFAULT_INTEGER_VALUE
+        _Contact3Name = String.Empty
+        _Contact3HmPh = String.Empty
+        _Contact3WkPH = String.Empty
+        _Contact3Fax = String.Empty
+        _Contact3Mob = String.Empty
+        _Contact3Email = String.Empty
+        _Contact3Type = Constants.DEFAULT_INTEGER_VALUE
+        _ContractTotal = Constants.DEFAULT_DECIMAL_VALUE
+        _PONumber = String.Empty
+        _DepositDate = Constants.DEFAULT_DATE_VALUE
+        _Deposit = Constants.DEFAULT_DECIMAL_VALUE
+        _ProgressClaim1Date = Constants.DEFAULT_DATE_VALUE
+        _ProgressClaim1 = Constants.DEFAULT_DECIMAL_VALUE
+        _ProgressClaim2Date = Constants.DEFAULT_DATE_VALUE
+        _ProgressClaim2 = Constants.DEFAULT_DECIMAL_VALUE
+        _ProgressClaim3Date = Constants.DEFAULT_DATE_VALUE
+        _ProgressClaim3 = Constants.DEFAULT_DECIMAL_VALUE
+        _ProgressClaim4Date = Constants.DEFAULT_DATE_VALUE
+        _ProgressClaim4 = Constants.DEFAULT_DECIMAL_VALUE
+        _Balance = Constants.DEFAULT_DECIMAL_VALUE
+        _InvoicedDate = Constants.DEFAULT_DATE_VALUE
+        _Variation1 = Constants.DEFAULT_DECIMAL_VALUE
+        _Retention1DueDate = Constants.DEFAULT_DATE_VALUE
+        _Retention1Amount = Constants.DEFAULT_DECIMAL_VALUE
+        _Retention2DueDate = Constants.DEFAULT_DATE_VALUE
+        _Retention2Amount = Constants.DEFAULT_DECIMAL_VALUE
+        _Variation1Description = String.Empty
+        _AdjustedContractValue1 = Constants.DEFAULT_DECIMAL_VALUE
+        _Variation2 = Constants.DEFAULT_DECIMAL_VALUE
+        _Variation2Description = String.Empty
+        _AdjustedContractValue2 = Constants.DEFAULT_DECIMAL_VALUE
+        _Variation3 = Constants.DEFAULT_DECIMAL_VALUE
+        _Variation3Description = String.Empty
+        _AdjustedContractValue3 = Constants.DEFAULT_DECIMAL_VALUE
+        _Variation4 = Constants.DEFAULT_DECIMAL_VALUE
+        _Variation4Description = String.Empty
+        _AdjustedContractValue4 = Constants.DEFAULT_DECIMAL_VALUE
+        _Quantity = Constants.DEFAULT_INTEGER_VALUE
+        _SQM = String.Empty
+        _ManHours = String.Empty
+        _ToCheckMeasure = Constants.DEFAULT_DATE_VALUE
+        _CheckMeasureBy = Constants.DEFAULT_INTEGER_VALUE
+        _CheckMeasured = Constants.DEFAULT_DATE_VALUE
+        _CMNotReq = False
+        _ToProduction = Constants.DEFAULT_DATE_VALUE
+        _Cutting = Constants.DEFAULT_DATE_VALUE
+        _Prep = Constants.DEFAULT_DATE_VALUE
+        _ToPowdercoating = Constants.DEFAULT_DATE_VALUE
+        _ETAPC = Constants.DEFAULT_DATE_VALUE
+        _ReturnPC = Constants.DEFAULT_DATE_VALUE
+        _Assembly = Constants.DEFAULT_DATE_VALUE
+        _QCDone = Constants.DEFAULT_DATE_VALUE
+        _NoofReworks = String.Empty
+        _ToDespatch = Constants.DEFAULT_DATE_VALUE
+        _Shipped = Constants.DEFAULT_DATE_VALUE
+        _ProdNotes = String.Empty
+        _InstallBooked = Constants.DEFAULT_DATE_VALUE
+        _Fitter = Constants.DEFAULT_INTEGER_VALUE
+        _FittingTime = Constants.DEFAULT_DATE_VALUE
+        _InstallComplete = False
+        _FittersNotes = String.Empty
+        _OnTime = String.Empty
+        _LateReason = Constants.DEFAULT_INTEGER_VALUE
+        _DIFOTNotes = String.Empty
+        _WarrantyDateReport = Constants.DEFAULT_DATE_VALUE
+        _CurrentProblem = String.Empty
+        _MaterialRequire = String.Empty
+        _POrderID = Constants.DEFAULT_INTEGER_VALUE
+        _ScheduledDate = Constants.DEFAULT_DATE_VALUE
+
+        _ColourID = Constants.DEFAULT_INTEGER_VALUE
+        _OrderTypeID = Constants.DEFAULT_INTEGER_VALUE
+
+    End Sub
+
+    Public Function Clone() As Object Implements ICloneable.Clone
+
+        Return MyBase.MemberwiseClone
+
+    End Function
+
+End Class

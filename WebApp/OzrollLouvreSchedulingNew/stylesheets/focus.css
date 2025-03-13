@@ -1,0 +1,27 @@
+﻿
+/* Works in conjuction with focus.js to indicate UI focus on controls. */
+
+.radio-focus label {
+    text-shadow: 0px 1px 1px grey; 
+}
+
+.radio-no-focus {
+    
+}
+
+.checkbox-focus
+{
+    border: solid 1px #fb9e25;
+    background-color: #fef07f;
+    display: inline-block;          
+}
+
+.checkbox-no-focus 
+{
+    border: solid 1px transparent;
+    display: inline-block;   
+}
+
+a:focus {
+    text-shadow: 0px 1px 1px grey;
+}

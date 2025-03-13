@@ -1,0 +1,733 @@
+﻿Imports Microsoft.VisualBasic
+Imports System.Linq
+Imports SharedEnums
+
+Public Class Costing
+
+    Private _lLouvreExtraPrices As List(Of LouvreExtraPrice) = New List(Of LouvreExtraPrice)
+    Private _lAddressZones As List(Of AddressZone) = New List(Of AddressZone)
+    Private _lColours As List(Of Colour) = New List(Of Colour)
+    Private _CategoryID As Integer = 1
+    Private _EffectiveDateTime As Date
+    Private _Service As New AppService
+
+    Private Const _NO_PRICE_MSG As String = "NOT FOUND"
+    Private Const _MAKE_EXTRA_SIZE_PERCENTAGE As Decimal = 0.1
+
+    Public Sub New(intCategoryID As Integer, dteEffectiveDateTime As Date)
+        _CategoryID = intCategoryID
+        _EffectiveDateTime = dteEffectiveDateTime
+
+        _lLouvreExtraPrices = _Service.GetLouvreExtraPricesByParameters(intCategoryID, dteEffectiveDateTime)
+        _lLouvreExtraPrices = _lLouvreExtraPrices.FindAll(Function(x) x.Discontinued = False)
+
+        _lAddressZones = _Service.GetAddressZones()
+        _lColours = _Service.getColours()
+    End Sub
+
+    Public ReadOnly Property NoPriceMsg() As String
+        Get
+            Return _NO_PRICE_MSG
+        End Get
+    End Property
+
+    Public ReadOnly Property LouvreExtraPricesCache() As List(Of LouvreExtraPrice)
+        Get
+            Return _lLouvreExtraPrices
+        End Get
+    End Property
+
+    Public ReadOnly Property AddressZonesCache() As List(Of AddressZone)
+        Get
+            Return _lAddressZones
+        End Get
+    End Property
+
+#Region "Quick Quote Costing Functions"
+
+    Public Function GetLouvrePriceString(cLouvre As QuoteLouvre, boolFromDBPriceMatrix As Boolean) As String
+        Dim cLouvrePrice As LouvrePrice = Nothing
+        Dim decPrice As Decimal = 0
+        Dim isValid As Boolean = False
+
+        If boolFromDBPriceMatrix Then
+            decPrice = GetLouvrePriceFromDBMatrix(cLouvre, cLouvrePrice)
+        Else
+            decPrice = GetLouvrePriceFromQuoteLouvre(cLouvre, isValid)
+        End If
+
+        If (boolFromDBPriceMatrix AndAlso cLouvrePrice IsNot Nothing) OrElse (Not boolFromDBPriceMatrix AndAlso isValid) Then
+            Return FormatCurrency(decPrice)
+        End If
+
+        Return _NO_PRICE_MSG
+    End Function
+
+    Public Function GetLouvrePriceFromDBMatrix(cLouvre As QuoteLouvre, ByRef cLouvrePriceFound As LouvrePrice) As Decimal
+        Dim decPrice As Decimal = 0
+
+        ' Returned for reference use. If its nothing, then no price was found.
+        cLouvrePriceFound = Nothing
+
+        If cLouvre IsNot Nothing Then
+            If cLouvre.Height > 0 AndAlso cLouvre.Width > 0 Then
+                Dim decSQM As Decimal = (CDec(cLouvre.Height) / SharedFunctions._INT_LOUVRE_SQ_UNIT_SIZE) * (CDec(cLouvre.Width) / SharedFunctions._INT_LOUVRE_SQ_UNIT_SIZE)
+
+                Dim lLouvrePrice As LouvrePrice = _Service.GetLouvrePricesByParameters(_CategoryID,
+                                                                                       cLouvre.LouvreStyleID,
+                                                                                       cLouvre.LouvreTypeID,
+                                                                                       cLouvre.CoatingTypeID,
+                                                                                       _EffectiveDateTime,
+                                                                                       RoundMeasurementForPricingMM(cLouvre.Height),
+                                                                                       RoundMeasurementForPricingMM(cLouvre.Width)).FirstOrDefault
+
+                If lLouvrePrice IsNot Nothing Then
+                    ' Don't multiply by panel number when working with a quote as they are opening sizes.
+                    decPrice = lLouvrePrice.SalePrice
+                    cLouvrePriceFound = lLouvrePrice
+                End If
+            End If
+        End If
+
+        Return decPrice
+    End Function
+
+    Public Function GetLouvrePriceFromQuoteLouvre(cLouvre As QuoteLouvre, ByRef boolIsValid As Boolean) As Decimal
+        Dim decPrice As Decimal = 0
+
+        boolIsValid = False
+
+        If cLouvre IsNot Nothing Then
+            If cLouvre.LouvrePriceID > 0 Then
+                ' Lookup not requested. Use existing quote data.
+                ' SalePricePerUnit is all that is relevant when working with a quick quote.
+                decPrice = cLouvre.SalePricePerUnit
+                boolIsValid = True
+            End If
+        End If
+
+        Return decPrice
+    End Function
+
+    Public Function GetExtraPriceString(cExtra As QuoteExtra) As String
+        Dim boolIsValid As Boolean = False
+        Dim decPrice As String = 0
+
+        ' Dollar value
+        decPrice = GetExtraPriceFromQuoteExtra(cExtra, boolIsValid)
+
+        If boolIsValid Then
+            Return FormatCurrency(decPrice)
+        End If
+
+        Return _NO_PRICE_MSG
+    End Function
+
+    Public Function GetExtraPriceFromQuoteExtra(cExtra As QuoteExtra, ByRef boolIsValid As Boolean) As Decimal
+        Dim decPrice As String = 0
+
+        boolIsValid = False
+
+        If cExtra IsNot Nothing Then
+            If cExtra.LouvreExtraPriceID > 0 Then
+                If Not cExtra.PriceIsPercentage Then
+                    ' Dollar value
+                    decPrice = cExtra.PricePerUnit * cExtra.UnitsQuoted
+                    boolIsValid = True
+                End If
+            End If
+        End If
+
+        Return decPrice
+    End Function
+
+    Public Function GetExtraPercentageString(cExtra As QuoteExtra) As String
+        Dim boolIsValid As Boolean = False
+        Dim decPercent As String = 0
+
+        decPercent = GetExtraPercentageFromQuoteExtra(cExtra, boolIsValid)
+
+        If boolIsValid Then
+            Return FormatPercent(decPercent)
+        End If
+
+        Return _NO_PRICE_MSG
+    End Function
+
+    Public Function GetExtraPercentageFromQuoteExtra(cExtra As QuoteExtra, ByRef boolIsValid As Boolean) As Decimal
+        Dim decPercent As String = 0
+
+        boolIsValid = False
+
+        If cExtra IsNot Nothing Then
+            If cExtra.LouvreExtraPriceID > 0 Then
+                If cExtra.PriceIsPercentage Then
+                    ' Percentage increase 
+                    decPercent = cExtra.PricePerUnit
+                End If
+            End If
+        End If
+
+        Return decPercent
+    End Function
+
+    Public Function GetLouvrePricesTotal(cQuote As Quote, boolFromDBPriceMatrix As Boolean, ByRef boolIsValid As Boolean) As Decimal
+        Dim decPrice As Decimal = 0
+        Dim cLouvrePrice As LouvrePrice = Nothing
+
+        boolIsValid = True
+
+        For Each l As QuoteLouvre In cQuote.QuoteLouvres
+
+            If boolFromDBPriceMatrix Then
+                decPrice += GetLouvrePriceFromDBMatrix(l, cLouvrePrice)
+
+                If cLouvrePrice Is Nothing Then
+                    ' Could not find a price in the matrix so cant add them all up.
+                    boolIsValid = False
+                    decPrice = 0
+
+                    Exit For
+                End If
+            Else
+                decPrice += GetLouvrePriceFromQuoteLouvre(l, boolIsValid)
+
+                If Not boolIsValid Then
+                    ' Could not find a price in the matrix so cant add them all up.
+                    decPrice = 0
+
+                    Exit For
+                End If
+            End If
+        Next
+
+        Return decPrice
+    End Function
+
+    Public Function GetExtraPricesTotal(cQuote As Quote, ByRef boolIsValid As Boolean) As Decimal
+        Dim decTotal As Decimal = 0
+
+        boolIsValid = True
+
+        For Each l As QuoteLouvre In cQuote.QuoteLouvres
+            For Each e As QuoteExtra In l.QuoteExtras
+
+                If Not e.PriceIsPercentage Then
+                    ' Check an actual price was found
+                    If e.LouvreExtraPriceID > 0 Then
+                        decTotal += (e.PricePerUnit * e.UnitsQuoted)
+                    Else
+                        ' No price was found so invalid.
+                        boolIsValid = False
+                        decTotal = 0
+
+                        Return decTotal
+                    End If
+                End If
+            Next e
+        Next l
+
+        Return decTotal
+    End Function
+
+    Public Function GetExtraPercentTotal(cQuote As Quote, ByRef boolIsValid As Boolean) As Decimal
+        Dim decTotal As Decimal = 0
+
+        boolIsValid = True
+
+        For Each l As QuoteLouvre In cQuote.QuoteLouvres
+            For Each e As QuoteExtra In l.QuoteExtras
+
+                If e.PriceIsPercentage Then
+                    ' Check an actual price was found
+                    If e.LouvreExtraPriceID > 0 Then
+                        decTotal += (e.PricePerUnit * e.UnitsQuoted)
+                    Else
+                        ' No price was found so invalid.
+                        boolIsValid = False
+                        decTotal = 0
+
+                        Return decTotal
+                    End If
+                End If
+            Next e
+        Next l
+
+        Return decTotal
+    End Function
+
+    Public Function GetFreightPriceFromDB(cQuote As Quote, ByRef boolIsValid As Boolean) As Decimal
+        Dim decFreightPrice As Decimal = 0
+        Dim decSQM As Decimal = 0
+
+        Dim cZone As AddressZone = _lAddressZones.Find(Function(x) x.ID = cQuote.AddressZoneID)
+
+        If cZone IsNot Nothing Then
+            GetFreightPriceByAddressZoneFromDB(cZone, boolIsValid)
+        End If
+
+        Return decFreightPrice
+    End Function
+
+#End Region
+
+#Region "Production Schedule Quote Functions"
+
+    Public Function GetLouvrePrice(cLouvre As LouvreDetails, cExtras As List(Of LouvreExtraProduct),
+                                   ByRef cLouvrePriceFound As LouvrePrice,
+                                   ByRef lLouvreExtraPriceIDsNotFound As List(Of LouvreExtraPrices)) As Decimal
+        Dim decTotalSalePrice As Decimal = 0
+        Dim cExtraTotals As ExtraTotals
+        Dim decPrice As Decimal = 0
+        Dim intSQMM As Integer = 0
+        Dim totalWidthMM As Integer = 0
+        Dim totalHeightMM As Integer = 0
+
+        lLouvreExtraPriceIDsNotFound = New List(Of LouvreExtraPrices)
+        cLouvrePriceFound = Nothing
+
+        If cLouvre IsNot Nothing Then
+
+            cLouvre.LouvrePriceID = 0
+
+            ' Base panel features
+            If cLouvre.Height > 0 AndAlso cLouvre.Width > 0 AndAlso cLouvre.NoOfPanels > 0 Then
+                If cLouvre.MakeOrOpenSizesId = MakeOpen.Opening Then
+                    ' Opening is the total size regardless of number of panels.
+                    totalWidthMM = cLouvre.Width
+                    totalHeightMM = cLouvre.Height
+
+                ElseIf cLouvre.MakeOrOpenSizesId = MakeOpen.Make Then
+                    ' Make means per panel, so take into account number of panels and extra space around panels.
+                    totalWidthMM = (cLouvre.Width * cLouvre.NoOfPanels) + ((cLouvre.Width * cLouvre.NoOfPanels) * (1 + _MAKE_EXTRA_SIZE_PERCENTAGE))
+                    totalHeightMM = cLouvre.Height * (1 + _MAKE_EXTRA_SIZE_PERCENTAGE)
+                End If
+
+                totalHeightMM = RoundMeasurementForPricingMM(totalHeightMM)
+                totalWidthMM = RoundMeasurementForPricingMM(totalWidthMM)
+
+                intSQMM = (totalHeightMM * totalWidthMM) \ SharedFunctions._INT_LOUVRE_SQ_UNIT_SIZE
+
+                ' Ensure above the minumum size for charging.
+                If intSQMM < SharedFunctions._INT_LOUVRE_SQ_UNIT_SIZE Then
+                    intSQMM = SharedFunctions._INT_LOUVRE_SQ_UNIT_SIZE
+                End If
+
+                Dim cColour As Colour = _lColours.Find(Function(x) x.ID = cLouvre.ColourId)
+
+                If cColour IsNot Nothing Then
+
+                    Dim lLouvrePrice As LouvrePrice = _Service.GetLouvrePricesByParameters(_CategoryID,
+                                                                                           cLouvre.ProductId,
+                                                                                           cLouvre.ShutterTypeId,
+                                                                                           cColour.CoatingTypeID,
+                                                                                           _EffectiveDateTime,
+                                                                                            totalHeightMM,
+                                                                                            totalWidthMM).FirstOrDefault
+                    If lLouvrePrice IsNot Nothing Then
+                        decPrice = lLouvrePrice.SalePrice
+                        cLouvrePriceFound = lLouvrePrice
+                        cLouvre.LouvrePriceID = 0
+                    End If
+                End If
+            End If
+
+            ' Extras
+
+            ' Main Insert (top) - Vertical Blades, Glass Infill Extras.
+            If cLouvre.InsertTopId > 0 OrElse cLouvre.InsertBottomId > 0 Then
+                Dim cExtraTop As LouvreExtraPrice = Nothing
+                Dim cExtraBottom As LouvreExtraPrice = Nothing
+
+                Select Case cLouvre.InsertTopId
+                    Case InsertTypes.VerticalBlade
+                        cExtraTop = _lLouvreExtraPrices.Find(Function(x) x.ExtraProductID = LouvreExtraPrices.VerticalBlades)
+
+                        If cExtraTop Is Nothing Then
+                            lLouvreExtraPriceIDsNotFound.Add(LouvreExtraPrices.VerticalBlades)
+                        End If
+
+                    Case InsertTypes.ClearGlass, InsertTypes.GreyGlass
+                        cExtraTop = _lLouvreExtraPrices.Find(Function(x) x.ExtraProductID = LouvreExtraPrices.GlassInfills)
+
+                        If cExtraTop Is Nothing Then
+                            lLouvreExtraPriceIDsNotFound.Add(LouvreExtraPrices.GlassInfills)
+                        End If
+
+                End Select
+
+                Select Case cLouvre.InsertBottomId
+                    Case InsertTypes.VerticalBlade
+                        cExtraBottom = _lLouvreExtraPrices.Find(Function(x) x.ExtraProductID = LouvreExtraPrices.VerticalBlades)
+
+                        If cExtraBottom Is Nothing Then
+                            lLouvreExtraPriceIDsNotFound.Add(LouvreExtraPrices.VerticalBlades)
+                        End If
+
+                    Case InsertTypes.ClearGlass, InsertTypes.GreyGlass
+                        cExtraBottom = _lLouvreExtraPrices.Find(Function(x) x.ExtraProductID = LouvreExtraPrices.GlassInfills)
+
+                        If cExtraBottom Is Nothing Then
+                            lLouvreExtraPriceIDsNotFound.Add(LouvreExtraPrices.GlassInfills)
+                        End If
+
+                End Select
+
+                If cExtraTop IsNot Nothing Then
+                    ' Charge for the top.
+                    AddExtraToTotal(cExtraTop, 1, cExtraTotals)
+
+                    If cExtraBottom IsNot Nothing Then
+                        ' If the top is different than the bottom charge them again.
+                        If cExtraBottom.ID <> cExtraTop.ID Then
+                            AddExtraToTotal(cExtraTop, 1, cExtraTotals)
+                        End If
+                    End If
+                ElseIf cExtraBottom IsNot Nothing Then
+                    ' Have no top, but have a bottom.
+                    AddExtraToTotal(cExtraBottom, 1, cExtraTotals)
+                End If
+            End If
+
+            ' Blade Size - 150mm Blades Extra.
+            If cLouvre.BladeSizeId > 0 Then
+                Dim cExtraBlades As LouvreExtraPrice = Nothing
+
+                Select Case cLouvre.BladeSizeId
+                    Case BladeSizes.Blade150mm
+                        cExtraBlades = _lLouvreExtraPrices.Find(Function(x) x.ExtraProductID = LouvreExtraPrices.Blades150mm)
+
+                        If cExtraBlades Is Nothing Then
+                            lLouvreExtraPriceIDsNotFound.Add(LouvreExtraPrices.Blades150mm)
+                        End If
+                End Select
+
+                If cExtraBlades IsNot Nothing Then
+                    AddExtraToTotal(cExtraBlades, 1, cExtraTotals)
+                End If
+            End If
+
+            '  - Raked panels with flat sheet infill.
+            ' BTODO
+
+            '  - Raked panels with fixed blades.
+            ' BTODO
+
+            ' Curved track - Curved track Extra.
+            If cLouvre.CurvedTrack = 1 Then
+                Dim cExtraCurvedTrack As LouvreExtraPrice = Nothing
+
+                cExtraCurvedTrack = _lLouvreExtraPrices.Find(Function(x) x.ExtraProductID = LouvreExtraPrices.CurvedTrack)
+
+                If cExtraCurvedTrack IsNot Nothing Then
+                    AddExtraToTotal(cExtraCurvedTrack, 1, cExtraTotals)
+                Else
+                    lLouvreExtraPriceIDsNotFound.Add(LouvreExtraPrices.CurvedTrack)
+                End If
+            End If
+
+            ' Blade Lock - Blade Lock Extra
+
+            If cLouvre.BladeLocks = 1 Then
+                Dim cExtraBladeLock As LouvreExtraPrice = Nothing
+                Dim intQty As Integer = 0
+
+                cExtraBladeLock = _lLouvreExtraPrices.Find(Function(x) x.ExtraProductID = LouvreExtraPrices.BladeLock)
+
+                If cExtraBladeLock IsNot Nothing Then
+
+                    ' Calc qty - one lock for each insert. Midrail = 2 inserts.
+                    If cLouvre.MidRailHeight > 0 Then
+                        intQty = 2
+                    Else
+                        intQty = 1
+                    End If
+
+                    AddExtraToTotal(cExtraBladeLock, intQty, cExtraTotals)
+                Else
+                    lLouvreExtraPriceIDsNotFound.Add(LouvreExtraPrices.BladeLock)
+                End If
+            End If
+
+            ' Extra Track - Extra Track Extra
+            If cLouvre.ExtraTrack > 0 Then
+                Dim cExtraTrack As LouvreExtraPrice = Nothing
+
+                cExtraTrack = _lLouvreExtraPrices.Find(Function(x) x.ExtraProductID = LouvreExtraPrices.ExtraTrack)
+
+                If cExtraTrack IsNot Nothing Then
+                    AddExtraToTotal(cExtraTrack, cLouvre.ExtraTrack, cExtraTotals)
+                Else
+                    lLouvreExtraPriceIDsNotFound.Add(LouvreExtraPrices.ExtraTrack)
+                End If
+            End If
+
+            ' Flush Bolts Top/Bottom - Flush Bolts Extra
+            If cLouvre.ShutterTypeId = LouvreTypes.Hinged2Panels OrElse
+                cLouvre.ShutterTypeId = LouvreTypes.HingedPanelLeft OrElse
+                cLouvre.ShutterTypeId = LouvreTypes.HingedPanelRight Then
+
+                Dim cExtraFushBolts As LouvreExtraPrice = Nothing
+                Dim intQty As Integer = 0
+
+                cExtraFushBolts = _lLouvreExtraPrices.Find(Function(x) x.ExtraProductID = LouvreExtraPrices.TwinBoltFlushBolt)
+
+                If cExtraFushBolts IsNot Nothing Then
+                    If cLouvre.FlushBoltsTopId > 0 Then
+
+                        ' Charge for top bolt.
+                        AddExtraToTotal(cExtraFushBolts, cLouvre.NoOfPanels, cExtraTotals)
+
+                        If cExtraFushBolts Is Nothing Then
+                            lLouvreExtraPriceIDsNotFound.Add(LouvreExtraPrices.TwinBoltFlushBolt)
+                        End If
+                    End If
+
+                    If cLouvre.FlushBoltsBottomId > 0 Then
+                        ' Charge for bottom bolt.
+                        AddExtraToTotal(cExtraFushBolts, cLouvre.NoOfPanels, cExtraTotals)
+
+                        If cExtraFushBolts Is Nothing Then
+                            lLouvreExtraPriceIDsNotFound.Add(LouvreExtraPrices.TwinBoltFlushBolt)
+                        End If
+                    End If
+                End If
+            End If
+
+            ' Special Lock Options - Lockable Door Handle, Twin Bolt Flush Bolt Extras
+            If cLouvre.LockOptionsId > 0 Then
+                Dim cExtraLockOpt As LouvreExtraPrice = Nothing
+                Dim intQty As Integer = 0
+
+                Select Case cLouvre.LockOptionsId
+                    Case LockOptions.HandleLockInsideAndOut,
+                         LockOptions.KnobsetLockInsideAndOut
+
+                        If cLouvre.ShutterTypeId = LouvreTypes.Hinged2Panels OrElse
+                            cLouvre.ShutterTypeId = LouvreTypes.HingedPanelLeft OrElse
+                            cLouvre.ShutterTypeId = LouvreTypes.HingedPanelRight Then
+
+                            cExtraLockOpt = _lLouvreExtraPrices.Find(Function(x) x.ExtraProductID = LouvreExtraPrices.LockableDoorHandle)
+
+                            If cExtraLockOpt Is Nothing Then
+                                lLouvreExtraPriceIDsNotFound.Add(LouvreExtraPrices.LockableDoorHandle)
+                            End If
+                        End If
+
+                    Case LockOptions.PremiumHandleLockInsideAndOut
+
+                        If cLouvre.ShutterTypeId = LouvreTypes.Hinged2Panels OrElse
+                            cLouvre.ShutterTypeId = LouvreTypes.HingedPanelLeft OrElse
+                            cLouvre.ShutterTypeId = LouvreTypes.HingedPanelRight Then
+
+                            cExtraLockOpt = _lLouvreExtraPrices.Find(Function(x) x.ExtraProductID = LouvreExtraPrices.PremiumLockableDoorHandle)
+
+                            If cExtraLockOpt Is Nothing Then
+                                lLouvreExtraPriceIDsNotFound.Add(LouvreExtraPrices.PremiumLockableDoorHandle)
+                            End If
+                        End If
+
+                    Case LockOptions.TwinFlushBoltLocking,
+                         LockOptions.TwinFlushBoltNonLocking
+
+                        If cLouvre.ShutterTypeId = LouvreTypes.Hinged2Panels OrElse
+                            cLouvre.ShutterTypeId = LouvreTypes.HingedPanelLeft OrElse
+                            cLouvre.ShutterTypeId = LouvreTypes.HingedPanelRight OrElse
+                            cLouvre.ShutterTypeId = LouvreTypes.BiFold Then
+
+                            cExtraLockOpt = _lLouvreExtraPrices.Find(Function(x) x.ExtraProductID = LouvreExtraPrices.TwinBoltFlushBolt)
+
+                            If cExtraLockOpt Is Nothing Then
+                                lLouvreExtraPriceIDsNotFound.Add(LouvreExtraPrices.TwinBoltFlushBolt)
+                            End If
+                        End If
+                End Select
+
+                If cExtraLockOpt IsNot Nothing Then
+                    AddExtraToTotal(cExtraLockOpt, cLouvre.NoOfPanels, cExtraTotals)
+                End If
+            End If
+
+            ' Fly Screen - Insect Screen Extra
+            If cLouvre.FlyScreen = 1 Then
+                Dim cExtraFlyScreen As LouvreExtraPrice = Nothing
+
+                cExtraFlyScreen = _lLouvreExtraPrices.Find(Function(x) x.ExtraProductID = LouvreExtraPrices.InsectScreen)
+
+                If cExtraFlyScreen IsNot Nothing Then
+                    ' Qty is panel mm2.
+                    AddExtraToTotal(cExtraFlyScreen, intSQMM, cExtraTotals)
+                Else
+                    lLouvreExtraPriceIDsNotFound.Add(LouvreExtraPrices.InsectScreen)
+                End If
+            End If
+
+            ' Add any extras to the total
+            If cExtras IsNot Nothing Then
+                For Each e As LouvreExtraProduct In cExtras
+                    Dim cExtraPrice As LouvreExtraPrice = Nothing
+
+                    cExtraPrice = _lLouvreExtraPrices.Find(Function(x) x.ExtraProductID = e.ExtraProductID)
+
+                    If cExtraPrice IsNot Nothing Then
+                        AddExtraToTotal(cExtraPrice, e.Quantity, cExtraTotals, e.CutLength, e)
+                    Else
+                        e.SalePrice = 0
+                        e.LouvreExtraPriceID = 0
+                        lLouvreExtraPriceIDsNotFound.Add(e.ExtraProductID)
+                    End If
+                Next e
+            End If
+
+            If cLouvrePriceFound IsNot Nothing AndAlso lLouvreExtraPriceIDsNotFound.Count = 0 Then
+                decTotalSalePrice = (decPrice * (cExtraTotals.PercentageIncrese + 1)) + cExtraTotals.ExtraPrice
+            End If
+
+            cLouvre.SalePrice = decTotalSalePrice
+        End If
+
+        Return decTotalSalePrice
+    End Function
+
+    Private Sub AddExtraToTotal(cExtraPrice As LouvreExtraPrice, decQty As Decimal,
+                                ByRef cExtraTotals As ExtraTotals,
+                                Optional decCutLength As Decimal? = Nothing,
+                                Optional cLouvreExtraProductToUpdatePrice As LouvreExtraProduct = Nothing)
+        Dim decPrice As Decimal = 0
+
+        If cLouvreExtraProductToUpdatePrice IsNot Nothing Then
+            cLouvreExtraProductToUpdatePrice.SalePrice = 0
+            cLouvreExtraProductToUpdatePrice.LouvreExtraPriceID = 0
+        End If
+
+        If cExtraPrice IsNot Nothing Then
+            If decQty > 0 Then
+                If decCutLength.HasValue Then
+                    If decCutLength.Value > 0 Then
+                        ' Specific cut length has been provided outside of costing framework.
+                        decPrice = cExtraPrice.UnitPrice * (Math.Ceiling((decCutLength.Value * decQty) / cExtraPrice.UnitSize))
+                    End If
+                Else
+                    ' Use set costing values. Qty will be the relevant cut length in this case.
+                    decPrice = cExtraPrice.UnitPrice * (decQty / cExtraPrice.UnitSize)
+                End If
+
+                If decPrice < cExtraPrice.MinimumCharge Then
+                    decPrice = cExtraPrice.MinimumCharge
+                End If
+            End If
+
+            If cExtraPrice.PriceIsPercentage Then
+                cExtraTotals.PercentageIncrese += decPrice
+            Else
+                cExtraTotals.ExtraPrice += decPrice
+            End If
+
+            If cLouvreExtraProductToUpdatePrice IsNot Nothing Then
+                cLouvreExtraProductToUpdatePrice.SalePrice = decPrice
+                cLouvreExtraProductToUpdatePrice.LouvreExtraPriceID = cExtraPrice.ID
+            End If
+        End If
+    End Sub
+
+    Public Function GetFreightPriceByAddressIDFromDB(intAddressID As Integer, ByRef cAddressZoneFound As AddressZone) As Decimal
+        Dim decFreightPrice As Decimal = 0
+
+        cAddressZoneFound = Nothing
+
+        If intAddressID > 0 Then
+            Dim cAddress As Address = _Service.getAddressByID(intAddressID)
+
+            If cAddress IsNot Nothing Then
+                decFreightPrice = GetFreightPriceByAddressFromDB(cAddress, cAddressZoneFound)
+            End If
+        End If
+
+        Return decFreightPrice
+    End Function
+
+    Public Function GetFreightPriceByAddressFromDB(cAddress As Address, ByRef cAddressZoneFound As AddressZone) As Decimal
+        Dim decFreightPrice As Decimal = 0
+        Dim boolIsValid As Boolean = False
+
+        cAddressZoneFound = Nothing
+
+        If cAddress IsNot Nothing Then
+            Dim addressZone As AddressZone = _lAddressZones.Find(Function(x) (x.IsActiveAtDate(Date.Now) AndAlso
+                                                                 x.AddressZoneRanges.Find(Function(y) y.Start <= CInt(cAddress.Postcode) AndAlso
+                                                                 y.End >= CInt(cAddress.Postcode)) IsNot Nothing))
+
+            If addressZone IsNot Nothing Then
+                decFreightPrice = GetFreightPriceByAddressZoneFromDB(addressZone, boolIsValid)
+
+                If boolIsValid Then
+                    cAddressZoneFound = addressZone
+                End If
+            End If
+        End If
+
+        Return decFreightPrice
+    End Function
+
+    Public Function GetFreightPriceByAddressZoneIDFromDB(intAddressZoneID As Integer, ByRef boolIsValid As Boolean) As Decimal
+        Dim decFreightPrice As Decimal = 0
+
+        boolIsValid = False
+
+        If intAddressZoneID > 0 Then
+            Dim cAddressZone As AddressZone = _lAddressZones.Find(Function(x) x.ID = intAddressZoneID)
+
+            If cAddressZone IsNot Nothing Then
+                decFreightPrice = GetFreightPriceByAddressZoneFromDB(cAddressZone, boolIsValid)
+            End If
+        End If
+
+        Return decFreightPrice
+    End Function
+
+    ''' <summary>
+    ''' This is the core function where the address price is actually calculated. All others lead to here.
+    ''' </summary>
+    ''' <param name="cAddressZone">The addresszone to get the price for.</param>
+    ''' <returns></returns>
+    Public Function GetFreightPriceByAddressZoneFromDB(cAddressZone As AddressZone, ByRef boolIsValid As Boolean) As Decimal
+        Dim decFreightPrice As Decimal = 0
+
+        boolIsValid = False
+
+        If cAddressZone IsNot Nothing Then
+            decFreightPrice = cAddressZone.Price
+
+            boolIsValid = True
+        End If
+
+        ' BTODO: is this part of the calc? Turn it into a DB table???
+        'If decSQM < 5 Then
+        '    decFreightPrice = 50
+        'ElseIf decSQM >= 5 And decSQM < 10 Then
+        '    decFreightPrice = 100
+        'ElseIf decSQM >= 10 And decSQM < 15 Then
+        '    decFreightPrice = 125
+        'ElseIf decSQM >= 15 And decSQM < 25 Then
+        '    decFreightPrice = 150
+        'ElseIf decSQM >= 25 And decSQM < 35 Then
+        '    decFreightPrice = 200
+        'ElseIf decSQM >= 35 Then
+        '    decFreightPrice = 250
+        'End If
+
+        Return decFreightPrice
+    End Function
+
+    Private Structure ExtraTotals
+        Public ExtraPrice As Decimal
+        Public PercentageIncrese As Decimal
+    End Structure
+
+#End Region
+
+    Public Function RoundMeasurementForPricingMM(intMM As Integer) As Integer
+        Return Math.Ceiling(intMM / 100) * 100
+    End Function
+
+End Class

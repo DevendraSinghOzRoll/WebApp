@@ -1,0 +1,1082 @@
+﻿
+Partial Class AcceptOrder
+    Inherits System.Web.UI.Page
+
+    Protected Sub Page_Load(sender As Object, e As System.EventArgs) Handles Me.Load
+
+        If Not IsPostBack Then
+
+            If Session("sessUserID") = String.Empty Then
+                Response.Redirect("Logout.aspx", False)
+                Exit Sub
+            Else
+                If Not IsNumeric(Session("sessUserID")) Then
+                    Response.Redirect("Logout.aspx", False)
+                    Exit Sub
+                End If
+            End If
+
+            Me.txtProductTypeID.Text = Session("sessProductTypeID").ToString
+
+            Dim intScheduleID As Integer = 0
+
+            If Not Request.QueryString.Count = 0 Then
+                If Not IsNothing(Request.Params("ScheduleID")) Then
+                    intScheduleID = CInt(Request.Params("ScheduleID"))
+                End If
+            End If
+            Me.txtID.Text = intScheduleID.ToString
+
+            Dim service As New AppService
+            service.addWebsitePageAccess("Ozroll Plantation Scheduling", CInt(Session("sessUserID")), Session("sessUserName").ToString, System.IO.Path.GetFileName(Request.PhysicalPath), Request.QueryString.ToString(), Now)
+
+            'load list of extra stock items
+            Dim dtStock As DataTable = service.runSQLScheduling("select * from dbo.tblExtraProductList where Discontinued = 0 order by SortOrder ASC")
+            Me.cboExtraStock.DataSource = dtStock
+            Me.cboExtraStock.DataValueField = "ExtraProductID"
+            Me.cboExtraStock.DataTextField = "Description"
+            Me.cboExtraStock.DataBind()
+
+            service = Nothing
+
+            populateDetails(intScheduleID)
+
+            pnlOptimise.Visible = True
+
+        End If
+
+    End Sub
+
+    Private Sub Page_Error(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.Error
+        Dim objErr1 As Exception = Server.GetLastError().GetBaseException()
+
+        Dim strErrorMessage As String = String.Empty
+
+        strErrorMessage &= "Error In: " & Request.Url.ToString() & Environment.NewLine & Environment.NewLine
+
+        strErrorMessage &= "Server.GetLastError().GetBaseException()" & Environment.NewLine & Environment.NewLine
+
+        strErrorMessage &= "Error Message: " & objErr1.Message & Environment.NewLine
+        strErrorMessage &= "Stack Trace:" & Environment.NewLine
+        strErrorMessage &= objErr1.StackTrace & Environment.NewLine & Environment.NewLine
+
+        Dim objErr2 As Exception = Server.GetLastError()
+
+        strErrorMessage &= "Server.GetLastError()" & Environment.NewLine & Environment.NewLine
+
+        strErrorMessage &= "Error Message: " & objErr2.Message & Environment.NewLine
+        strErrorMessage &= "Stack Trace:" & Environment.NewLine
+        strErrorMessage &= objErr2.StackTrace & Environment.NewLine
+
+        EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & strErrorMessage)
+
+        Server.ClearError()
+
+        Response.Redirect("GenericErrorPage.aspx", False)
+    End Sub
+
+    Private Function getPageInfo() As String
+
+        Dim strPageInfo As String = String.Empty
+        Dim strName As String = String.Empty
+        If Session.Contents.Count > 0 Then
+            strPageInfo &= "Session Variables" & Environment.NewLine
+            For Each strName In Session.Contents
+                strPageInfo &= strName & ": " & CStr(Session.Contents(strName)) & Environment.NewLine
+            Next
+        Else
+            strPageInfo &= "No Session Variables" & Environment.NewLine
+        End If
+
+        strPageInfo &= Environment.NewLine
+        If Me.HasControls Then
+            strPageInfo &= "Form Controls" & Environment.NewLine
+            getPageControls(Me, strPageInfo)
+        Else
+            strPageInfo &= "No Form Controls" & Environment.NewLine
+        End If
+        Return strPageInfo
+
+    End Function
+
+    Private Sub getPageControls(ByVal ctrl As Control, ByRef strPageControls As String)
+
+        If ctrl.HasControls Then
+            For Each childCtrl As Control In ctrl.Controls
+                getPageControls(childCtrl, strPageControls)
+            Next
+        Else
+            Select Case ctrl.GetType.Name
+                Case "TextBox"
+                    Dim frmTxt As TextBox
+                    frmTxt = DirectCast(ctrl, TextBox)
+                    strPageControls &= frmTxt.ID & ": " & Left(frmTxt.Text, 100) & Environment.NewLine
+                Case "DropDownList"
+                    Dim frmCbo As DropDownList
+                    frmCbo = DirectCast(ctrl, DropDownList)
+                    If frmCbo.Items.Count > 0 Then
+                        strPageControls &= frmCbo.ID & ": " & frmCbo.SelectedItem.Text & " (" & frmCbo.SelectedValue & ")" & Environment.NewLine
+                    Else
+                        strPageControls &= frmCbo.ID & ": Not Populated" & Environment.NewLine
+                    End If
+                Case "CheckBox"
+                    Dim frmChk As CheckBox
+                    frmChk = DirectCast(ctrl, CheckBox)
+                    strPageControls &= frmChk.ID & ": " & frmChk.Checked & Environment.NewLine
+                Case "RadioButton"
+                    Dim frmRdo As RadioButton
+                    frmRdo = DirectCast(ctrl, RadioButton)
+                    strPageControls &= frmRdo.ID & ": " & frmRdo.Checked & Environment.NewLine
+                Case "RadioButtonList"
+                    Dim frmRdoLst As RadioButtonList
+                    frmRdoLst = DirectCast(ctrl, RadioButtonList)
+                    If frmRdoLst.SelectedIndex >= 0 Then
+                        strPageControls &= frmRdoLst.ID & ": " & frmRdoLst.SelectedItem.Text & " (" & frmRdoLst.SelectedValue & ")" & Environment.NewLine
+                    Else
+                        strPageControls &= frmRdoLst.ID & ": Not Selected" & Environment.NewLine
+                    End If
+            End Select
+        End If
+
+    End Sub
+
+    Private Sub populateDetails(ProductionScheduleID As Integer)
+
+        Dim strLabel As String = String.Empty
+
+        strLabel = "<table cellspacing=""0"" class=""form-table"" summary="""">"
+
+        Dim service As New AppService
+        Dim strSQL As String = String.Empty
+        strSQL = "Select * from tblLouvreDetails where Deleted=0 and ProductionScheduleID=" & ProductionScheduleID
+        Dim dtAcceptOrder As DataTable = service.runSQLScheduling(strSQL)
+        service = Nothing
+
+        For i As Integer = 0 To dtAcceptOrder.Rows.Count - 1
+            strLabel &= "<tr>"
+            strLabel &= "<td class=""form-label-td"" style=""width: 15%; text-align: center;"">"
+            strLabel &= "<input type=""submit"" id=""" & dtAcceptOrder.Rows(i).Item("LouvreDetailID").ToString & """ name=""btnViewDetails"" value=""View Details"" OnClick=""getViewDetailsModalPopupButton(this.id)"" class=""updatebutton"" style=""font-size: 13px;height: 29px;"">"
+            strLabel &= "</td>"
+            strLabel &= "<td class=""form-label-td"" style=""width: 15%; text-align: center;"">"
+            strLabel &= "<input type=""submit"" id=""" & dtAcceptOrder.Rows(i).Item("LouvreDetailID").ToString & """ name=""btnOpeningModify"" value=""Modify Opening"" OnClick=""getButtonID(this.id)"" class=""form-button"" style=""font-size: 13px;height: 29px;"">"
+            strLabel &= "</td>"
+            strLabel &= "<td class=""form-label-td"" style=""width: 15%; text-align: center;"">"
+            strLabel &= "<input type=""submit"" id=""" & dtAcceptOrder.Rows(i).Item("LouvreDetailID").ToString & """ name=""btnExtraStock"" value=""Extra Stock"" OnClick=""getExtraStockButtonID(this.id)"" class=""form-button"" style=""font-size: 13px;height: 29px;"">"
+            strLabel &= "</td>"
+            strLabel &= "<td class=""form-label-td"" style=""text-align: left;"">"
+            strLabel &= "<b>Opening Type:</b> " & dtAcceptOrder.Rows(i).Item("ShutterType").ToString & " "
+            strLabel &= "<b>Product:</b> " & dtAcceptOrder.Rows(i).Item("Product").ToString & " "
+            strLabel &= "<b>Height:</b> " & dtAcceptOrder.Rows(i).Item("Height").ToString & " "
+            strLabel &= "<b>Width:</b> " & dtAcceptOrder.Rows(i).Item("Width").ToString
+            strLabel &= "<br/ >"
+
+            strLabel &= "<b>Location:</b> " & dtAcceptOrder.Rows(i).Item("Location").ToString & "<br/ >"
+            If dtAcceptOrder.Rows(i).Item("MakeOrOpenSizesId").ToString = 2 Then
+                strLabel &= "<b>Make/Opening:</b> Opening Size<br/ >"
+            Else
+                strLabel &= "<b>Make/Opening:</b> Make Size<br/ >"
+            End If
+            strLabel &= "<b>No of Panels:</b> " & dtAcceptOrder.Rows(i).Item("NoOfPanels").ToString & "<br/ >"
+            strLabel &= "<br/ >"
+
+            'double bottom rail
+            'strLabel &= "Double Bottom Rail Required? <input id=""chk" & dtAcceptOrder.Rows(i).Item("LouvreDetailID").ToString & """ type=""checkbox"" />"
+
+            'special requirements
+            If Not IsDBNull(dtAcceptOrder.Rows(i).Item("SpecialRequirements")) Then
+                strLabel &= "<br/ >"
+                strLabel &= "Special Requirements:" & dtAcceptOrder.Rows(i).Item("SpecialRequirements").ToString
+            End If
+
+
+            'check that production sheet exists - if not display message that it needs to be done manually for now
+            Dim intShutterTypeID As Integer = CInt(dtAcceptOrder.Rows(i).Item("ShutterTypeID"))
+            Dim intProfileTypeID As Integer = CInt(dtAcceptOrder.Rows(i).Item("ProductID"))
+            Dim intNoOfPanels As Integer = CInt(dtAcceptOrder.Rows(i).Item("NoOfPanels"))
+            Dim intTransom As Integer = 0
+            Dim intOpenInOut As Integer = CInt(SharedFunctions.nz(dtAcceptOrder.Rows(i).Item("BiFoldHingedDoorInOutId"), 0))
+
+            If CInt(SharedFunctions.nz(dtAcceptOrder.Rows(i).Item("MidRailHeight"), 0)) > 0 Then
+                intTransom = 1
+            End If
+
+            If productionSheetExistsForOpening(intShutterTypeID, intProfileTypeID, intNoOfPanels, intTransom, intOpenInOut) = False Then
+                strLabel &= "<br/ ><br />"
+                strLabel &= "<b>PRODUCTION SHEET TEMPLATE NOT CURRENTLY AVAILABLE FOR THIS OPENING</b>"
+            End If
+
+            strLabel &= "</td>"
+            strLabel &= "</tr>"
+
+
+        Next
+
+        strLabel &= "</table>"
+
+        Me.lblOpenings.Text = strLabel
+
+    End Sub
+    Protected Sub btnHome_Click(sender As Object, e As EventArgs) Handles btnHome.Click
+        Response.Redirect("Home.aspx")
+    End Sub
+    Protected Sub btnLogout_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles btnLogout.Click
+        Response.Redirect("Logout.aspx", False)
+    End Sub
+
+    Private Sub btnBack_Click(sender As Object, e As EventArgs) Handles btnBack.Click
+        Response.Redirect("UpdateAwaitingAcceptance.aspx", False)
+    End Sub
+
+    Private Sub btnProcessProdSheet_Click(sender As Object, e As EventArgs) Handles btnProcessProdSheet.Click
+
+        Dim service As New AppService
+        Dim bolContinue As Boolean = True
+
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlClient.SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim trans As SqlClient.SqlTransaction = Nothing
+        dbConn = Nothing
+
+        Try
+
+            cnn.Open()
+            trans = cnn.BeginTransaction
+            'update orderstatus to accepted plus set received date
+            Dim cProductionSchedule As ProductionSchedule = service.getProdScheduleClsByID(CInt(Me.txtID.Text), cnn, trans)
+            Dim cNewProductionSchedule As ProductionSchedule = CType(cProductionSchedule.Clone, ProductionSchedule)
+            cNewProductionSchedule.OrderStatus = 2 'received - accepted
+            cNewProductionSchedule.ReceivedDate = DateTime.Today.Date
+
+            bolContinue = setLouvreSpecDetailsData(cNewProductionSchedule.ID, cnn, trans)
+
+            If bolContinue Then
+                bolContinue = service.updateProductionScheduleByID(cNewProductionSchedule, cnn, trans)
+            End If
+
+            If bolContinue Then
+                bolContinue = service.addProdScheduleHistoryRcd(0, cProductionSchedule, cnn, trans)
+            End If
+
+
+            If bolContinue Then
+                trans.Commit()
+                Response.Redirect("UpdateAwaitingAcceptance.aspx", False)
+            Else
+                EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - Transaction Rolled Back" & Environment.NewLine & getPageInfo())
+                trans.Rollback()
+            End If
+
+        Catch ex As Exception
+            If Not trans Is Nothing Then
+                trans.Rollback()
+            End If
+            If cnn.State = ConnectionState.Open Then
+                cnn.Close()
+            End If
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine & getPageInfo())
+            bolContinue = False
+        Finally
+            trans.Dispose()
+            trans = Nothing
+            If cnn.State = ConnectionState.Open Then
+                cnn.Close()
+            End If
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+        service = Nothing
+        ViewState("dtUpdate") = Nothing
+
+
+    End Sub
+
+    Protected Function setLouvreSpecDetailsData(intScheduleID As Integer, cnn As SqlClient.SqlConnection, ByRef trans As SqlClient.SqlTransaction) As Boolean
+        Dim service As New AppService
+
+        Dim bolContinue As Boolean = True
+
+        'Write to LouvreSpecDesign
+        Dim dtMain As New DataTable
+        Dim cLouvreDetails As New LouvreDetails
+        Dim cLouvreSpecDesign As New LouvreSpecDesign
+
+        dtMain = GetLouvreDetails(intScheduleID, dtMain)
+
+        If ViewState("dtUpdate") IsNot Nothing Then
+
+            Dim dtUpdate As DataTable = ViewState("dtUpdate")
+            If dtMain.Rows.Count > dtUpdate.Rows.Count Then
+                For i As Integer = 0 To dtMain.Rows.Count - 1
+                    For j As Integer = 0 To dtUpdate.Rows.Count - 1
+                        If (dtUpdate.Rows(j).Item("LouvreDetailsID") = dtMain.Rows(i).Item("LouvreDetailID")) Then
+                            Exit For
+                        Else
+                            Dim intLouvreID As Integer = dtMain.Rows(i).Item("LouvreDetailID")
+                            Dim row As DataRow = dtUpdate.NewRow
+                            row("GivenTransomHeight") = "0"
+                            row("LouvreDetailsID") = intLouvreID
+                            dtUpdate.Rows.Add(row)
+                        End If
+                    Next
+                Next
+            End If
+
+        End If
+
+        'If Details Have Been Updated
+        If ViewState("dtUpdate") IsNot Nothing Then
+
+            Dim dtUpdate As DataTable = ViewState("dtUpdate")
+
+            'Sort Rows
+            Dim dv As New DataView(dtUpdate)
+            dv.Sort = "LouvreDetailsID ASC"
+            dtUpdate = dv.ToTable
+
+            For i As Integer = 0 To dtMain.Rows.Count - 1
+
+                Dim drow As DataRow = dtMain.Rows(i)
+                cLouvreDetails = service.setLouvreDetailsObjectFromDataRow(drow)
+
+                'Height
+                'If dtMain.Rows(i).Item("Height").ToString = Nothing Then
+                '    cLouvreDetails.Height = Constants.DEFAULT_INTEGER_VALUE
+                'Else
+                '    cLouvreDetails.Height = CInt(dtMain.Rows(i).Item("Height"))
+                'End If
+
+                ''Width
+                'If dtMain.Rows(i).Item("Width").ToString = Nothing Then
+                '    cLouvreDetails.Width = Constants.DEFAULT_INTEGER_VALUE
+                'Else
+                '    cLouvreDetails.Width = CInt(dtMain.Rows(i).Item("Width"))
+                'End If
+
+                ''NoOfPanels
+                'If dtMain.Rows(i).Item("NoOfPanels").ToString = Nothing Then
+                '    cLouvreDetails.NoOfPanels = Constants.DEFAULT_INTEGER_VALUE
+                'Else
+                '    cLouvreDetails.NoOfPanels = CInt(dtMain.Rows(i).Item("NoOfPanels"))
+                'End If
+
+                ''PileColourID
+                'If dtMain.Rows(i).Item("PileColourId").ToString = Nothing Then
+                '    cLouvreDetails.PileColourId = Constants.DEFAULT_INTEGER_VALUE
+                'Else
+                '    cLouvreDetails.PileColourId = CInt(dtMain.Rows(i).Item("PileColourId"))
+                'End If
+
+                ''MidRailHeight
+                'If dtMain.Rows(i).Item("MidRailHeight").ToString = Nothing Then
+                '    cLouvreDetails.MidRailHeight = Constants.DEFAULT_INTEGER_VALUE
+                'Else
+                '    cLouvreDetails.MidRailHeight = CInt(dtMain.Rows(i).Item("MidRailHeight"))
+                'End If
+
+                ''LouvreDetailID
+                'If dtMain.Rows(i).Item("LouvreDetailID").ToString = Nothing Then
+                '    cLouvreDetails.LouvreDetailID = Constants.DEFAULT_INTEGER_VALUE
+                'Else
+                '    cLouvreDetails.LouvreDetailID = CInt(dtMain.Rows(i).Item("LouvreDetailID"))
+                'End If
+
+                ''ShutterTypeID
+                'If dtMain.Rows(i).Item("ShutterTypeId").ToString = Nothing Then
+                '    cLouvreDetails.ShutterTypeId = Constants.DEFAULT_INTEGER_VALUE
+                'Else
+                '    cLouvreDetails.ShutterTypeId = CInt(dtMain.Rows(i).Item("ShutterTypeId"))
+                'End If
+
+                'If dtMain.Rows(i).Item("BladeLocks").ToString = Nothing Then
+                '    cLouvreDetails.BladeLocks = Constants.DEFAULT_INTEGER_VALUE
+                'Else
+                '    cLouvreDetails.BladeLocks = CInt(dtMain.Rows(i).Item("BladeLocks"))
+                'End If
+
+                txtHiddenGivenTransomHeight.Text = dtUpdate.Rows(i).Item("GivenTransomHeight")
+
+                Dim dtSpec As DataTable = service.GetLouvreSpecDesignRecordByLouvreDetailsID(cLouvreDetails.LouvreDetailID)
+                If dtSpec.Rows.Count > 0 Then
+                    cLouvreSpecDesign = service.getLouvreSpecDesignRecordDetails(dtSpec)
+                    cLouvreSpecDesign = setProductionSheetDataForOpening(cLouvreDetails, cLouvreSpecDesign)
+                    bolContinue = service.updateLouvreSpecDesign(cLouvreSpecDesign, cnn, trans)
+                Else
+                    cLouvreSpecDesign = New LouvreSpecDesign
+                    cLouvreSpecDesign = setProductionSheetDataForOpening(cLouvreDetails, cLouvreSpecDesign)
+                    bolContinue = service.addLouvreSpecDesign(cLouvreSpecDesign, cnn, trans)
+                End If
+                dtSpec.Dispose()
+                dtSpec = Nothing
+
+                If bolContinue = False Then
+                    Exit For
+                End If
+            Next
+        Else
+            'If Details Are Standard
+            For i As Integer = 0 To dtMain.Rows.Count - 1
+
+                Dim drow As DataRow = dtMain.Rows(i)
+                cLouvreDetails = service.setLouvreDetailsObjectFromDataRow(drow)
+
+                'Height
+                'If dtMain.Rows(i).Item("Height").ToString = Nothing Then
+                '    cLouvreDetails.Height = Constants.DEFAULT_INTEGER_VALUE
+                'Else
+                '    cLouvreDetails.Height = CInt(dtMain.Rows(i).Item("Height"))
+                'End If
+
+                ''Width
+                'If dtMain.Rows(i).Item("Width").ToString = Nothing Then
+                '    cLouvreDetails.Width = Constants.DEFAULT_INTEGER_VALUE
+                'Else
+                '    cLouvreDetails.Width = CInt(dtMain.Rows(i).Item("Width"))
+                'End If
+
+                ''NoOfPanels
+                'If dtMain.Rows(i).Item("NoOfPanels").ToString = Nothing Then
+                '    cLouvreDetails.NoOfPanels = Constants.DEFAULT_INTEGER_VALUE
+                'Else
+                '    cLouvreDetails.NoOfPanels = CInt(dtMain.Rows(i).Item("NoOfPanels"))
+                'End If
+
+                ''PileColourID
+                'If dtMain.Rows(i).Item("PileColourId").ToString = Nothing Then
+                '    cLouvreDetails.PileColourId = Constants.DEFAULT_INTEGER_VALUE
+                'Else
+                '    cLouvreDetails.PileColourId = CInt(dtMain.Rows(i).Item("PileColourId"))
+                'End If
+
+                ''MidRailHeight
+                'If dtMain.Rows(i).Item("MidRailHeight").ToString = Nothing Then
+                '    cLouvreDetails.MidRailHeight = Constants.DEFAULT_INTEGER_VALUE
+                'Else
+                '    cLouvreDetails.MidRailHeight = CInt(dtMain.Rows(i).Item("MidRailHeight"))
+                'End If
+
+                ''LouvreDetailID
+                'If dtMain.Rows(i).Item("LouvreDetailID").ToString = Nothing Then
+                '    cLouvreDetails.LouvreDetailID = Constants.DEFAULT_INTEGER_VALUE
+                'Else
+                '    cLouvreDetails.LouvreDetailID = CInt(dtMain.Rows(i).Item("LouvreDetailID"))
+                'End If
+
+                ''ShutterTypeID
+                'If dtMain.Rows(i).Item("ShutterTypeId").ToString = Nothing Then
+                '    cLouvreDetails.ShutterTypeId = Constants.DEFAULT_INTEGER_VALUE
+                'Else
+                '    cLouvreDetails.ShutterTypeId = CInt(dtMain.Rows(i).Item("ShutterTypeId"))
+                'End If
+
+                'If dtMain.Rows(i).Item("BladeLocks").ToString = Nothing Then
+                '    cLouvreDetails.BladeLocks = Constants.DEFAULT_INTEGER_VALUE
+                'Else
+                '    cLouvreDetails.BladeLocks = CInt(dtMain.Rows(i).Item("BladeLocks"))
+                'End If
+
+
+                Dim dtSpec As DataTable = service.GetLouvreSpecDesignRecordByLouvreDetailsID(cLouvreDetails.LouvreDetailID)
+                If dtSpec.Rows.Count > 0 Then
+                    cLouvreSpecDesign = service.getLouvreSpecDesignRecordDetails(dtSpec)
+                    cLouvreSpecDesign = setProductionSheetDataForOpening(cLouvreDetails, cLouvreSpecDesign)
+                    bolContinue = service.updateLouvreSpecDesign(cLouvreSpecDesign, cnn, trans)
+                Else
+                    cLouvreSpecDesign = New LouvreSpecDesign
+                    cLouvreSpecDesign = setProductionSheetDataForOpening(cLouvreDetails, cLouvreSpecDesign)
+                    bolContinue = service.addLouvreSpecDesign(cLouvreSpecDesign, cnn, trans)
+                End If
+                dtSpec.Dispose()
+                dtSpec = Nothing
+
+                If bolContinue = False Then
+                    Exit For
+                End If
+            Next
+        End If
+
+        service = Nothing
+
+        Return bolContinue
+
+    End Function
+
+    Protected Function GetLouvreDetails(intScheduleID As Integer, dtMain As DataTable) As DataTable
+
+        Dim service As New AppService
+        dtMain = service.getLouvreDetailsByProductionScheduleID(intScheduleID)
+        Return dtMain
+
+    End Function
+
+    Protected Function setProductionSheetDataForOpening(cLouvreDetails As LouvreDetails, cLouvreDesign As LouvreSpecDesign) As LouvreSpecDesign
+
+        'Dim cLouvreDesign As New LouvreSpecDesign
+
+        cLouvreDesign.LouvreDetailsID = cLouvreDetails.LouvreDetailID
+
+        cLouvreDesign.OpeningHeight = cLouvreDetails.Height
+        cLouvreDesign.OpeningWidth = cLouvreDetails.Width
+
+        cLouvreDesign.NoOfPanels = cLouvreDetails.NoOfPanels
+
+        cLouvreDesign.PileColour = cLouvreDetails.PileColourId
+
+        If cLouvreDetails.BladeLocks = 1 Then 'bladelocks selected
+            cLouvreDesign.BladeLockQuantity = cLouvreDetails.NoOfPanels
+        End If
+
+
+        'flushbolts for bifolds
+        If cLouvreDetails.ShutterTypeId = 1 Then 'bifolds
+            If cLouvreDetails.FlushBoltsTopId <> Constants.DEFAULT_INTEGER_VALUE Then
+                cLouvreDesign.TopFlushBoltsType = cLouvreDetails.FlushBoltsTopId
+                cLouvreDesign.TopFlushBoltsQuantity = cLouvreDetails.NoOfPanels / 2
+            End If
+            If cLouvreDetails.FlushBoltsBottomId <> Constants.DEFAULT_INTEGER_VALUE Then
+                cLouvreDesign.BottomFlushBoltsType = cLouvreDetails.FlushBoltsBottomId
+                cLouvreDesign.BottomFlushBoltsQuantity = cLouvreDetails.NoOfPanels / 2
+            End If
+        End If
+
+        'hinged lockset
+        'If cLouvreDetails.ShutterTypeId = 11 Or cLouvreDetails.ShutterTypeId = 12 Or cLouvreDetails.ShutterTypeId = 13 Then
+        '    Select Case cLouvreDetails.LockOptionsId
+        '        Case 1
+        '            cLouvreDesign.KeyLocksetType = 1
+        '            cLouvreDesign.KeyLocksetQuantity = 1
+        '            cLouvreDesign.KeyLockType = 1
+        '            cLouvreDesign.KeyLockQuantity = 1
+        '            cLouvreDesign.KeyLockPinCylinder = 1
+        '            cLouvreDesign.KeyLockPinCylinderQuantity = 1
+        '        Case 2
+        '            cLouvreDesign.KeyLocksetType = 1
+        '            cLouvreDesign.KeyLocksetQuantity = 1
+        '            cLouvreDesign.KeyLockType = 1
+        '            cLouvreDesign.KeyLockQuantity = 1
+        '            cLouvreDesign.KeyLockPinCylinder = 1
+        '            cLouvreDesign.KeyLockPinCylinderQuantity = 1
+        '        Case 3
+        '            cLouvreDesign.KeyLocksetType = 1
+        '            cLouvreDesign.KeyLocksetQuantity = 1
+        '            cLouvreDesign.KeyLockType = 1
+        '            cLouvreDesign.KeyLockQuantity = 1
+        '            cLouvreDesign.KeyLockPinCylinder = 1
+        '            cLouvreDesign.KeyLockPinCylinderQuantity = 1
+        '        Case 4
+        '            cLouvreDesign.KeyLocksetType = 1
+        '            cLouvreDesign.KeyLocksetQuantity = 1
+        '            cLouvreDesign.KeyLockType = 1
+        '            cLouvreDesign.KeyLockQuantity = 1
+        '            cLouvreDesign.KeyLockPinCylinder = 1
+        '            cLouvreDesign.KeyLockPinCylinderQuantity = 1
+        '        Case 5
+        '            cLouvreDesign.KeyLocksetType = 1
+        '            cLouvreDesign.KeyLocksetQuantity = 1
+        '            cLouvreDesign.KeyLockType = 1
+        '            cLouvreDesign.KeyLockQuantity = 1
+        '            cLouvreDesign.KeyLockPinCylinder = 1
+        '            cLouvreDesign.KeyLockPinCylinderQuantity = 1
+        '    End Select
+        'End If
+
+
+
+        If cLouvreDetails.MidRailHeight <> Constants.DEFAULT_INTEGER_VALUE Then
+            cLouvreDesign.NoOfTransom = 1
+
+            'set single bottom rail for now...
+            Dim dtTransom As DataTable = calculateTransomHeightData(cLouvreDetails.ShutterTypeId, cLouvreDetails.MidRailHeight, 1)
+            If dtTransom.Rows.Count > 0 Then
+
+                'Given Value
+                If ViewState("dtUpdate") IsNot Nothing Then
+                    cLouvreDesign.GivenTransomHeight = CInt(txtHiddenGivenTransomHeight.Text)
+                    cLouvreDesign.PanelTransomHeight = CInt(txtHiddenGivenTransomHeight.Text) - 10
+                    If cLouvreDesign.GivenTransomHeight = 0 Then
+                        cLouvreDesign.GivenTransomHeight = CInt(dtTransom.Rows(0)("GivenTransomHeight"))
+                        cLouvreDesign.PanelTransomHeight = CInt(dtTransom.Rows(0)("PanelTransomHeight"))
+                    End If
+                Else
+                    cLouvreDesign.GivenTransomHeight = CInt(dtTransom.Rows(0)("GivenTransomHeight"))
+                    cLouvreDesign.PanelTransomHeight = CInt(dtTransom.Rows(0)("PanelTransomHeight"))
+                End If
+
+                cLouvreDesign.BottomFirstBladeHoleStartPoint = CInt(dtTransom.Rows(0)("StartMM"))
+
+                cLouvreDesign.TopInfillBottomSize = CInt(dtTransom.Rows(0)("TopTrim"))
+                cLouvreDesign.BottomInfillBottomSize = CInt(dtTransom.Rows(0)("BottomTrim"))
+            End If
+            dtTransom.Dispose()
+            dtTransom = Nothing
+        End If
+
+        cLouvreDesign.ReadyToGenerate = DateTime.Now
+
+        cLouvreDesign.GenerationComplete = Constants.DEFAULT_DATE_VALUE
+
+        Return cLouvreDesign
+
+    End Function
+
+    Protected Function calculateTransomHeightData(intShutterTypeID As Integer, intMidrailHeight As Integer, intBottomRailType As Integer) As DataTable
+
+        Dim dtReturnTransom As DataTable = New DataTable
+
+        Dim service As New AppService
+        Dim dtTransom As DataTable = service.runSQLScheduling("select * from dbo.tblLouvreTransomHeights where ShutterTypeID=" & intShutterTypeID.ToString & " and BottomRailType=" & intBottomRailType.ToString)
+
+        If dtTransom.Rows.Count > 0 Then
+            'Updated
+            If ViewState("dtUpdate") IsNot Nothing Then
+                Dim intMidrailHeightOrig As Integer = intMidrailHeight
+                Dim intPanelHeight As Integer = CInt(txtHiddenGivenTransomHeight.Text)
+                If intPanelHeight > 0 Then
+                    intMidrailHeight = intPanelHeight
+                    dtReturnTransom = SharedFunctions.performDatatableSelect(dtTransom, "GivenTransomHeight>=" & intMidrailHeight.ToString, "GivenTransomHeight ASC")
+                    txtHiddenGivenTransomHeight.Text = CInt(dtReturnTransom.Rows(0)("GivenTransomHeight"))
+                    dtReturnTransom.Clear()
+                    dtReturnTransom = SharedFunctions.performDatatableSelect(dtTransom, "GivenTransomHeight>=" & intMidrailHeightOrig.ToString, "GivenTransomHeight ASC")
+                Else
+                    'Original
+                    dtReturnTransom = SharedFunctions.performDatatableSelect(dtTransom, "GivenTransomHeight>=" & intMidrailHeight.ToString, "GivenTransomHeight ASC")
+                End If
+            Else
+                'Original
+                dtReturnTransom = SharedFunctions.performDatatableSelect(dtTransom, "GivenTransomHeight>=" & intMidrailHeight.ToString, "GivenTransomHeight ASC")
+            End If
+        End If
+
+        dtTransom.Dispose()
+        dtTransom = Nothing
+
+        Return dtReturnTransom
+
+    End Function
+
+    Private Sub btnOpeningModify_Click(sender As Object, e As EventArgs) Handles btnOpeningModify.Click
+
+        Dim service As New AppService
+
+        Dim strSQL As String = "Select * from tblLouvreSpecDesign where LouvreDetailsID = " & txtHiddenLouvreDetail.Text
+        Dim dt As DataTable = service.runSQLScheduling(strSQL)
+
+        If ViewState("dtUpdate") IsNot Nothing Then
+            Dim dtUpdated As DataTable = ViewState("dtUpdate")
+            For Each drow As DataRow In dtUpdated.Rows
+                If txtHiddenLouvreDetail.Text = drow("LouvreDetailsID").ToString Then
+                    txtGrossTransomHeight.Text = drow("GivenTransomHeight")
+                End If
+            Next
+            ModalPopupExtender1.Show()
+            Exit Sub
+        Else
+            Dim row As DataRow = dt.NewRow
+            row("GivenTransomHeight") = "0"
+            row("LouvreDetailsID") = txtHiddenLouvreDetail.Text
+            dt.Rows.Add(row)
+            ViewState("dtUpdate") = dt
+            ModalPopupExtender1.Show()
+        End If
+
+
+    End Sub
+
+    Private Sub btnViewDetails_Click(sender As Object, e As EventArgs) Handles btnViewDetails.Click
+
+        Dim service As New AppService
+
+        Dim strSQL As String = "Select * from tblLouvreDetails where LouvreDetailID = " & txtHiddenLouvreDetail.Text
+        Dim dtViewDetails As DataTable = service.runSQLScheduling(strSQL)
+
+        lblLocation.Text = dtViewDetails.Rows(0).Item("Location").ToString
+        lblColour.Text = dtViewDetails.Rows(0).Item("Colour").ToString
+        lblHeight.Text = dtViewDetails.Rows(0).Item("Height").ToString
+        lblWidth.Text = dtViewDetails.Rows(0).Item("Width").ToString
+
+        If dtViewDetails.Rows(0).Item("MakeOrOpenSizesId").ToString = "1" Then
+            lblMakeOpening.Text = "Make Sizes"
+        ElseIf dtViewDetails.Rows(0).Item("MakeOrOpenSizesId").ToString = "2" Then
+            lblMakeOpening.Text = "Opening Sizes"
+        Else
+            lblMakeOpening.Text = String.Empty
+        End If
+
+        lblProduct.Text = dtViewDetails.Rows(0).Item("Product").ToString
+        lblShutterType.Text = dtViewDetails.Rows(0).Item("ShutterType").ToString
+        lblOpenInOut.Text = dtViewDetails.Rows(0).Item("BiFoldHingedDoorInOut").ToString
+        lblNoOfPanels.Text = dtViewDetails.Rows(0).Item("NoOfPanels").ToString
+        lblBladeSize.Text = dtViewDetails.Rows(0).Item("BladeSize").ToString
+        lblEndPlugColour.Text = dtViewDetails.Rows(0).Item("EndCapColour").ToString
+        lblBladeClipColour.Text = dtViewDetails.Rows(0).Item("BladeClipColour").ToString
+        lblPileColour.Text = dtViewDetails.Rows(0).Item("PileColour").ToString
+        lblTopTrackType.Text = dtViewDetails.Rows(0).Item("TopTrack").ToString
+        lblBottomTrackType.Text = dtViewDetails.Rows(0).Item("BottomTrackType").ToString
+
+        If dtViewDetails.Rows(0).Item("CurvedTrack").ToString = "1" Then
+            lblCurvedTrack.Text = "Yes"
+        ElseIf dtViewDetails.Rows(0).Item("CurvedTrack").ToString = "2" Then
+            lblCurvedTrack.Text = "No"
+        Else
+            lblCurvedTrack.Text = String.Empty
+        End If
+
+        lblExtraTrack.Text = dtViewDetails.Rows(0).Item("ExtraTrack").ToString
+        lblMidRailHeight.Text = dtViewDetails.Rows(0).Item("MidRailHeight").ToString
+        lblFlushBoltsTop.Text = dtViewDetails.Rows(0).Item("FlushBoltsTop").ToString
+        lblFlushBoltsBottom.Text = dtViewDetails.Rows(0).Item("FlushBoltsBottom").ToString
+        lblSpecialLockOptions.Text = dtViewDetails.Rows(0).Item("LockOptions").ToString
+
+        If dtViewDetails.Rows(0).Item("BladeLocks").ToString = "1" Then
+            lblBladeLocks.Text = "Yes"
+        ElseIf dtViewDetails.Rows(0).Item("BladeLocks").ToString = "2" Then
+            lblBladeLocks.Text = "No"
+        Else
+            lblBladeLocks.Text = String.Empty
+        End If
+
+        If dtViewDetails.Rows(0).Item("CChannel").ToString = "1" Then
+            lblFixedPanelChannelTAndB.Text = "Yes"
+        ElseIf dtViewDetails.Rows(0).Item("CChannel").ToString = "2" Then
+            lblFixedPanelChannelTAndB.Text = "No"
+        Else
+            lblFixedPanelChannelTAndB.Text = String.Empty
+        End If
+
+        lblFixedPanelChannel.Text = dtViewDetails.Rows(0).Item("FixedPanelChannel").ToString
+
+        If dtViewDetails.Rows(0).Item("HChannel").ToString = "1" Then
+            lblHJoiner.Text = "Yes"
+        ElseIf dtViewDetails.Rows(0).Item("HChannel").ToString = "2" Then
+            lblHJoiner.Text = "No"
+        Else
+            lblHJoiner.Text = String.Empty
+        End If
+
+        If dtViewDetails.Rows(0).Item("LChannel").ToString = "1" Then
+            lblLReveal.Text = "Reveal 3 Sided"
+        ElseIf dtViewDetails.Rows(0).Item("LChannel").ToString = "2" Then
+            lblLReveal.Text = "Reveal 4 Sided"
+        ElseIf dtViewDetails.Rows(0).Item("LChannel").ToString = "3" Then
+            lblLReveal.Text = "Facefit 3 Sided"
+        ElseIf dtViewDetails.Rows(0).Item("LChannel").ToString = "4" Then
+            lblLReveal.Text = "Facefit 4 Sided"
+        ElseIf dtViewDetails.Rows(0).Item("LChannel").ToString = "5" Then
+            lblLReveal.Text = "Door 3 Sided"
+        Else
+            lblLReveal.Text = String.Empty
+        End If
+
+        If dtViewDetails.Rows(0).Item("ZChannel").ToString = "1" Then
+            lblZReveal.Text = "Reveal 3 Sided"
+        ElseIf dtViewDetails.Rows(0).Item("ZChannel").ToString = "2" Then
+            lblZReveal.Text = "Reveal 4 Sided"
+        ElseIf dtViewDetails.Rows(0).Item("ZChannel").ToString = "3" Then
+            lblZReveal.Text = "Door 3 Sided"
+        Else
+            lblZReveal.Text = String.Empty
+        End If
+
+        lblTopOperation.Text = dtViewDetails.Rows(0).Item("BladeOperation").ToString
+        lblBottomOperation.Text = dtViewDetails.Rows(0).Item("BladeOperationBottom").ToString
+        lblTopInsert.Text = dtViewDetails.Rows(0).Item("InsertTop").ToString
+        lblBottomInsert.Text = dtViewDetails.Rows(0).Item("InsertBottom").ToString
+
+        If dtViewDetails.Rows(0).Item("BiFoldHingedDoorInOut").ToString = "Out" Then
+            If dtViewDetails.Rows(0).Item("FlyScreen").ToString = "1" Then
+                lblFlyScreen.Text = "No"
+            ElseIf dtViewDetails.Rows(0).Item("FlyScreen").ToString = "2" Then
+                lblFlyScreen.Text = "Yes"
+            End If
+        Else
+            lblFlyScreen.Text = String.Empty
+        End If
+
+        If dtViewDetails.Rows(0).Item("Winder").ToString = "1" Then
+            lblWinder.Text = "Left"
+        ElseIf dtViewDetails.Rows(0).Item("Winder").ToString = "2" Then
+            lblWinder.Text = "Right"
+        ElseIf dtViewDetails.Rows(0).Item("Winder").ToString = "3" Then
+            lblWinder.Text = "None"
+        Else
+            lblWinder.Text = String.Empty
+        End If
+
+        lblSlide.Text = dtViewDetails.Rows(0).Item("Slide").ToString
+        lblStackerLocation.Text = dtViewDetails.Rows(0).Item("StackerLocation").ToString
+
+        If dtViewDetails.Rows(0).Item("SpecialRequirements").ToString = "False" Then
+            lblSpecialRequirements.Text = String.Empty
+        Else
+            lblSpecialRequirements.Text = dtViewDetails.Rows(0).Item("SpecialRequirements").ToString
+        End If
+
+        If lblHeight.Text <> String.Empty Then
+            lblHeight.Text = lblHeight.Text + " (mm)"
+        End If
+
+        If lblWidth.Text <> String.Empty Then
+            lblWidth.Text = lblWidth.Text + " (mm)"
+        End If
+
+        If lblExtraTrack.Text <> String.Empty Then
+            lblExtraTrack.Text = lblExtraTrack.Text + " (mm)"
+        End If
+
+        If lblMidRailHeight.Text <> String.Empty Then
+            lblMidRailHeight.Text = lblMidRailHeight.Text + " (mm)"
+        End If
+
+        ModalPopupExtender2.Show()
+
+    End Sub
+
+    Private Sub btnSaveChanges_Click(sender As Object, e As EventArgs) Handles btnSaveChanges.Click
+
+        Dim dt As DataTable = ViewState("dtUpdate")
+
+        For Each drow As DataRow In dt.Rows
+            If txtHiddenLouvreDetail.Text = drow("LouvreDetailsID").ToString Then
+                drow("GivenTransomHeight") = txtGrossTransomHeight.Text
+                Exit For
+            End If
+        Next drow
+
+        ViewState("dtUpdate") = dt
+
+
+    End Sub
+
+    Protected Function productionSheetExistsForOpening(intShutterTypeID As Integer, intProfileTypeID As Integer, intNoOfPanels As Integer, intTransom As Integer, intOpenInOut As Integer) As Boolean
+
+        Dim service As New AppService
+
+        Dim strSQL As String = "select * from dbo.tblLouvreProductionSheetSelect where ShutterTypeID = " & intShutterTypeID.ToString & " and ProfileTypeID = " & intProfileTypeID.ToString &
+                        " and NoOfPanels = " & intNoOfPanels.ToString & " and NoOfTransoms = " & intTransom.ToString & " and OpenInOut = " & intOpenInOut.ToString
+
+        Dim dt As DataTable = service.runSQLScheduling(strSQL)
+        If dt.Rows.Count > 0 Then
+            Return True
+        Else
+            Return False
+        End If
+        dt.Dispose()
+        dt = Nothing
+        service = Nothing
+
+    End Function
+
+    Private Sub btnOptimise_Click(sender As Object, e As EventArgs) Handles btnOptimise.Click
+
+        Dim service As New AppService
+        Dim bolContinue As Boolean = True
+
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlClient.SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim trans As SqlClient.SqlTransaction = Nothing
+        dbConn = Nothing
+
+        Try
+
+            cnn.Open()
+            trans = cnn.BeginTransaction
+            'update orderstatus to accepted plus set received date
+            Dim cProductionSchedule As ProductionSchedule = service.getProdScheduleClsByID(CInt(Me.txtID.Text), cnn, trans)
+            Dim cNewProductionSchedule As ProductionSchedule = CType(cProductionSchedule.Clone, ProductionSchedule)
+            cNewProductionSchedule.OrderStatus = 2 'received - accepted
+            cNewProductionSchedule.ReceivedDate = DateTime.Today.Date
+
+            bolContinue = setLouvreSpecDetailsData(CInt(Me.txtID.Text), cnn, trans)
+
+            If bolContinue Then
+                bolContinue = service.addLouvreJobOptimiseRecord(CInt(Me.txtID.Text), cnn, trans)
+            End If
+
+            If bolContinue Then
+                bolContinue = service.updateProductionScheduleByID(cNewProductionSchedule, cnn, trans)
+            End If
+
+            If bolContinue Then
+                bolContinue = service.addProdScheduleHistoryRcd(0, cProductionSchedule, cnn, trans)
+            End If
+
+            If bolContinue Then
+                trans.Commit()
+                Response.Redirect("UpdateAwaitingAcceptance.aspx", False)
+            Else
+                EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - Transaction Rolled Back" & Environment.NewLine & getPageInfo())
+                trans.Rollback()
+            End If
+
+        Catch ex As Exception
+            If Not trans Is Nothing Then
+                trans.Rollback()
+            End If
+            If cnn.State = ConnectionState.Open Then
+                cnn.Close()
+            End If
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine & getPageInfo())
+            bolContinue = False
+        Finally
+            trans.Dispose()
+            trans = Nothing
+            If cnn.State = ConnectionState.Open Then
+                cnn.Close()
+            End If
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+        service = Nothing
+        ViewState("dtUpdate") = Nothing
+
+    End Sub
+
+    Private Sub btnOpeningExtraStock_Click(sender As Object, e As EventArgs) Handles btnOpeningExtraStock.Click
+
+        Dim service As New AppService
+
+        Dim strSQL As String = "Select tblLouvreExtraProduct.*, dbo.tblExtraProductList.Description from dbo.tblLouvreExtraProduct inner join dbo.tblExtraProductList on dbo.tblLouvreExtraProduct.ExtraProductID = dbo.tblExtraProductList.ExtraProductID where LouvreDetailsID = " & txtHiddenLouvreDetail.Text
+        Dim dt As DataTable = service.runSQLScheduling(strSQL)
+
+        'bind grid
+        Me.dgvOpeningExtras.DataSource = dt
+        Me.dgvOpeningExtras.DataBind()
+
+        Me.txtExtraStock.Text = String.Empty
+        Me.txtCutLength.Text = String.Empty
+
+        ViewState("dtStockUpdate") = dt
+        ModalPopupExtender3.Show()
+
+
+    End Sub
+
+    Private Sub dgvOpeningExtras_RowCommand(sender As Object, e As GridViewCommandEventArgs) Handles dgvOpeningExtras.RowCommand
+
+        If (e.CommandName = "DeleteExtraItem") Then
+
+            Dim currentRowIndex As Integer = Int32.Parse(e.CommandArgument.ToString())
+            Dim intID As String = dgvOpeningExtras.DataKeys(currentRowIndex).Values("ID").ToString
+
+            Dim dt As DataTable = ViewState("dtStockUpdate")
+
+            'add all records back with new id value sexcept the one being deleted
+            Dim dtTemp As DataTable = dt.Clone
+            For i As Integer = 0 To dt.Rows.Count - 1
+                If CInt(dt.Rows(i)("ID")) <> intID Then
+
+                    Dim drow As DataRow = dtTemp.NewRow
+                    drow("ID") = i
+                    drow("Description") = dt.Rows(i)("Description")
+                    drow("ExtraProductID") = dt.Rows(i)("ExtraProductID")
+                    drow("Quantity") = dt.Rows(i)("Quantity")
+                    drow("CutLength") = dt.Rows(i)("CutLength")
+                    dtTemp.Rows.Add(drow)
+
+                End If
+            Next
+
+            Me.dgvOpeningExtras.DataSource = dtTemp
+            Me.dgvOpeningExtras.DataBind()
+
+            ViewState("dtStockUpdate") = dtTemp
+
+        End If
+
+    End Sub
+
+    Private Sub btnSaveStock_Click(sender As Object, e As EventArgs) Handles btnSaveStock.Click
+
+
+        Dim service As New AppService
+        Dim bolContinue As Boolean = True
+
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlClient.SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim trans As SqlClient.SqlTransaction = Nothing
+        dbConn = Nothing
+
+        Try
+
+            cnn.Open()
+            trans = cnn.BeginTransaction
+
+            bolContinue = service.executeSQLScheduling("delete from dbo.tblLouvreExtraProduct where LouvreDetailsID = " & Me.txtHiddenLouvreDetail.Text, cnn, trans)
+
+            If bolContinue Then
+                Dim dt As DataTable = ViewState("dtStockUpdate")
+                For i As Integer = 0 To dt.Rows.Count - 1
+                    Dim cLouvreExtra As New LouvreExtraProduct
+                    cLouvreExtra.LouvreDetailsID = CInt(Me.txtHiddenLouvreDetail.Text)
+                    cLouvreExtra.ExtraProductID = CInt(dt.Rows(i)("ExtraProductID"))
+                    cLouvreExtra.Quantity = CDec(dt.Rows(i)("Quantity"))
+                    cLouvreExtra.CutLength = CDec(dt.Rows(i)("CutLength"))
+
+                    bolContinue = service.addLouvreExtraProductRecord(cLouvreExtra, cnn, trans)
+
+                    If bolContinue = False Then
+                        Exit For
+                    End If
+                Next
+            End If
+
+
+            If bolContinue Then
+                trans.Commit()
+            Else
+                EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - Transaction Rolled Back" & Environment.NewLine & getPageInfo())
+                trans.Rollback()
+            End If
+
+        Catch ex As Exception
+            If Not trans Is Nothing Then
+                trans.Rollback()
+            End If
+            If cnn.State = ConnectionState.Open Then
+                cnn.Close()
+            End If
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine & getPageInfo())
+            bolContinue = False
+        Finally
+            trans.Dispose()
+            trans = Nothing
+            If cnn.State = ConnectionState.Open Then
+                cnn.Close()
+            End If
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+        service = Nothing
+
+        If bolContinue Then
+            ViewState("dtStockUpdate") = Nothing
+        End If
+
+    End Sub
+
+    Private Sub btnAddStock_Click(sender As Object, e As EventArgs) Handles btnAddStock.Click
+
+        Dim dt As DataTable = ViewState("dtStockUpdate")
+
+        Dim drow As DataRow = dt.NewRow
+        drow("ID") = dt.Rows.Count * -1
+        drow("Description") = Me.cboExtraStock.SelectedItem.Text
+        drow("ExtraProductID") = Me.cboExtraStock.SelectedValue
+        If Me.txtExtraStock.Text <> String.Empty Then
+            drow("Quantity") = CDec(Me.txtExtraStock.Text)
+        End If
+        If Me.txtCutLength.Text <> String.Empty Then
+            drow("CutLength") = CDec(Me.txtCutLength.Text)
+        End If
+        dt.Rows.Add(drow)
+
+        Me.txtExtraStock.Text = String.Empty
+        Me.txtCutLength.Text = String.Empty
+
+        Me.dgvOpeningExtras.DataSource = dt
+        Me.dgvOpeningExtras.DataBind()
+
+        ViewState("dtStockUpdate") = dt
+
+
+    End Sub
+End Class

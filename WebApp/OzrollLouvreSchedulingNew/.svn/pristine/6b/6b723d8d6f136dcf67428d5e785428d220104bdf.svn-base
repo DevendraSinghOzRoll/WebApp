@@ -1,0 +1,449 @@
+﻿Imports System.Data.SqlClient
+
+Public Class DataDAO
+
+    Function runSQLHive(ByVal intSiteID As Integer, ByVal strSQL As String) As DataTable
+
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_HIVE(intSiteID)
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = strSQL
+            cmd.CommandType = CommandType.Text
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+        Catch ex As Exception
+            'EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Close()
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+        dbConn = Nothing
+        Return dt
+
+
+    End Function
+
+    Function runSQLOzrollSybiz(ByVal strSQL As String) As DataTable
+
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzrollSybiz
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = strSQL
+            cmd.CommandType = CommandType.Text
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Close()
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+        dbConn = Nothing
+        Return dt
+
+
+    End Function
+
+    Function runSQLOSCDatabase(ByVal strSQL As String, Optional cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As DataTable
+
+        Dim bolCnnOpen As Boolean = True
+
+        If IsNothing(cnn) Then
+            Dim dbConn As New DBConnection
+            cnn = dbConn.getSQLConnection_To_OSCDatabase
+            dbConn = Nothing
+            bolCnnOpen = False
+        End If
+
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            If bolCnnOpen = False Then
+                cnn.Open()
+            End If
+
+            cmd.Connection = cnn
+            cmd.CommandText = strSQL
+            cmd.CommandType = CommandType.Text
+
+            If bolCnnOpen Then
+                cmd.Transaction = trans
+            End If
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+
+            If bolCnnOpen = False Then
+                cnn.Close()
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            If bolCnnOpen = False Then
+                cnn.Dispose()
+                cnn = Nothing
+            End If
+        End Try
+        Return dt
+
+    End Function
+
+    Function runSQLScheduling(ByVal strSQL As String, Optional cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As DataTable
+
+        Dim bolCnnOpen As Boolean = True
+
+        If IsNothing(cnn) Then
+            Dim dbConn As New DBConnection
+            cnn = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+            dbConn = Nothing
+            bolCnnOpen = False
+        End If
+
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            If bolCnnOpen = False Then
+                cnn.Open()
+            End If
+
+            cmd.Connection = cnn
+            cmd.CommandText = strSQL
+            cmd.CommandType = CommandType.Text
+
+            If bolCnnOpen Then
+                cmd.Transaction = trans
+            End If
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+
+            If bolCnnOpen = False Then
+                cnn.Close()
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            If bolCnnOpen = False Then
+                cnn.Dispose()
+                cnn = Nothing
+            End If
+        End Try
+        Return dt
+
+    End Function
+
+    Function runSQLOZOTS(ByVal strSQL As String) As DataTable
+
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OZOTS
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = strSQL
+            cmd.CommandType = CommandType.Text
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+        Catch ex As Exception
+            'EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Close()
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+        dbConn = Nothing
+        Return dt
+
+
+    End Function
+
+    Function runSQLOzrollTracking(ByVal strSQL As String) As DataTable
+
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzrollTracking
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = strSQL
+            cmd.CommandType = CommandType.Text
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+        Catch ex As Exception
+            'EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Close()
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+        dbConn = Nothing
+        Return dt
+
+
+    End Function
+
+    Function executeSQLScheduling(ByVal strSQL As String, Optional cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As Boolean
+
+        Dim bolCnnOpen As Boolean = True
+
+        If IsNothing(cnn) Then
+            Dim dbConn As New DBConnection
+            cnn = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+            dbConn = Nothing
+            bolCnnOpen = False
+        End If
+        Dim cmd As New SqlCommand
+        Dim upExecuteOK As Boolean = True
+        Try
+            If bolCnnOpen = False Then
+                cnn.Open()
+            End If
+            cmd.Connection = cnn
+            cmd.CommandText = strSQL
+            cmd.CommandType = CommandType.Text
+            If bolCnnOpen Then
+                cmd.Transaction = trans
+            End If
+            cmd.ExecuteNonQuery()
+        Catch ex As Exception
+            upExecuteOK = False
+            'EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+            If bolCnnOpen = False Then
+                cnn.Dispose()
+                cnn = Nothing
+            End If
+        End Try
+        Return upExecuteOK
+
+    End Function
+
+    Public Function addWebsitePageAccess(ByVal strWebsite As String, ByVal intUserID As Integer, ByVal strUserName As String, ByVal strPageName As String, ByVal strReference As String, ByVal dteHitDate As Date) As Boolean
+        Dim dbConn As New DBConnection
+        Dim con As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim com As New SqlCommand
+
+        con = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Try
+            con.Open()
+            com.Connection = con
+            com.CommandText = "sp_addWebsitePageAccess"
+            com.CommandType = CommandType.StoredProcedure
+
+            com.Parameters.Add("@Website", SqlDbType.VarChar)
+            If strWebsite.Equals(String.Empty) Then
+                com.Parameters("@Website").Value = System.DBNull.Value
+            Else : com.Parameters("@Website").Value = strWebsite
+            End If
+
+            com.Parameters.Add("@UserID", SqlDbType.Int)
+            If intUserID = Constants.DEFAULT_INTEGER_VALUE Then
+                com.Parameters("@UserID").Value = System.DBNull.Value
+            Else : com.Parameters("@UserID").Value = intUserID
+            End If
+
+            com.Parameters.Add("@UserName", SqlDbType.VarChar)
+            If strUserName.Equals(String.Empty) Then
+                com.Parameters("@UserName").Value = System.DBNull.Value
+            Else : com.Parameters("@UserName").Value = strUserName
+            End If
+
+            com.Parameters.Add("@PageName", SqlDbType.VarChar)
+            If strPageName.Equals(String.Empty) Then
+                com.Parameters("@PageName").Value = System.DBNull.Value
+            Else : com.Parameters("@PageName").Value = strPageName
+            End If
+
+            com.Parameters.Add("@Reference", SqlDbType.VarChar)
+            If strReference.Equals(String.Empty) Then
+                com.Parameters("@Reference").Value = System.DBNull.Value
+            Else : com.Parameters("@Reference").Value = strReference
+            End If
+
+            com.Parameters.Add("@HitDateTime", SqlDbType.DateTime)
+            If dteHitDate.Equals(Constants.DEFAULT_DATE_VALUE) Then
+                com.Parameters("@HitDateTime").Value = System.DBNull.Value
+            Else : com.Parameters("@HitDateTime").Value = dteHitDate
+            End If
+
+            Dim ra As Integer = com.ExecuteNonQuery()
+            con.Close()
+
+            If ra = 0 Then
+                Return False
+            Else
+                Return True
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+
+            con.Close()
+            Return False
+
+        Finally
+            com.Dispose()
+            com = Nothing
+            con.Dispose()
+            con = Nothing
+
+        End Try
+
+        dbConn = Nothing
+
+    End Function
+
+    Function updateScheduledDate(ByVal intSiteID As Integer, ByVal intJobNumber As Integer, ByVal dteScheduledDate As Date) As Boolean
+
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim upDateOK As Boolean = True
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_updateScheduledDate"
+            cmd.CommandType = CommandType.StoredProcedure
+            SqlCommandBuilder.DeriveParameters(cmd)
+            cmd.Parameters("@SiteID").Value = intSiteID
+            cmd.Parameters("@JobNumber").Value = intJobNumber
+            cmd.Parameters("@ScheduledDate").Value = dteScheduledDate
+            cmd.ExecuteNonQuery()
+        Catch ex As Exception
+            upDateOK = False
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Close()
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+        dbConn = Nothing
+        Return upDateOK
+
+    End Function
+
+    Function getPlantationOrderDetail(ByVal intSiteID As Integer, ByVal intJobNumber As Integer) As DataTable
+
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_HIVE(intSiteID)
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "SELECT Orders.JobNumber, Orders.ContractNo, Customers.LastName AS CustomerName, tblPSCheckMeasure.Notes " & _
+                                "FROM Orders INNER JOIN " & _
+                                "Customers ON Orders.CustomerID = Customers.CustomerID INNER JOIN " & _
+                                "tblPSCheckMeasure ON Orders.JobNumber = tblPSCheckMeasure.JobNumber " & _
+                                "WHERE (Orders.JobNumber = " & intJobNumber & ")"
+
+            cmd.CommandType = CommandType.Text
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Close()
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+        dbConn = Nothing
+        Return dt
+
+    End Function
+
+    Function getPlantationOrderExtras(ByVal intSiteID As Integer, ByVal intJobNumber As Integer) As DataTable
+
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_HIVE(intSiteID)
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "SELECT AutoID, Quantity, Description " & _
+                              "FROM vw_TManCMDiscExtras " & _
+                              "WHERE (JobNumber = " & intJobNumber & ") AND (RecordTypeId = 2)"
+
+            cmd.CommandType = CommandType.Text
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+        Catch ex As Exception
+            'EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Close()
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+        dbConn = Nothing
+        Return dt
+
+    End Function
+
+End Class

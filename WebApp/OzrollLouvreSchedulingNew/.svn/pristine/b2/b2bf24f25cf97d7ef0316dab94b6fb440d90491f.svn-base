@@ -1,0 +1,165 @@
+Imports System.Data.SqlClient
+
+Public Class DBConnection
+
+    Public Function getSQLConnection_To_HIVE(ByVal intSiteID As Integer) As SqlConnection
+
+        Dim w_Server As String = String.Empty
+        Dim w_Database As String = String.Empty
+        Dim w_Username As String = "HiveAccess"
+        Dim w_Password As String = "skycity"
+
+        Select Case intSiteID
+            Case 1 ' MOD NSW
+                w_Server = "MODSQL1\HIVE"
+                w_Database = "HiveServer"
+            Case 2 ' MOD VIC
+                w_Server = "MODSQL1\HIVE"
+                w_Database = "HiveSvrModRetVIC"
+            Case 3, 8 ' BRAM SA
+                w_Server = "MODSQL1\HIVE"
+                w_Database = "HiveSvrBrmRet"
+            Case 4 ' MOD WA
+                w_Server = "MODSQL1\HIVE"
+                w_Database = "HiveSvrModRetWA"
+            Case 7 ' MOD QLD
+                w_Server = "MODSQL1\HIVE"
+                w_Database = "HiveSvrModRetQLD"
+            Case 44 ' MOD TAS
+                w_Server = "MODSQL1\HIVE"
+                w_Database = "HiveSvrModRetTAS"
+            Case 10
+                w_Server = "MODNEWCSVR\HIVE"
+                w_Database = "HiveSvrModRet"
+            Case 15
+                w_Server = "MODCCSVR\HIVE"
+                w_Database = "HiveSvrModRet"
+            Case 45
+                w_Server = "MODSQL1\HIVE"
+                w_Database = "HiveSvrGGGRet"
+        End Select
+
+        '''''''''''''''
+        ' Testing Only
+        'w_Server = "HIVESERVER"
+        'w_Database = "OzrollPlantationScheduling"
+        'w_Server = "MODSQL1\HIVE"
+        'w_Database = "HiveServer"
+        '''''''''''''''
+
+        Dim connectionString As String = "Server=" & w_Server & ";Database=" & w_Database & ";User ID=" & w_Username & ";Password=" & w_Password & ";Trusted_Connection=False;Connect Timeout=360"
+        Dim con As New SqlConnection(connectionString)
+        Return con
+
+    End Function
+
+    Public Function getSQLConnection_To_WebAutoEmail() As SqlConnection
+
+        Dim w_Server As String = "MODSQL1\HIVE"
+        Dim w_Database As String = "AutoEmailWebsite"
+        Dim w_Username As String = "HiveAccess"
+        Dim w_Password As String = "skycity"
+
+        Dim connectionString As String = "Server=" & w_Server & ";Database=" & w_Database & ";User ID=" & w_Username & ";Password=" & w_Password & ";Trusted_Connection=False;Connect Timeout=60"
+        Dim con As New SqlConnection(connectionString)
+        Return con
+
+    End Function
+
+
+    Public Function getSQLConnection_To_OzRollPlantationScheduling() As SqlConnection
+
+        'Dim w_Server As String = "HIVESERVER"
+        Dim w_Server As String = "MODSQL1\HIVE"
+        Dim w_Username As String = "HiveAccess"
+        Dim w_Password As String = "skycity"
+
+        Dim w_Database As String = String.Empty
+
+        If Constants.LIVE_SITE Then
+            w_Database = "OzrollPlantationScheduling"
+        Else
+            'w_Database = "OzrollPlantationSchedulingRESTORE"
+            'w_Database = "OzrollPlantationSchedulingDEV"
+            w_Database = "OzrollPlantationSchedulingTEST"
+        End If
+
+        Dim connectionString As String = "Server=" & w_Server & ";Database=" & w_Database & ";User ID=" & w_Username & ";Password=" & w_Password & ";Trusted_Connection=False;Connect Timeout=60"
+        Dim con As New SqlConnection(connectionString)
+        Return con
+
+    End Function
+
+    Public Function getSQLConnection_To_OSCDatabase() As SqlConnection
+
+        'Dim w_Server As String = "HIVESERVER"
+        Dim w_Server As String = "OZOTSSVR\OZROLL"
+        Dim w_Username As String = "oscdatabase"
+        Dim w_Password As String = "L0uvreqld"
+
+        Dim w_Database As String = String.Empty
+
+        If Constants.LIVE_SITE Then
+            w_Database = "OSCDatabaseBackend"
+        Else
+            w_Database = "OSCDatabaseBackend"
+        End If
+
+
+
+        Dim connectionString As String = "Server=" & w_Server & ";Database=" & w_Database & ";User ID=" & w_Username & ";Password=" & w_Password & ";Trusted_Connection=False;Connect Timeout=60"
+        Dim con As New SqlConnection(connectionString)
+        Return con
+
+    End Function
+
+    Public Function getSQLConnection_To_OzrollSybiz() As SqlConnection
+
+        'Dim w_Server As String = "HIVESERVER"
+        Dim w_Server As String = "OZSASQL2"
+        Dim w_Username As String = "sybiz"
+        Dim w_Password As String = "Centre847"
+
+        Dim w_Database As String = String.Empty
+
+        If Constants.LIVE_SITE Then
+            w_Database = "Ozroll"
+        Else
+            w_Database = "Ozroll_DEVTEST"
+        End If
+
+
+
+        Dim connectionString As String = "Server=" & w_Server & ";Database=" & w_Database & ";User ID=" & w_Username & ";Password=" & w_Password & ";Trusted_Connection=False;Connect Timeout=60"
+        Dim con As New SqlConnection(connectionString)
+        Return con
+
+    End Function
+
+    Public Function getSQLConnection_To_OZOTS() As SqlConnection
+
+        Dim w_Server As String = "OZOTSSVR"
+        Dim w_Database As String = "ozots"
+        Dim w_Username As String = "modernro"
+        Dim w_Password As String = "EZGnVMP}#(X58df"
+
+        Dim connectionString As String = "Server=" & w_Server & ";Database=" & w_Database & ";User ID=" & w_Username & ";Password=" & w_Password & ";Trusted_Connection=False;Connect Timeout=60"
+        Dim con As New SqlConnection(connectionString)
+        Return con
+
+    End Function
+
+    Public Function getSQLConnection_To_OzrollTracking() As SqlConnection
+
+        Dim w_Server As String = "OZOTSSVR\OZROLL"
+        Dim w_Database As String = "smartbase"
+        Dim w_Username As String = "smartbase"
+        Dim w_Password As String = "smartbase"
+
+        Dim connectionString As String = "Server=" & w_Server & ";Database=" & w_Database & ";User ID=" & w_Username & ";Password=" & w_Password & ";Trusted_Connection=False;Connect Timeout=60"
+        Dim con As New SqlConnection(connectionString)
+        Return con
+
+    End Function
+
+End Class

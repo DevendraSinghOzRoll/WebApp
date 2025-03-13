@@ -1,0 +1,1024 @@
+﻿Imports Microsoft.VisualBasic
+Imports System.Data.SqlClient
+
+Public Class TempPlantationJobDetailsDAO
+
+    Function getTempPlantationJobDetailsRecord(intPSDetailID As Integer) As PlantationJobDetails
+
+        Dim dt As DataTable = getTempPlantationJobDetailsRecordDatatable(intPSDetailID)
+        Dim cPlantationJobDetails As PlantationJobDetails = New PlantationJobDetails
+
+        If dt.Rows.Count > 0 Then
+            If Not IsDBNull(dt.Rows(0)("PSDetailID")) Then
+                cPlantationJobDetails.PSDetailID = CInt(dt.Rows(0)("PSDetailID"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("TempGUID")) Then
+                cPlantationJobDetails.TempGUID = dt.Rows(0)("TempGUID").ToString
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("OriginalPSDetailID")) Then
+                cPlantationJobDetails.OriginalPSDetailID = CInt(dt.Rows(0)("OriginalPSDetailID"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("PlantationScheduleListID")) Then
+                cPlantationJobDetails.PlantationScheduleListID = CInt(dt.Rows(0)("PlantationScheduleListID"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("ShutterID")) Then
+                cPlantationJobDetails.ShutterID = CInt(dt.Rows(0)("ShutterID"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Quantity")) Then
+                cPlantationJobDetails.Quantity = CInt(dt.Rows(0)("Quantity"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("InstallationAreaID")) Then
+                cPlantationJobDetails.InstallationAreaID = CInt(dt.Rows(0)("InstallationAreaID"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("InstallationArea")) Then
+                cPlantationJobDetails.InstallationArea = CStr(dt.Rows(0)("InstallationArea"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("RoomLocationID")) Then
+                cPlantationJobDetails.RoomLocationID = CInt(dt.Rows(0)("RoomLocationID"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("RoomLocation")) Then
+                cPlantationJobDetails.RoomLocation = CStr(dt.Rows(0)("RoomLocation"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("RoomLocationOther")) Then
+                cPlantationJobDetails.RoomLocationOther = CStr(dt.Rows(0)("RoomLocationOther"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Width")) Then
+                cPlantationJobDetails.Width = CInt(dt.Rows(0)("Width"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Height")) Then
+                cPlantationJobDetails.Height = CInt(dt.Rows(0)("Height"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("MountConfigID")) Then
+                cPlantationJobDetails.MountConfigID = CInt(dt.Rows(0)("MountConfigID"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("MountConfig")) Then
+                cPlantationJobDetails.MountConfig = CStr(dt.Rows(0)("MountConfig"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("MountStyleID")) Then
+                cPlantationJobDetails.MountStyleID = CInt(dt.Rows(0)("MountStyleID"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("MountStyle")) Then
+                cPlantationJobDetails.MountStyle = CStr(dt.Rows(0)("MountStyle"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("PanelQtyID")) Then
+                cPlantationJobDetails.PanelQtyID = CInt(dt.Rows(0)("PanelQtyID"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("PanelQty")) Then
+                cPlantationJobDetails.PanelQty = CStr(dt.Rows(0)("PanelQty"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("MaterialID")) Then
+                cPlantationJobDetails.MaterialID = CInt(dt.Rows(0)("MaterialID"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Material")) Then
+                cPlantationJobDetails.Material = CStr(dt.Rows(0)("Material"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("BladeSizeID")) Then
+                cPlantationJobDetails.BladeSizeID = CInt(dt.Rows(0)("BladeSizeID"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("BladeSize")) Then
+                cPlantationJobDetails.BladeSize = CStr(dt.Rows(0)("BladeSize"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("ColourID")) Then
+                cPlantationJobDetails.ColourID = CInt(dt.Rows(0)("ColourID"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Colour")) Then
+                cPlantationJobDetails.Colour = CStr(dt.Rows(0)("Colour"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("MidRailHeight")) Then
+                cPlantationJobDetails.MidRailHeight = CInt(dt.Rows(0)("MidRailHeight"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("LayoutID")) Then
+                cPlantationJobDetails.LayoutID = CInt(dt.Rows(0)("LayoutID"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Layout")) Then
+                cPlantationJobDetails.Layout = CStr(dt.Rows(0)("Layout"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("LayoutOther")) Then
+                cPlantationJobDetails.LayoutOther = CStr(dt.Rows(0)("LayoutOther"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("MountMethodID")) Then
+                cPlantationJobDetails.MountMethodID = CInt(dt.Rows(0)("MountMethodID"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("MountMethod")) Then
+                cPlantationJobDetails.MountMethod = CStr(dt.Rows(0)("MountMethod"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("HingeColourID")) Then
+                cPlantationJobDetails.HingeColourID = CInt(dt.Rows(0)("HingeColourID"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("HingeColour")) Then
+                cPlantationJobDetails.HingeColour = CStr(dt.Rows(0)("HingeColour"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("FrameTypeID")) Then
+                cPlantationJobDetails.FrameTypeID = CInt(dt.Rows(0)("FrameTypeID"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("FrameType")) Then
+                cPlantationJobDetails.FrameType = CStr(dt.Rows(0)("FrameType"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("SidesID")) Then
+                cPlantationJobDetails.SidesID = CInt(dt.Rows(0)("SidesID"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Sides")) Then
+                cPlantationJobDetails.Sides = CStr(dt.Rows(0)("Sides"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("ControlTypeID")) Then
+                cPlantationJobDetails.ControlTypeID = CInt(dt.Rows(0)("ControlTypeID"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("ControlType")) Then
+                cPlantationJobDetails.ControlType = CStr(dt.Rows(0)("ControlType"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Track")) Then
+                cPlantationJobDetails.Track = CInt(dt.Rows(0)("Track"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("SlidingGuideID")) Then
+                cPlantationJobDetails.SlidingGuideID = CInt(dt.Rows(0)("SlidingGuideID"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("SlidingGuide")) Then
+                cPlantationJobDetails.SlidingGuide = CStr(dt.Rows(0)("SlidingGuide"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("SlidingOpenCloseID")) Then
+                cPlantationJobDetails.SlidingOpenCloseID = CInt(dt.Rows(0)("SlidingOpenCloseID"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("SlidingOpenClose")) Then
+                cPlantationJobDetails.SlidingOpenClose = CStr(dt.Rows(0)("SlidingOpenClose"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("TPostQtyID")) Then
+                cPlantationJobDetails.TPostQtyID = CInt(dt.Rows(0)("TPostQtyID"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("TPostQty")) Then
+                cPlantationJobDetails.TPostQty = CStr(dt.Rows(0)("TPostQty"))
+            End If
+
+
+            If Not IsDBNull(dt.Rows(0)("TPostQtyLocationID")) Then
+                cPlantationJobDetails.TPostQtyLocationID = CStr(dt.Rows(0)("TPostQtyLocationID"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("TPostQtyLocation")) Then
+                cPlantationJobDetails.TPostQtyLocation = dt.Rows(0)("TPostQtyLocation").ToString
+            End If
+
+            'If Not IsDBNull(dt.Rows(0)("TPostQtyLocationOther")) Then
+            '    cPlantationJobDetails.TPostQtyLocationOther = CStr(dt.Rows(0)("TPostQtyLocationOther"))
+            'End If
+
+            If Not IsDBNull(dt.Rows(0)("SplitBladeID")) Then
+                cPlantationJobDetails.SplitBladeID = CInt(dt.Rows(0)("SplitBladeID"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("SplitBlade")) Then
+                cPlantationJobDetails.SplitBlade = CStr(dt.Rows(0)("SplitBlade"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("SplitBladeHeight")) Then
+                cPlantationJobDetails.SplitBladeHeight = CInt(dt.Rows(0)("SplitBladeHeight"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("HangStripID")) Then
+                cPlantationJobDetails.HangStripID = CInt(dt.Rows(0)("HangStripID"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("HangStrip")) Then
+                cPlantationJobDetails.HangStrip = CStr(dt.Rows(0)("HangStrip"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("LightBlockID")) Then
+                cPlantationJobDetails.LightBlockID = CInt(dt.Rows(0)("LightBlockID"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("LightBlock")) Then
+                cPlantationJobDetails.LightBlock = CStr(dt.Rows(0)("LightBlock"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("AngleBayID")) Then
+                cPlantationJobDetails.AngleBayID = CInt(dt.Rows(0)("AngleBayID"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("AngleBay")) Then
+                cPlantationJobDetails.AngleBay = CStr(dt.Rows(0)("AngleBay"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("FixedBlades")) Then
+                cPlantationJobDetails.FixedBlades = CInt(dt.Rows(0)("FixedBlades"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("StainlessSteelWheels")) Then
+                cPlantationJobDetails.StainlessSteelWheels = CInt(dt.Rows(0)("StainlessSteelWheels"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("ToCenterTPos1")) Then
+                cPlantationJobDetails.ToCenterTPos1 = CStr(dt.Rows(0)("ToCenterTPos1"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("ToCenterTPos2")) Then
+                cPlantationJobDetails.ToCenterTPos2 = CStr(dt.Rows(0)("ToCenterTPos2"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("ToCenterTPos3")) Then
+                cPlantationJobDetails.ToCenterTPos3 = CStr(dt.Rows(0)("ToCenterTPos3"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("ToCenterTPos4")) Then
+                cPlantationJobDetails.ToCenterTPos4 = CStr(dt.Rows(0)("ToCenterTPos4"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("ToCenterTPos5")) Then
+                cPlantationJobDetails.ToCenterTPos5 = CStr(dt.Rows(0)("ToCenterTPos5"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("SpecialRequirements")) Then
+                cPlantationJobDetails.SpecialRequirements = CStr(dt.Rows(0)("SpecialRequirements"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("CostPrice")) Then
+                cPlantationJobDetails.CostPrice = CDec(dt.Rows(0)("CostPrice"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("CostPriceGST")) Then
+                cPlantationJobDetails.CostPriceGST = CDec(dt.Rows(0)("CostPriceGST"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("ExtrasPrice")) Then
+                cPlantationJobDetails.ExtrasPrice = CDec(dt.Rows(0)("ExtrasPrice"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("ExtrasPriceGST")) Then
+                cPlantationJobDetails.ExtrasPriceGST = CDec(dt.Rows(0)("ExtrasPriceGST"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("SalePrice")) Then
+                cPlantationJobDetails.SalePrice = CDec(dt.Rows(0)("SalePrice"))
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("SalePriceGST")) Then
+                cPlantationJobDetails.SalePriceGST = CDec(dt.Rows(0)("SalePriceGST"))
+            End If
+
+            If dt.Columns.Contains("Deleted") Then
+                If Not IsDBNull(dt.Rows(0)("Deleted")) Then
+                    cPlantationJobDetails.Deleted = CBool(dt.Rows(0)("Deleted"))
+                End If
+            End If
+
+            If dt.Columns.Contains("Sideboards") Then
+                If Not IsDBNull(dt.Rows(0)("Sideboards")) Then
+                    cPlantationJobDetails.Sideboards = CInt(dt.Rows(0)("Sideboards"))
+                End If
+            End If
+
+            If dt.Columns.Contains("Bottomboards") Then
+                If Not IsDBNull(dt.Rows(0)("Bottomboards")) Then
+                    cPlantationJobDetails.Bottomboards = CInt(dt.Rows(0)("Bottomboards"))
+                End If
+            End If
+
+            If dt.Columns.Contains("BayPost") Then
+                If Not IsDBNull(dt.Rows(0)("BayPost")) Then
+                    cPlantationJobDetails.BayPost = CInt(dt.Rows(0)("BayPost"))
+                End If
+            End If
+
+            If dt.Columns.Contains("CornerPost") Then
+                If Not IsDBNull(dt.Rows(0)("CornerPost")) Then
+                    cPlantationJobDetails.CornerPost = CInt(dt.Rows(0)("CornerPost"))
+                End If
+            End If
+
+            If dt.Columns.Contains("MidRailHeight2") Then
+                If Not IsDBNull(dt.Rows(0)("MidRailHeight2")) Then
+                    cPlantationJobDetails.MidRailHeight2 = CInt(dt.Rows(0)("MidRailHeight2"))
+                End If
+            End If
+
+            If dt.Columns.Contains("RemakeTypeID") Then
+                If Not IsDBNull(dt.Rows(0)("RemakeTypeID")) Then
+                    cPlantationJobDetails.RemakeTypeID = CInt(dt.Rows(0)("RemakeTypeID"))
+                End If
+            End If
+
+        End If
+
+        dt.Dispose()
+        dt = Nothing
+
+        Return cPlantationJobDetails
+
+    End Function
+
+    Function getTempPlantationJobDetailsRecordDatatable(intPSDetailID As Integer) As DataTable
+
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getTempPlantationJobDetailsByPSDetailID"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            cmd.Parameters.Add("@PSDetailID", SqlDbType.Int)
+            cmd.Parameters("@PSDetailID").Value = intPSDetailID
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+
+            cnn.Close()
+
+            Return dt
+        Catch ex As Exception
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+
+        dbConn = Nothing
+
+
+    End Function
+
+    Function getTempPlantationJobDetailsRecordsByTempGUID(strTempGUID As String, Optional cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As DataTable
+
+        Dim bolCnnOpen As Boolean = True
+        If IsNothing(cnn) Then
+            bolCnnOpen = False
+            Dim dbConn As New DBConnection
+            cnn = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+            dbConn = Nothing
+        End If
+
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            If bolCnnOpen = False Then
+                cnn.Open()
+            End If
+
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getTempPlantationJobDetailsRecordsByTempGUID"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            If bolCnnOpen = True Then
+                cmd.Transaction = trans
+            End If
+
+            cmd.Parameters.Add("@TempGUID", SqlDbType.VarChar)
+            cmd.Parameters("@TempGUID").Value = strTempGUID
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+
+            If bolCnnOpen = False Then
+                cnn.Close()
+            End If
+
+            Return dt
+        Catch ex As Exception
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            If bolCnnOpen = False Then
+                cnn.Dispose()
+                cnn = Nothing
+            End If
+        End Try
+
+    End Function
+
+    Function addTempPlantationJobDetailsRecord(cPlantationJobDetails As PlantationJobDetails, cnn As SqlConnection, ByRef trans As SqlTransaction) As Integer
+
+        Dim cmd As New SqlCommand
+
+        Try
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_addTempPlantationJobDetails"
+            cmd.CommandType = CommandType.StoredProcedure
+            cmd.Transaction = trans
+
+            setupCommandParameters(cPlantationJobDetails, cmd)
+
+            cmd.ExecuteNonQuery()
+
+            Dim intID As Integer = CInt(cmd.Parameters("@PSDetailID").Value)
+
+            Return intID
+
+        Catch ex As Exception
+            Return Constants.DEFAULT_INTEGER_VALUE
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+        End Try
+
+    End Function
+
+    Function updateTempPlantationJobDetailsRecord(cPlantationJobDetails As PlantationJobDetails, cnn As SqlConnection, ByRef trans As SqlTransaction) As Boolean
+
+        Dim cmd As New SqlCommand
+
+        Try
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_updateTempPlantationJobDetails"
+            cmd.CommandType = CommandType.StoredProcedure
+            cmd.Transaction = trans
+
+            setupCommandParameters(cPlantationJobDetails, cmd)
+
+            Dim intVal As Integer = cmd.ExecuteNonQuery()
+            If intVal > 0 Then
+                Return True
+            Else
+                Return False
+            End If
+
+        Catch ex As Exception
+            Return False
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+        End Try
+
+    End Function
+
+    Private Sub setupCommandParameters(cPlantationJobDetails As PlantationJobDetails, ByRef cmd As SqlCommand)
+
+        Dim bolDeleted As Boolean = False
+        Dim bolSideboards As Boolean = False
+        Dim bolMidRail2 As Boolean = False
+
+        Dim bolTempGUID As Boolean = False
+        Dim bolRemakeTypeID As Boolean = False
+        Dim bolOriginalPSDetailID As Boolean = False
+
+        SqlCommandBuilder.DeriveParameters(cmd)
+        For Each param As SqlParameter In cmd.Parameters
+            If param.ParameterName = "@Sideboards" Then
+                bolSideboards = True
+            End If
+            If param.ParameterName = "@Deleted" Then
+                bolDeleted = True
+            End If
+            If param.ParameterName = "@MidRailHeight2" Then
+                bolMidRail2 = True
+            End If
+            If param.ParameterName = "@TempGUID" Then
+                bolTempGUID = True
+            End If
+            If param.ParameterName = "@RemakeTypeID" Then
+                bolRemakeTypeID = True
+            End If
+            If param.ParameterName = "@OriginalPSDetailID" Then
+                bolOriginalPSDetailID = True
+            End If
+        Next
+
+        If cPlantationJobDetails.PSDetailID = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@PSDetailID").Value = DBNull.Value
+        Else
+            cmd.Parameters("@PSDetailID").Value = cPlantationJobDetails.PSDetailID
+        End If
+        'If cmd.Parameters("@PSDetailID").Direction = ParameterDirection.Input Then
+        '    If cPlantationJobDetails.PSDetailID = Constants.DEFAULT_INTEGER_VALUE Then
+        '        cmd.Parameters("@PSDetailID").Value = DBNull.Value
+        '    Else
+        '        cmd.Parameters("@PSDetailID").Value = cPlantationJobDetails.PSDetailID
+        '    End If
+        'End If
+
+        If bolTempGUID Then
+            If cPlantationJobDetails.TempGUID = String.Empty Then
+                cmd.Parameters("@TempGUID").Value = DBNull.Value
+            Else
+                cmd.Parameters("@TempGUID").Value = cPlantationJobDetails.TempGUID
+            End If
+        End If
+
+        If bolOriginalPSDetailID Then
+            If cPlantationJobDetails.OriginalPSDetailID = Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@OriginalPSDetailID").Value = DBNull.Value
+            Else
+                cmd.Parameters("@OriginalPSDetailID").Value = cPlantationJobDetails.OriginalPSDetailID
+            End If
+        End If
+
+        If cPlantationJobDetails.PlantationScheduleListID = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@PlantationScheduleListID").Value = DBNull.Value
+        Else
+            cmd.Parameters("@PlantationScheduleListID").Value = cPlantationJobDetails.PlantationScheduleListID
+        End If
+
+        If cPlantationJobDetails.ShutterID = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@ShutterID").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ShutterID").Value = cPlantationJobDetails.ShutterID
+        End If
+
+        If cPlantationJobDetails.Quantity = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@Quantity").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Quantity").Value = cPlantationJobDetails.Quantity
+        End If
+
+        If cPlantationJobDetails.InstallationAreaID = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@InstallationAreaID").Value = DBNull.Value
+        Else
+            cmd.Parameters("@InstallationAreaID").Value = cPlantationJobDetails.InstallationAreaID
+        End If
+
+        If cPlantationJobDetails.InstallationArea = String.Empty Then
+            cmd.Parameters("@InstallationArea").Value = DBNull.Value
+        Else
+            cmd.Parameters("@InstallationArea").Value = cPlantationJobDetails.InstallationArea
+        End If
+
+        If cPlantationJobDetails.RoomLocationID = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@RoomLocationID").Value = DBNull.Value
+        Else
+            cmd.Parameters("@RoomLocationID").Value = cPlantationJobDetails.RoomLocationID
+        End If
+
+        If cPlantationJobDetails.RoomLocation = String.Empty Then
+            cmd.Parameters("@RoomLocation").Value = DBNull.Value
+        Else
+            cmd.Parameters("@RoomLocation").Value = cPlantationJobDetails.RoomLocation
+        End If
+
+        If cPlantationJobDetails.RoomLocationOther = String.Empty Then
+            cmd.Parameters("@RoomLocationOther").Value = DBNull.Value
+        Else
+            cmd.Parameters("@RoomLocationOther").Value = cPlantationJobDetails.RoomLocationOther
+        End If
+
+        If cPlantationJobDetails.Width = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@Width").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Width").Value = cPlantationJobDetails.Width
+        End If
+
+        If cPlantationJobDetails.Height = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@Height").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Height").Value = cPlantationJobDetails.Height
+        End If
+
+        If cPlantationJobDetails.MountConfigID = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@MountConfigID").Value = DBNull.Value
+        Else
+            cmd.Parameters("@MountConfigID").Value = cPlantationJobDetails.MountConfigID
+        End If
+
+        If cPlantationJobDetails.MountConfig = String.Empty Then
+            cmd.Parameters("@MountConfig").Value = DBNull.Value
+        Else
+            cmd.Parameters("@MountConfig").Value = cPlantationJobDetails.MountConfig
+        End If
+
+        If cPlantationJobDetails.MountStyleID = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@MountStyleID").Value = DBNull.Value
+        Else
+            cmd.Parameters("@MountStyleID").Value = cPlantationJobDetails.MountStyleID
+        End If
+
+        If cPlantationJobDetails.MountStyle = String.Empty Then
+            cmd.Parameters("@MountStyle").Value = DBNull.Value
+        Else
+            cmd.Parameters("@MountStyle").Value = cPlantationJobDetails.MountStyle
+        End If
+
+        If cPlantationJobDetails.PanelQtyID = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@PanelQtyID").Value = DBNull.Value
+        Else
+            cmd.Parameters("@PanelQtyID").Value = cPlantationJobDetails.PanelQtyID
+        End If
+
+        If cPlantationJobDetails.PanelQty = String.Empty Then
+            cmd.Parameters("@PanelQty").Value = DBNull.Value
+        Else
+            cmd.Parameters("@PanelQty").Value = cPlantationJobDetails.PanelQty
+        End If
+
+        If cPlantationJobDetails.MaterialID = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@MaterialID").Value = DBNull.Value
+        Else
+            cmd.Parameters("@MaterialID").Value = cPlantationJobDetails.MaterialID
+        End If
+
+        If cPlantationJobDetails.Material = String.Empty Then
+            cmd.Parameters("@Material").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Material").Value = cPlantationJobDetails.Material
+        End If
+
+        If cPlantationJobDetails.BladeSizeID = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@BladeSizeID").Value = DBNull.Value
+        Else
+            cmd.Parameters("@BladeSizeID").Value = cPlantationJobDetails.BladeSizeID
+        End If
+
+        If cPlantationJobDetails.BladeSize = String.Empty Then
+            cmd.Parameters("@BladeSize").Value = DBNull.Value
+        Else
+            cmd.Parameters("@BladeSize").Value = cPlantationJobDetails.BladeSize
+        End If
+
+        If cPlantationJobDetails.ColourID = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@ColourID").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ColourID").Value = cPlantationJobDetails.ColourID
+        End If
+
+        If cPlantationJobDetails.Colour = String.Empty Then
+            cmd.Parameters("@Colour").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Colour").Value = cPlantationJobDetails.Colour
+        End If
+
+        If cPlantationJobDetails.MidRailHeight = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@MidRailHeight").Value = DBNull.Value
+        Else
+            cmd.Parameters("@MidRailHeight").Value = cPlantationJobDetails.MidRailHeight
+        End If
+
+        If cPlantationJobDetails.LayoutID = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@LayoutID").Value = DBNull.Value
+        Else
+            cmd.Parameters("@LayoutID").Value = cPlantationJobDetails.LayoutID
+        End If
+
+        If cPlantationJobDetails.Layout = String.Empty Then
+            cmd.Parameters("@Layout").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Layout").Value = cPlantationJobDetails.Layout
+        End If
+
+        If cPlantationJobDetails.LayoutOther = String.Empty Then
+            cmd.Parameters("@LayoutOther").Value = DBNull.Value
+        Else
+            cmd.Parameters("@LayoutOther").Value = cPlantationJobDetails.LayoutOther
+        End If
+
+        If cPlantationJobDetails.MountMethodID = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@MountMethodID").Value = DBNull.Value
+        Else
+            cmd.Parameters("@MountMethodID").Value = cPlantationJobDetails.MountMethodID
+        End If
+
+        If cPlantationJobDetails.MountMethod = String.Empty Then
+            cmd.Parameters("@MountMethod").Value = DBNull.Value
+        Else
+            cmd.Parameters("@MountMethod").Value = cPlantationJobDetails.MountMethod
+        End If
+
+        If cPlantationJobDetails.HingeColourID = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@HingeColourID").Value = DBNull.Value
+        Else
+            cmd.Parameters("@HingeColourID").Value = cPlantationJobDetails.HingeColourID
+        End If
+
+        If cPlantationJobDetails.HingeColour = String.Empty Then
+            cmd.Parameters("@HingeColour").Value = DBNull.Value
+        Else
+            cmd.Parameters("@HingeColour").Value = cPlantationJobDetails.HingeColour
+        End If
+
+        If cPlantationJobDetails.FrameTypeID = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@FrameTypeID").Value = DBNull.Value
+        Else
+            cmd.Parameters("@FrameTypeID").Value = cPlantationJobDetails.FrameTypeID
+        End If
+
+        If cPlantationJobDetails.FrameType = String.Empty Then
+            cmd.Parameters("@FrameType").Value = DBNull.Value
+        Else
+            cmd.Parameters("@FrameType").Value = cPlantationJobDetails.FrameType
+        End If
+
+        If cPlantationJobDetails.SidesID = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@SidesID").Value = DBNull.Value
+        Else
+            cmd.Parameters("@SidesID").Value = cPlantationJobDetails.SidesID
+        End If
+
+        If cPlantationJobDetails.Sides = String.Empty Then
+            cmd.Parameters("@Sides").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Sides").Value = cPlantationJobDetails.Sides
+        End If
+
+        If cPlantationJobDetails.ControlTypeID = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@ControlTypeID").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ControlTypeID").Value = cPlantationJobDetails.ControlTypeID
+        End If
+
+        If cPlantationJobDetails.ControlType = String.Empty Then
+            cmd.Parameters("@ControlType").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ControlType").Value = cPlantationJobDetails.ControlType
+        End If
+
+        If cPlantationJobDetails.Track = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@Track").Value = DBNull.Value
+        Else
+            cmd.Parameters("@Track").Value = cPlantationJobDetails.Track
+        End If
+
+        If cPlantationJobDetails.SlidingGuideID = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@SlidingGuideID").Value = DBNull.Value
+        Else
+            cmd.Parameters("@SlidingGuideID").Value = cPlantationJobDetails.SlidingGuideID
+        End If
+
+        If cPlantationJobDetails.SlidingGuide = String.Empty Then
+            cmd.Parameters("@SlidingGuide").Value = DBNull.Value
+        Else
+            cmd.Parameters("@SlidingGuide").Value = cPlantationJobDetails.SlidingGuide
+        End If
+
+        If cPlantationJobDetails.SlidingOpenCloseID = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@SlidingOpenCloseID").Value = DBNull.Value
+        Else
+            cmd.Parameters("@SlidingOpenCloseID").Value = cPlantationJobDetails.SlidingOpenCloseID
+        End If
+
+        If cPlantationJobDetails.SlidingOpenClose = String.Empty Then
+            cmd.Parameters("@SlidingOpenClose").Value = DBNull.Value
+        Else
+            cmd.Parameters("@SlidingOpenClose").Value = cPlantationJobDetails.SlidingOpenClose
+        End If
+
+        If cPlantationJobDetails.TPostQtyID = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@TPostQtyID").Value = DBNull.Value
+        Else
+            cmd.Parameters("@TPostQtyID").Value = cPlantationJobDetails.TPostQtyID
+        End If
+
+        If cPlantationJobDetails.TPostQty = String.Empty Then
+            cmd.Parameters("@TPostQty").Value = DBNull.Value
+        Else
+            cmd.Parameters("@TPostQty").Value = cPlantationJobDetails.TPostQty
+        End If
+
+        If cPlantationJobDetails.TPostQtyLocationID = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@TPostQtyLocationID").Value = DBNull.Value
+        Else
+            cmd.Parameters("@TPostQtyLocationID").Value = cPlantationJobDetails.TPostQtyLocationID
+        End If
+
+        If cPlantationJobDetails.TPostQtyLocation = String.Empty Then
+            cmd.Parameters("@TPostQtyLocation").Value = DBNull.Value
+        Else
+            cmd.Parameters("@TPostQtyLocation").Value = cPlantationJobDetails.TPostQtyLocation
+        End If
+
+        'cmd.Parameters.Add("@TPostQtyLocationOther", SqlDbType.VarChar)
+        'If cPlantationJobDetails.TPostQtyLocationOther = String.Empty Then
+        '    cmd.Parameters("@TPostQtyLocationOther").Value = DBNull.Value
+        'Else
+        '    cmd.Parameters("@TPostQtyLocationOther").Value = cPlantationJobDetails.TPostQtyLocationOther
+        'End If
+
+        If cPlantationJobDetails.SplitBladeID = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@SplitBladeID").Value = DBNull.Value
+        Else
+            cmd.Parameters("@SplitBladeID").Value = cPlantationJobDetails.SplitBladeID
+        End If
+
+        If cPlantationJobDetails.SplitBlade = String.Empty Then
+            cmd.Parameters("@SplitBlade").Value = DBNull.Value
+        Else
+            cmd.Parameters("@SplitBlade").Value = cPlantationJobDetails.SplitBlade
+        End If
+
+        If cPlantationJobDetails.SplitBladeHeight = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@SplitBladeHeight").Value = DBNull.Value
+        Else
+            cmd.Parameters("@SplitBladeHeight").Value = cPlantationJobDetails.SplitBladeHeight
+        End If
+
+        If cPlantationJobDetails.HangStripID = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@HangStripID").Value = DBNull.Value
+        Else
+            cmd.Parameters("@HangStripID").Value = cPlantationJobDetails.HangStripID
+        End If
+
+        If cPlantationJobDetails.HangStrip = String.Empty Then
+            cmd.Parameters("@HangStrip").Value = DBNull.Value
+        Else
+            cmd.Parameters("@HangStrip").Value = cPlantationJobDetails.HangStrip
+        End If
+
+        If cPlantationJobDetails.LightBlockID = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@LightBlockID").Value = DBNull.Value
+        Else
+            cmd.Parameters("@LightBlockID").Value = cPlantationJobDetails.LightBlockID
+        End If
+
+        If cPlantationJobDetails.LightBlock = String.Empty Then
+            cmd.Parameters("@LightBlock").Value = DBNull.Value
+        Else
+            cmd.Parameters("@LightBlock").Value = cPlantationJobDetails.LightBlock
+        End If
+
+        If cPlantationJobDetails.AngleBayID = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@AngleBayID").Value = DBNull.Value
+        Else
+            cmd.Parameters("@AngleBayID").Value = cPlantationJobDetails.AngleBayID
+        End If
+
+        If cPlantationJobDetails.AngleBay = String.Empty Then
+            cmd.Parameters("@AngleBay").Value = DBNull.Value
+        Else
+            cmd.Parameters("@AngleBay").Value = cPlantationJobDetails.AngleBay
+        End If
+
+        If cPlantationJobDetails.FixedBlades = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@FixedBlades").Value = DBNull.Value
+        Else
+            cmd.Parameters("@FixedBlades").Value = cPlantationJobDetails.FixedBlades
+        End If
+
+        If cPlantationJobDetails.StainlessSteelWheels = Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@StainlessSteelWheels").Value = DBNull.Value
+        Else
+            cmd.Parameters("@StainlessSteelWheels").Value = cPlantationJobDetails.StainlessSteelWheels
+        End If
+
+        If cPlantationJobDetails.ToCenterTPos1 = String.Empty Then
+            cmd.Parameters("@ToCenterTPos1").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ToCenterTPos1").Value = cPlantationJobDetails.ToCenterTPos1
+        End If
+
+        If cPlantationJobDetails.ToCenterTPos2 = String.Empty Then
+            cmd.Parameters("@ToCenterTPos2").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ToCenterTPos2").Value = cPlantationJobDetails.ToCenterTPos2
+        End If
+
+        If cPlantationJobDetails.ToCenterTPos3 = String.Empty Then
+            cmd.Parameters("@ToCenterTPos3").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ToCenterTPos3").Value = cPlantationJobDetails.ToCenterTPos3
+        End If
+
+        If cPlantationJobDetails.ToCenterTPos4 = String.Empty Then
+            cmd.Parameters("@ToCenterTPos4").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ToCenterTPos4").Value = cPlantationJobDetails.ToCenterTPos4
+        End If
+
+        If cPlantationJobDetails.ToCenterTPos5 = String.Empty Then
+            cmd.Parameters("@ToCenterTPos5").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ToCenterTPos5").Value = cPlantationJobDetails.ToCenterTPos5
+        End If
+
+        If cPlantationJobDetails.SpecialRequirements = String.Empty Then
+            cmd.Parameters("@SpecialRequirements").Value = DBNull.Value
+        Else
+            cmd.Parameters("@SpecialRequirements").Value = cPlantationJobDetails.SpecialRequirements
+        End If
+
+        If cPlantationJobDetails.CostPrice = Constants.DEFAULT_DECIMAL_VALUE Then
+            cmd.Parameters("@CostPrice").Value = DBNull.Value
+        Else
+            cmd.Parameters("@CostPrice").Value = cPlantationJobDetails.CostPrice
+        End If
+
+        If cPlantationJobDetails.CostPriceGST = Constants.DEFAULT_DECIMAL_VALUE Then
+            cmd.Parameters("@CostPriceGST").Value = DBNull.Value
+        Else
+            cmd.Parameters("@CostPriceGST").Value = cPlantationJobDetails.CostPriceGST
+        End If
+
+        If cPlantationJobDetails.ExtrasPrice = Constants.DEFAULT_DECIMAL_VALUE Then
+            cmd.Parameters("@ExtrasPrice").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ExtrasPrice").Value = cPlantationJobDetails.ExtrasPrice
+        End If
+
+        If cPlantationJobDetails.ExtrasPriceGST = Constants.DEFAULT_DECIMAL_VALUE Then
+            cmd.Parameters("@ExtrasPriceGST").Value = DBNull.Value
+        Else
+            cmd.Parameters("@ExtrasPriceGST").Value = cPlantationJobDetails.ExtrasPriceGST
+        End If
+
+        If cPlantationJobDetails.SalePrice = Constants.DEFAULT_DECIMAL_VALUE Then
+            cmd.Parameters("@SalePrice").Value = DBNull.Value
+        Else
+            cmd.Parameters("@SalePrice").Value = cPlantationJobDetails.SalePrice
+        End If
+
+        If cPlantationJobDetails.SalePriceGST = Constants.DEFAULT_DECIMAL_VALUE Then
+            cmd.Parameters("@SalePriceGST").Value = DBNull.Value
+        Else
+            cmd.Parameters("@SalePriceGST").Value = cPlantationJobDetails.SalePriceGST
+        End If
+
+        If bolDeleted Then
+            cmd.Parameters("@Deleted").Value = cPlantationJobDetails.Deleted
+        End If
+
+        If bolSideboards Then
+            If cPlantationJobDetails.Sideboards = Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@Sideboards").Value = DBNull.Value
+            Else
+                cmd.Parameters("@Sideboards").Value = cPlantationJobDetails.Sideboards
+            End If
+
+            If cPlantationJobDetails.Bottomboards = Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@Bottomboards").Value = DBNull.Value
+            Else
+                cmd.Parameters("@Bottomboards").Value = cPlantationJobDetails.Bottomboards
+            End If
+
+            If cPlantationJobDetails.BayPost = Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@BayPost").Value = DBNull.Value
+            Else
+                cmd.Parameters("@BayPost").Value = cPlantationJobDetails.BayPost
+            End If
+
+            If cPlantationJobDetails.CornerPost = Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@CornerPost").Value = DBNull.Value
+            Else
+                cmd.Parameters("@CornerPost").Value = cPlantationJobDetails.CornerPost
+            End If
+        End If
+
+        If bolMidRail2 Then
+            If cPlantationJobDetails.MidRailHeight2 = Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@MidRailHeight2").Value = DBNull.Value
+            Else
+                cmd.Parameters("@MidRailHeight2").Value = cPlantationJobDetails.MidRailHeight2
+            End If
+        End If
+
+        If bolRemakeTypeID Then
+            If cPlantationJobDetails.RemakeTypeID = Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@RemakeTypeID").Value = DBNull.Value
+            Else
+                cmd.Parameters("@RemakeTypeID").Value = cPlantationJobDetails.RemakeTypeID
+            End If
+        End If
+
+    End Sub
+
+
+End Class

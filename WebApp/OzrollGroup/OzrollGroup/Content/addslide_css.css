@@ -1,0 +1,551 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap');
+
+* {
+    margin: 0;
+    padding: 0
+}
+
+html {
+    height: 100%
+}
+
+body {
+    background-image: url(../images/Graphic_SLIDETRACK.png);
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-size: cover;
+    background-position: center;
+    font-family: 'Roboto', sans-serif;
+    font-size: 14px;
+}
+
+p {
+    color: #3a3939;
+    font-weight: 400;
+    font-size: 14px;
+}
+
+#heading {
+    background: #3d5d98;
+    color: #ffffff !important;
+    text-align: center;
+    border-radius: 1em;
+    font-size: 25px;
+    padding: 10px;
+    margin: 25px 0;
+}
+
+#msform {
+    text-align: center;
+    position: relative;
+    margin-top: 20px;
+    display: none;
+}
+#msform.active{
+    display:block;
+}
+
+    #msform fieldset {
+        background: white;
+        border: 0 none;
+        border-radius: 0.5rem;
+        box-sizing: border-box;
+        width: 100%;
+        margin: 0;
+        padding-bottom: 20px;
+        position: relative
+    }
+
+.form-card {
+    text-align: left;
+    padding: 0px 10px
+}
+
+#msform fieldset:not(:first-of-type) {
+    display: none
+}
+
+.action-button, .action-button-previous {
+    border: 1px solid #4b4b4b;
+    height: 39px;
+    width: 135px;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    outline: none !important;
+    background: #f3f3f3;
+    margin-top: 30px
+}
+.action-button.submit {
+    background: #098c4b !important;
+    border-color: #098c4b !important;
+    margin-left: 15px;
+    color: #fff !important;
+}
+
+.card {
+    z-index: 0;
+    border: none;
+    position: relative
+}
+
+.fs-title {
+    font-size: 24px;
+    color: #000;
+    margin-bottom: 0;
+    font-weight: 500;
+    text-align: left;
+}
+
+.purple-text {
+    color: #673AB7;
+    font-weight: normal
+}
+
+.steps {
+    text-align: right;
+    font-size: 21px;
+    color: #000000;
+    font-weight: 500;
+    padding-top: 2px;
+}
+
+.fieldlabels {
+    color: gray;
+    text-align: left
+}
+
+#progressbar {
+    margin-bottom: 30px;
+    display: -ms-flexbox !important;
+    display: flex !important;
+}
+
+    #progressbar .active {
+        color: #673AB7
+    }
+
+    #progressbar li {
+        list-style-type: none;
+        font-size: 14px;
+        position: relative;
+        color: #767676;
+        text-transform: uppercase;
+        line-height: 20px;
+        -ms-flex: 1 1 auto !important;
+        flex: 1 1 auto !important;
+    }
+
+        #progressbar li strong {
+            font-weight: 400;
+        }
+
+        #progressbar li:before {
+            width: 35px;
+            height: 35px;
+            line-height: 33px;
+            display: block;
+            font-size: 18px;
+            color: #ffffff;
+            background: #767676;
+            border-radius: 4px;
+            margin: 0 auto 10px auto;
+            padding: 2px;
+            content: "1";
+        }
+
+        #progressbar li#account:before {
+            content: "1";
+        }
+
+        #progressbar li#personal:before {
+            content: "2";
+        }
+
+        #progressbar li#confirm:before {
+            content: "3";
+        }
+
+        #progressbar li:after {
+            content: '';
+            width: 100%;
+            height: 2px;
+            background: #cbc8c8;
+            position: absolute;
+            left: -50%;
+            top: 16px;
+            z-index: -1;
+        }
+
+        #progressbar li:first-child:after {
+            display: none;
+        }
+
+        #progressbar li.active strong {
+            font-weight: 500;
+        }
+
+        #progressbar li.active:before, #progressbar li.active:after {
+            background: #2e7403;
+        }
+
+        #progressbar li.active {
+            color: #2e7403;
+        }
+
+.progress {
+    height: 20px
+}
+
+.progress-bar {
+    background-color: #673AB7
+}
+
+.fit-image {
+    width: 100%;
+    object-fit: cover
+}
+
+
+/* css by Lokendra */
+
+.men-container {
+    max-width: 85%;
+    margin: 2rem auto;
+    padding: 15px;
+}
+
+.card {
+    padding: 25px 30px;
+}
+
+.frmrow label {
+    margin-bottom: 3px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #000;
+    text-transform: capitalize;
+}
+
+.frm-input {
+    display: block;
+    width: 100%;
+    border-radius: 0px;
+    border: 1px solid #c3c3c3;
+    padding: 4px 8px;
+    margin-bottom: 2px;
+    font-size: 13px;
+    max-width: calc(100% - 57px);
+    height: 27px;
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+.frm-input:disabled, .frm-input[readonly] {
+    background-color: #e9ecef;
+    opacity: 1;
+}
+.frmrow > .col-md-6 {
+    padding: 0px 60px;
+}
+.row.frmrow {
+    margin-left: -60px;
+    margin-right: -60px;
+}
+
+.frm-input::placeholder {
+    color: #ada9a9;
+    font-weight: 300;
+}
+
+.pricefinal {
+    width: 100%;
+    border: 1px solid #dddddd;
+    padding: 10px;
+    border-radius: 2px;
+    margin: 20px 0;
+    float: right;
+    max-width: 400px;
+}
+
+    .pricefinal p {
+        margin-bottom: 5px;
+    }
+
+    .pricefinal .row {
+        margin-bottom: 6px;
+    }
+
+        .pricefinal .row:last-child {
+            margin-bottom: 0;
+        }
+
+    .pricefinal p strong {
+        color: #000;
+    }
+
+.table thead th {
+    border-bottom-width: 1px !important;
+    font-weight: 400;
+    background: #3d5d98;
+    color: #fff;
+}
+
+.table {
+    line-height: 19px;
+}
+.csrt-table tbody tr:nth-child(odd) {
+    background-color: #F7F6F3;
+}
+.delete-button {
+    background-image: url(/images/delete_32x32.png);
+    border: none;
+    padding: 0px;
+    background-color: transparent !important;
+    height: 32px;
+    width: 32px;
+}
+.duplicate-button {
+    background-image: url(/images/duplicate_32x32.png);
+    border: none;
+    padding: 0px;
+    background-color: transparent !important;
+    height: 32px;
+    width: 32px;
+}
+table button {
+    box-shadow: none !important;
+    outline: none !important;
+    border: 0;
+    background: transparent;
+}
+
+    table button.details-btn {
+        background: green;
+        padding: 7px 11px;
+        color: #fff;
+        border-radius: 4px;
+        transition: all 0.4s;
+    }
+
+        table button.details-btn:hover {
+            background: #3e1b83;
+            color: #fff;
+        }
+
+.csrt-table {
+    
+}
+
+.deletebtn {
+    font-size: 18px;
+    color: red;
+}
+
+.openbtn {
+    font-size: 17px;
+    color: #000;
+}
+
+.ozrollLogo-left {
+    display: flex;
+    flex-flow: wrap;
+}
+
+.logo1 {
+    width: 37%;
+}
+
+.logo2 {
+    width: 59%;
+    padding-left: 20px;
+}
+
+.clmr01 {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.ozrol-btn {
+    width: 100px;
+    height: 36px;
+    border-radius: 4px;
+    background: #098c4b;
+    color: #fff;
+    border: 1px solid #098c4b !important;
+    outline: none !important;
+    box-shadow: none;
+    margin-left: 10px;
+}
+
+    .ozrol-btn:first-child {
+        margin-left: 0;
+    }
+
+.clmr02 {
+    margin-top: 10px;
+}
+
+.ozrol-btn.ozrol-btn02 {
+    background: #0053a0;
+    border: 1px solid #0053a0;
+}
+
+.flt-right {
+    float: right;
+}
+
+.ftrm-sec {
+    border-top: 1px solid #e2dddd;
+    margin: 2rem 0 20px;
+    padding-top: 24px;
+}
+
+.ftrm-sec h2 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.form-button {
+    border: 1px solid #4b4b4b;
+    height: 39px;
+    width: 135px;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    outline: none !important;
+    background: #f3f3f3;
+}
+
+    .form-button:hover, .form-button:focus {
+        border: 1px solid #656565;
+        background: #656565;
+        color: #fff;
+    }
+
+    .form-button.frm-order-confirm {
+        background: #098c4b !important;
+        border-color: #098c4b !important;
+        margin-left: 57px;
+        color: #fff !important;
+    }
+
+    .form-button.frm-addextra {
+        background: #0053a0 !important;
+        border-color: #0053a0 !important;
+        color: #fff !important;
+    }
+
+.ftrm-sec {
+    border-top: 1px solid #e2dddd;
+    margin: 2rem 0 2.5rem;
+    padding-top: 24px;
+}
+
+.row.innerrow {
+    margin-left: -4px;
+    margin-right: -4px;
+    margin-bottom: 8px;
+}
+
+.innerrow .col-md-4, .innerrow .col-md-8 {
+    padding-right: 4px;
+    padding-left: 4px;
+}
+
+.tsr_last {
+    font-size: 13px;
+    width: 50px;
+    margin-left: 6px;
+}
+
+.tsr_last i {
+    color: #b1aeae;
+    font-size: 15px;
+    vertical-align: middle;
+    cursor: pointer;
+}
+
+.innerrow .col-md-8 {
+    display: flex;
+    flex-flow: wrap;
+}
+
+#ErrorText::empty {
+    display: none;
+}
+
+#ErrorText {
+    background: red;
+    color: #fff;
+    text-align: center;
+    line-height: 34px;
+}
+.infoform {
+    padding: 20px 10px;
+}
+.infoform .frm-input {
+    max-width: 100%;
+}
+textarea.frm-input {
+    height: 57px;
+    resize: none;
+}
+.extra_table {
+    display: none;
+    margin-bottom: 10px;
+}
+.extra_table.active{
+    display:block;
+}
+.cancel-button {
+    background-image: url(/images/cancel_icon_32x32.png);
+    border: none;
+    padding: 0px;
+    background-color: transparent !important;
+    height: 32px;
+    width: 32px;
+    margin-left: 10px;
+}
+.save-button {
+    background-image: url(/images/save_icon_32x32.png);
+    border: none;
+    padding: 0px;
+    background-color: transparent !important;
+    height: 32px;
+    width: 32px;
+}
+.extra_table .frm-input {
+    max-width: 100%;
+}
+.cus-pop .modal-dialog {
+    max-width: 600px !important;
+}
+.cus-pop .modal-dialog .modal-content {
+    border-radius: 0;
+}
+.close-pop {
+    width: 30px;
+    height: 30px;
+    position: absolute;
+    top: -15px;
+    background: red !important;
+    z-index: 99;
+    right: -15px;
+    opacity: 1 !important;
+    color: #fff !important;
+    text-shadow: none !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    outline:none !important;
+}
+.popheader {
+    background: #3d5d98;
+    color: #fff;
+    text-align: center;
+    font-size: 20px;
+    font-weight: 400;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+.pop-content .action-button {
+    margin-top: 10px;
+}

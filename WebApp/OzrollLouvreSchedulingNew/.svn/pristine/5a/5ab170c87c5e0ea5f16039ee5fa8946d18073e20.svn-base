@@ -1,0 +1,18 @@
+Public Class Constants
+
+    ' Default Constants
+    Public Const DEFAULT_INTEGER_VALUE As Integer = Integer.MinValue
+    Public Const DEFAULT_DECIMAL_VALUE As Decimal = Decimal.MinValue
+    Public Const DEFAULT_LONG_VALUE As Long = -9999
+    Public Const DEFAULT_DATE_VALUE As Date = #12/31/1899#
+    Public Const DEFAULT_BOOLEAN_VALUE As Boolean = False
+
+    ' Helpdesk Email
+    Public Const IT_HELPDESK_EMAIL As String = "helpdesk@modernnsw.com.au"
+    Public Const IT_DEVELOPER_EMAIL As String = "jmacaluso@modernnsw.com.au"
+
+    Public Const LIVE_SITE As Boolean = False ' Set to true if publishing to live site
+    Public Const PLAY_SITE As Boolean = False ' Set to true if publishing to play site
+    Public Const DEV_SITE As Boolean = True ' Set to true if publishing to dev site
+
+End Class

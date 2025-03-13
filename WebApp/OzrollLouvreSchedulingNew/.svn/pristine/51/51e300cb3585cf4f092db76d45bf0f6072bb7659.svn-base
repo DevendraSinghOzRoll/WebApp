@@ -1,0 +1,86 @@
+﻿Imports Microsoft.VisualBasic
+Imports System.Data.SqlClient
+
+Public Class ColourDAO
+    ''' <summary>
+    ''' Gets the colours from the database.
+    ''' </summary>
+    ''' <returns>A <see cref="DataTable"/> representing the database table.</returns>
+    Function GetColoursDataTable() As DataTable
+
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getColours"
+            cmd.CommandType = CommandType.StoredProcedure
+            SqlCommandBuilder.DeriveParameters(cmd)
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Close()
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+
+        Return dt
+
+    End Function
+
+    Public Function GetColours() As List(Of Colour)
+        Dim dtColours As DataTable = GetColoursDataTable()
+        Dim lColours As New List(Of Colour)
+
+        For Each r As DataRow In dtColours.Rows
+            lColours.Add(ConvertColoursRecordToObject(r))
+        Next r
+
+        Return lColours
+    End Function
+
+    Private Function ConvertColoursRecordToObject(cColourRow As DataRow) As Colour
+        Dim cColour As New Colour
+
+        With cColour
+
+            .ID = cColourRow("ColourID")
+
+            If Not IsDBNull(cColourRow("CoatingType")) Then
+                .CoatingTypeID = cColourRow("CoatingType")
+            End If
+
+            If Not IsDBNull(cColourRow("Discontinued")) Then
+                .Discontinued = cColourRow("Discontinued")
+            End If
+
+            If Not IsDBNull(cColourRow("ColourName")) Then
+                .Name = cColourRow("ColourName")
+            End If
+
+            If Not IsDBNull(cColourRow("ProductTypeID")) Then
+                .ProductTypeID = cColourRow("ProductTypeID")
+            End If
+
+            If Not IsDBNull(cColourRow("SortOrder")) Then
+                .SortOrder = cColourRow("SortOrder")
+            End If
+
+        End With
+
+        Return cColour
+    End Function
+
+End Class

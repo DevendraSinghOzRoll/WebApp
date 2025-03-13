@@ -1,0 +1,353 @@
+﻿
+Partial Class AddCustomer
+    Inherits System.Web.UI.Page
+    Protected Sub Page_Load(sender As Object, e As System.EventArgs) Handles Me.Load
+        If Not IsPostBack Then
+
+            If Session("sessUserID") = String.Empty Then
+                Response.Redirect("Logout.aspx", False)
+                Exit Sub
+            Else
+                If Not IsNumeric(Session("sessUserID")) Then
+                    Response.Redirect("Logout.aspx", False)
+                    Exit Sub
+                End If
+            End If
+
+            Dim service As New AppService
+
+            service.addWebsitePageAccess("Ozroll Plantation Scheduling", CInt(Session("sessUserID")), Session("sessUserName").ToString, System.IO.Path.GetFileName(Request.PhysicalPath), Request.QueryString.ToString(), Now)
+
+            Dim intScheduleId As Integer = 0
+
+            If Not Request.QueryString.Count = 0 Then
+                If Not IsNothing(Request.Params("CustomerID")) Then
+                    intScheduleId = CInt(Request.Params("CustomerID"))
+                End If
+            End If
+
+            'Decrypt Query String
+            txtHidCustomerID.Text = (Request.QueryString("c"))
+            'Update Customer
+            If (txtHidCustomerID.Text <> String.Empty) Then
+                UpdateCustomer()
+                'Add Customer
+            Else
+                AddCustomer()
+            End If
+        End If
+        lblStatus.Visible = False
+
+    End Sub
+
+    Private Sub Page_Error(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.Error
+        Dim objErr1 As Exception = Server.GetLastError().GetBaseException()
+
+        Dim strErrorMessage As String = String.Empty
+
+        strErrorMessage &= "Error In: " & Request.Url.ToString() & Environment.NewLine & Environment.NewLine
+
+        strErrorMessage &= "Server.GetLastError().GetBaseException()" & Environment.NewLine & Environment.NewLine
+
+        strErrorMessage &= "Error Message: " & objErr1.Message & Environment.NewLine
+        strErrorMessage &= "Stack Trace:" & Environment.NewLine
+        strErrorMessage &= objErr1.StackTrace & Environment.NewLine & Environment.NewLine
+
+        Dim objErr2 As Exception = Server.GetLastError()
+
+        strErrorMessage &= "Server.GetLastError()" & Environment.NewLine & Environment.NewLine
+
+        strErrorMessage &= "Error Message: " & objErr2.Message & Environment.NewLine
+        strErrorMessage &= "Stack Trace:" & Environment.NewLine
+        strErrorMessage &= objErr2.StackTrace & Environment.NewLine
+
+        EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & strErrorMessage)
+
+        Server.ClearError()
+
+        Response.Redirect("GenericErrorPage.aspx", False)
+    End Sub
+
+    Private Function getPageInfo() As String
+
+        Dim strPageInfo As String = String.Empty
+
+        Dim strName As String = String.Empty
+        If Session.Contents.Count > 0 Then
+            strPageInfo &= "Session Variables" & Environment.NewLine
+            For Each strName In Session.Contents
+                strPageInfo &= strName & ": " & CStr(Session.Contents(strName)) & Environment.NewLine
+            Next
+        Else
+            strPageInfo &= "No Session Variables" & Environment.NewLine
+        End If
+
+        strPageInfo &= Environment.NewLine
+
+        If Me.HasControls Then
+            strPageInfo &= "Form Controls" & Environment.NewLine
+            getPageControls(Me, strPageInfo)
+        Else
+            strPageInfo &= "No Form Controls" & Environment.NewLine
+        End If
+        Return strPageInfo
+
+    End Function
+
+    Private Sub getPageControls(ByVal ctrl As Control, ByRef strPageControls As String)
+
+        If ctrl.HasControls Then
+            For Each childCtrl As Control In ctrl.Controls
+                getPageControls(childCtrl, strPageControls)
+            Next
+        Else
+            Select Case ctrl.GetType.Name
+                Case "TextBox"
+                    Dim frmTxt As TextBox
+                    frmTxt = DirectCast(ctrl, TextBox)
+                    strPageControls &= frmTxt.ID & ": " & Left(frmTxt.Text, 100) & Environment.NewLine
+                Case "DropDownList"
+                    Dim frmCbo As DropDownList
+                    frmCbo = DirectCast(ctrl, DropDownList)
+                    If frmCbo.Items.Count > 0 Then
+                        strPageControls &= frmCbo.ID & ": " & frmCbo.SelectedItem.Text & " (" & frmCbo.SelectedValue & ")" & Environment.NewLine
+                    Else
+                        strPageControls &= frmCbo.ID & ": Not Populated" & Environment.NewLine
+                    End If
+                Case "CheckBox"
+                    Dim frmChk As CheckBox
+                    frmChk = DirectCast(ctrl, CheckBox)
+                    strPageControls &= frmChk.ID & ": " & frmChk.Checked & Environment.NewLine
+                Case "RadioButton"
+                    Dim frmRdo As RadioButton
+                    frmRdo = DirectCast(ctrl, RadioButton)
+                    strPageControls &= frmRdo.ID & ": " & frmRdo.Checked & Environment.NewLine
+                Case "RadioButtonList"
+                    Dim frmRdoLst As RadioButtonList
+                    frmRdoLst = DirectCast(ctrl, RadioButtonList)
+                    If frmRdoLst.SelectedIndex >= 0 Then
+                        strPageControls &= frmRdoLst.ID & ": " & frmRdoLst.SelectedItem.Text & " (" & frmRdoLst.SelectedValue & ")" & Environment.NewLine
+                    Else
+                        strPageControls &= frmRdoLst.ID & ": Not Selected" & Environment.NewLine
+                    End If
+            End Select
+        End If
+
+    End Sub
+
+    Private Sub UpdateCustomer()
+        Dim service As New AppService
+        lblTitle.Text = "Update Customer"
+        btnAddCustomer.Visible = False
+        btnUpdateCustomer.Visible = True
+
+        Dim strCustomerID As String = txtHidCustomerID.Text
+        Dim strSQLUpdate As String = "Select * from tblCustomers where CustomerID=" + strCustomerID
+        Dim DTupdate As DataTable = service.runSQLScheduling(strSQLUpdate)
+
+        For Each row As DataRow In DTupdate.Rows
+            txtCustomerName.Text = row("CustomerName").ToString
+            Dim strDiscontinue As String = row("Discontinued").ToString()
+            Dim strExternal As String = row("ExternalCustomer").ToString()
+            Dim strFactory As String = row("CollectionFromFactory").ToString()
+            Dim strPlantations As String = row("Plantations").ToString()
+            Dim strWholesaleLouvres As String = row("WholesaleLouvres").ToString()
+            Dim strRetailsLouvres As String = row("RetailLouvres").ToString()
+            If (strDiscontinue = "1") Then
+                chkDiscontinued.Checked = True
+            ElseIf (strDiscontinue = "0" Or strWholesaleLouvres = String.Empty) Then
+                chkDiscontinued.Checked = False
+            End If
+            If (strExternal = "1") Then
+                chkExternalCustomer.Checked = True
+            ElseIf (strExternal = "0" Or strWholesaleLouvres = String.Empty) Then
+                chkExternalCustomer.Checked = False
+            End If
+            If (strFactory = "1") Then
+                chkCollectionFactory.Checked = True
+            ElseIf (strFactory = "0" Or strWholesaleLouvres = String.Empty) Then
+                chkCollectionFactory.Checked = False
+            End If
+            txtFreightPercentage.Text = row("FreightPercentage").ToString
+            txtCustomerAbbreviation.Text = row("CustomerAbbreviation").ToString
+            txtFullCustomerName.Text = row("FullCustomerName").ToString
+
+            If (strPlantations = "1") Then
+                chkPlantation.Checked = True
+            ElseIf (strPlantations = "0" Or strPlantations = String.Empty) Then
+                chkPlantation.Checked = False
+            End If
+            If (strRetailsLouvres = "1") Then
+                chkRetailLouvers.Checked = True
+            ElseIf (strRetailsLouvres = "0" Or strRetailsLouvres = String.Empty) Then
+                chkRetailLouvers.Checked = False
+            End If
+            If (strWholesaleLouvres = "1") Then
+                chkWholesaleLouvers.Checked = True
+            ElseIf (strWholesaleLouvres = "0" Or strWholesaleLouvres = String.Empty) Then
+                chkWholesaleLouvers.Checked = False
+            End If
+
+            Me.txtAddress.Text = row("CustomerAddress").ToString
+            Me.txtPhone1.Text = row("CustomerPhone1").ToString
+            Me.txtPhone2.Text = row("CustomerPhone2").ToString
+            Me.txtPhone3.Text = row("CustomerPhone3").ToString
+
+            Me.txtDiscount.Text = row("Discount").ToString
+
+        Next
+    End Sub
+
+    Private Sub AddCustomer()
+        Dim service As New AppService
+        lblTitle.Visible = True
+        lblTitle.Text = "Add Customer"
+        btnAddCustomer.Visible = True
+        btnUpdateCustomer.Visible = False
+    End Sub
+    Protected Sub btnAddCustomer_Click(sender As Object, e As EventArgs) Handles btnAddCustomer.Click
+        Dim service As New AppService
+        'Dim strCustomerID As String, 
+        Dim AddStatus As Boolean
+        Dim cCustomer As New Customer
+        'Dim strSQL As String
+        'If btnAddCustomer.Text = "Add" Then
+        '    Dim DTCustomerID As DataTable = service.runSQLScheduling("Select count(CustomerID)+1 from dbo.tblCustomers")
+        '    strCustomerID = DTCustomerID.Rows(0).Item(0).ToString()
+        '    AddStatus = True
+        'End If
+        'strSQL = "select * from dbo.tblCustomers where CustomerID = '" + txtHidCustomerID.Text + "'"
+        'Dim DTCustomer As DataTable = service.runSQLScheduling(strSQL)
+
+        cCustomer.CustomerName = txtCustomerName.Text
+
+        If chkExternalCustomer.Checked = True Then
+            cCustomer.Discontinued = "1"
+        Else
+            cCustomer.Discontinued = "0"
+        End If
+
+        If chkExternalCustomer.Checked = True Then
+            cCustomer.ExternalCustomer = "1"
+        Else
+            cCustomer.ExternalCustomer = "0"
+        End If
+
+        If chkCollectionFactory.Checked = True Then
+            cCustomer.CollectionFromFactory = "1"
+        Else
+            cCustomer.CollectionFromFactory = "0"
+        End If
+
+        cCustomer.FreightPercentage = txtFreightPercentage.Text
+        cCustomer.CustomerAbbreviation = txtCustomerAbbreviation.Text
+        cCustomer.FullCustomerName = txtFullCustomerName.Text
+
+        If chkPlantation.Checked = True Then
+            cCustomer.Plantations = "1"
+        Else
+            cCustomer.Plantations = "0"
+        End If
+
+        If chkWholesaleLouvers.Checked = True Then
+            cCustomer.WholesaleLouvres = "1"
+        Else
+            cCustomer.WholesaleLouvres = "0"
+        End If
+
+        If chkRetailLouvers.Checked = True Then
+            cCustomer.RetailLouvres = "1"
+        Else
+            cCustomer.RetailLouvres = "0"
+        End If
+
+        cCustomer.CustomerAddress = Me.txtAddress.Text
+        cCustomer.CustomerAddress = Me.txtPhone1.Text
+        cCustomer.CustomerAddress = Me.txtPhone2.Text
+        cCustomer.CustomerAddress = Me.txtPhone3.Text
+
+        If service.addCustomerRecord(cCustomer) = True Then
+            If AddStatus = False Then
+                btnAddCustomer.Text = "Add"
+            End If
+            'Dim Sqlstr1 = "select * from dbo.tblCustomers where CustomerID = " + txtHidCustomerID.Text
+
+        End If
+        lblStatus.Visible = True
+        lblStatus.Text = "Customer Add Successful"
+    End Sub
+    Protected Sub btnUpdateCustomer_Click(sender As Object, e As EventArgs) Handles btnUpdateCustomer.Click
+
+        Dim service As New AppService
+        Dim cCustomer As New Customer
+        Dim AddStatus As String = True
+        'Dim strSQLUpdate As String = "select * from dbo.tblCustomers where CustomerID = '" + txtHidCustomerID.Text + "'"
+        'Dim DTCustomer As DataTable = service.runSQLScheduling(strSQLUpdate)
+
+        cCustomer.CustomerID = txtHidCustomerID.Text
+        cCustomer.CustomerName = txtCustomerName.Text
+        If chkExternalCustomer.Checked = True Then
+            cCustomer.Discontinued = "1"
+        Else
+            cCustomer.Discontinued = "0"
+        End If
+        If chkExternalCustomer.Checked = True Then
+            cCustomer.ExternalCustomer = "1"
+        Else
+            cCustomer.ExternalCustomer = "0"
+        End If
+        If chkCollectionFactory.Checked = True Then
+            cCustomer.CollectionFromFactory = "1"
+        Else
+            cCustomer.CollectionFromFactory = "0"
+        End If
+        cCustomer.FreightPercentage = txtFreightPercentage.Text
+        cCustomer.CustomerAbbreviation = txtCustomerAbbreviation.Text
+        cCustomer.FullCustomerName = txtFullCustomerName.Text
+        If chkPlantation.Checked = True Then
+            cCustomer.Plantations = "1"
+        Else
+            cCustomer.Plantations = "0"
+        End If
+        If chkWholesaleLouvers.Checked = True Then
+            cCustomer.WholesaleLouvres = "1"
+        Else
+            cCustomer.WholesaleLouvres = "0"
+        End If
+        If chkRetailLouvers.Checked = True Then
+            cCustomer.RetailLouvres = "1"
+        Else
+            cCustomer.RetailLouvres = "0"
+        End If
+
+        cCustomer.CustomerAddress = Me.txtAddress.Text
+        cCustomer.CustomerAddress = Me.txtPhone1.Text
+        cCustomer.CustomerAddress = Me.txtPhone2.Text
+        cCustomer.CustomerAddress = Me.txtPhone3.Text
+
+        cCustomer.Discount = Me.txtDiscount.Text
+
+        If service.updateCustomerRecord(cCustomer) = True Then
+            If AddStatus = False Then
+                btnUpdateCustomer.Text = "Update"
+            End If
+            Dim Sqlstr1 = "select * from dbo.tblCustomers where CustomerId = " + txtHidCustomerID.Text
+
+        End If
+        lblStatus.Visible = True
+        lblStatus.Text = "Customer Update Successful"
+    End Sub
+
+    Protected Sub btnCancel_Click(sender As Object, e As EventArgs) Handles btnCancel.Click
+        Response.Redirect("CustomerDetails.aspx", False)
+    End Sub
+
+    Protected Sub btnHome_Click(sender As Object, e As EventArgs) Handles btnHome.Click
+        Response.Redirect("Home.aspx", False)
+    End Sub
+
+    Protected Sub btnLogout_Click(sender As Object, e As EventArgs) Handles btnLogout.Click
+        Response.Redirect("Logout.aspx", False)
+    End Sub
+
+End Class

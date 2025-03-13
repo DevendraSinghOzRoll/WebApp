@@ -1,0 +1,113 @@
+﻿Imports Microsoft.VisualBasic
+Imports System.Data.SqlClient
+Public Class UploadFilesDAO
+
+    Function getUploadedFiles(ByVal RefID As String, RefType As String) As DataTable
+
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "select filename from  dbo.tblUploadFiles where deleted = 0 and ReferenceID="
+            cmd.CommandText += RefID + " and referenceType=" + RefType
+            cmd.CommandType = CommandType.Text
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+
+            cnn.Close()
+
+            Return dt
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+            Return dt
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+
+        dbConn = Nothing
+
+    End Function
+
+    Function addUploadedFiles(ByVal DataArray As String()) As Boolean
+
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim SQLstr As String = "insert into dbo.tblUploadFiles ([id],referenceID,referenceType,filename,uploadby,deleted) "
+        SQLstr += " values((SELECT isnull(MAX([id]),0) + 1 from dbo.tblUploadFiles) ," + DataArray(3)
+        SQLstr += "," + DataArray(4) + ",'" + DataArray(6) + "'," + DataArray(5) + ",0)"
+        'Dim FileOBJ As UpLoadFiles = New UpLoadFiles
+        'FileOBJ.FileName = DataArray(0) + DataArray(1)
+        'FileOBJ.ReferenceID = DataArray(3)
+        'FileOBJ.Reference_Type = DataArray(4)
+        'FileOBJ.UpLoad_By = DataArray(5)
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = SQLstr
+            cmd.CommandType = CommandType.Text
+
+            cmd.ExecuteNonQuery()
+            cnn.Close()
+            Return True
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+            Return False
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+
+        dbConn = Nothing
+
+    End Function
+    Function deleteUploadedFiles(ByVal RefID As String, UserID As String, Fname As String) As Boolean
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "update dbo.tblUploadFiles set deleted=1,deldate=GetDate(),delby="
+            cmd.CommandText += UserID + " where ReferenceID=" + RefID + " and filename='" + Fname + "'"
+            cmd.CommandType = CommandType.Text
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+
+            cnn.Close()
+
+            Return True
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message)
+            Return False
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+        dbConn = Nothing
+    End Function
+End Class
+
+
+

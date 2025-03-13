@@ -1,0 +1,204 @@
+﻿Imports Microsoft.VisualBasic
+Imports iTextSharp.text
+Imports iTextSharp.text.pdf
+Imports System.IO
+
+Public Class LouvreJobDeliveryDocket
+
+    Public Shared Sub GetLouvreJobDeliveryDocket(intScheduleID As Integer)
+        Dim Response = HttpContext.Current.Response
+
+        Dim objBuffer() As Byte
+        Dim output As MemoryStream = New MemoryStream()
+
+        Dim document As Document = New Document(PageSize.A4, 50, 50, 25, 25)
+        Dim writer As PdfWriter = PdfWriter.GetInstance(document, output)
+        document.Open()
+        LouvreJobDeliveryDocket.generateLouvreJobDeliveryDocket(intScheduleID, output, document)
+
+        objBuffer = output.ToArray
+
+        Response.Clear()
+        Response.ContentType = "application/pdf"
+        Response.AddHeader("Content-Disposition", "attachment;filename=DeliveryDocket.pdf")
+        Response.BinaryWrite(output.ToArray())
+        Response.End()
+
+    End Sub
+
+
+    Public Shared Function generateLouvreJobDeliveryDocket(intScheduleID As Integer, ByRef output As MemoryStream, document As Document) As Boolean
+        Dim baseFont As Font = New Font(Font.HELVETICA, 10.5F, Font.NORMAL)
+        Dim baseFont9 As Font = New Font(Font.HELVETICA, 9.0F, Font.NORMAL)
+        Dim baseFont12 As Font = New Font(Font.HELVETICA, 12.0F, Font.NORMAL)
+
+        Dim baseFontBold12 As Font = New Font(Font.HELVETICA, 12.0F, Font.BOLD)
+        Dim baseFontBold20 As Font = New Font(Font.HELVETICA, 20.0F, Font.BOLD)
+        Dim baseFontBold As Font = New Font(Font.HELVETICA, 10.5F, Font.BOLD)
+        Dim baseFontBold9 As Font = New Font(Font.HELVETICA, 9.0F, Font.BOLD)
+        Dim baseFontBold7 As Font = New Font(Font.HELVETICA, 7.0F, Font.BOLD)
+        Dim baseFontBold11 As Font = New Font(Font.HELVETICA, 15.0F, Font.BOLD)
+        Dim baseFontBoldGrey28 As Font = New Font(Font.HELVETICA, 28.0F, Font.BOLD, Color.GRAY)
+
+        Dim service As New AppService
+
+        Dim dt As DataTable = New DataTable
+
+        Dim strOzrollAddress As String = String.Empty
+        Dim strOzrollPhone As String = String.Empty
+
+        Dim pageTable As PdfPTable
+        pageTable = New PdfPTable({35.0F, 35.0F, 15.0F, 15.0F})
+        pageTable.WidthPercentage = 100.0F
+        pageTable.AddCell(New PdfPCell(New Phrase(strOzrollAddress, baseFont)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_TOP})
+
+        Dim image As Image = Image.GetInstance(HttpContext.Current.Server.MapPath("~/images/logo.png"))
+        image.ScaleAbsolute(500, 300)
+        pageTable.AddCell(image)
+
+        pageTable.AddCell(New PdfPCell(New Phrase(strOzrollPhone, baseFontBold)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        document.Add(pageTable)
+        pageTable = Nothing
+
+        Dim strClientAddress As String = String.Empty
+        Dim strDeliverAddress As String = String.Empty
+
+        Dim cProductionSchedule As ProductionSchedule = service.getProdScheduleClsByID(intScheduleID)
+        Dim dtCustomer As DataTable = service.runSQLScheduling("select * from dbo.tblCustomers where CustomeriD = " & cProductionSchedule.CustomerID)
+
+        If dtCustomer.Rows.Count > 0 Then
+            strClientAddress = dtCustomer.Rows(0)("CustomerName").ToString & vbCrLf
+            strDeliverAddress = dtCustomer.Rows(0)("CustomerName").ToString & vbCrLf
+        End If
+        dtCustomer.Dispose()
+        dtCustomer = Nothing
+
+        Dim dtAddress As DataTable = service.runSQLScheduling("select * from dbo.tblCustomerDelivery where DeliveryID =" & cProductionSchedule.DeliveryAddressID)
+        If dtAddress.Rows.Count > 0 Then
+            strClientAddress &= dtAddress.Rows(0)("AddressLine1").ToString & vbCrLf & dtAddress.Rows(0)("Suburb").ToString & " " & dtAddress.Rows(0)("State").ToString & " " & dtAddress.Rows(0)("PostCode").ToString
+            strDeliverAddress &= dtAddress.Rows(0)("AddressLine1").ToString & vbCrLf & dtAddress.Rows(0)("Suburb").ToString & " " & dtAddress.Rows(0)("State").ToString & " " & dtAddress.Rows(0)("PostCode").ToString
+        End If
+        dtAddress.Dispose()
+        dtAddress = Nothing
+
+
+        Dim strSybizRef As String = cProductionSchedule.OzrollContractNo
+        Dim strScheduleRef As String = cProductionSchedule.ShutterProNumber
+
+        pageTable = New PdfPTable({15.0F, 40.0F, 15.0F, 20.0F})
+        pageTable.WidthPercentage = 100.0F
+        pageTable.SpacingBefore = 5.0F
+        pageTable.SpacingAfter = 5.0F
+
+        pageTable.AddCell(New PdfPCell(New Phrase("DELIVERY DOCKET", baseFontBoldGrey28)) With {.Colspan = 4, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageTable.AddCell(New PdfPCell(New Phrase(vbCrLf)) With {.Colspan = 4, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+
+        pageTable.AddCell(New PdfPCell(New Phrase("SOLD TO", baseFont)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_TOP})
+        pageTable.AddCell(New PdfPCell(New Phrase(strClientAddress, baseFont)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageTable.AddCell(New PdfPCell(New Phrase("Ozroll Ref:", baseFontBold)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageTable.AddCell(New PdfPCell(New Phrase(strSybizRef, baseFontBold)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageTable.AddCell(New PdfPCell(New Phrase(vbCrLf)) With {.Colspan = 4, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+
+        pageTable.AddCell(New PdfPCell(New Phrase("DELIVER TO", baseFont)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT, .VerticalAlignment = Element.ALIGN_TOP})
+        pageTable.AddCell(New PdfPCell(New Phrase(strClientAddress, baseFont)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageTable.AddCell(New PdfPCell(New Phrase("Ozroll Ref:", baseFontBold)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageTable.AddCell(New PdfPCell(New Phrase(strScheduleRef, baseFontBold)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        document.Add(pageTable)
+        pageTable = Nothing
+
+
+        Dim strQuantity As String = cProductionSchedule.TotalPanels.ToString
+        Dim strSQM As String = cProductionSchedule.TotalSQM.ToString
+        Dim strColour As String = String.Empty
+        Dim strJobDescription As String = String.Empty
+
+        Dim dtColour As DataTable = service.runSQLScheduling("select dbo.tblColours.ColourName from dbo.tblLouvreSpecs inner join dbo.tblColours on dbo.tblLouvreSpecs.ColourID  = dbo.tblColours.ColourID where dbo.tblLouvreSpecs.ProductScheduleID = " & intScheduleID.ToString)
+        If dtColour.Rows.Count > 0 Then
+            strColour = dtColour.Rows(0)("ColourName").ToString
+        End If
+        dtColour.Dispose()
+        dtColour = Nothing
+
+        pageTable = New PdfPTable({15.0F, 10.0F, 10.0F, 10.0F, 15.0F, 40.0F})
+        pageTable.WidthPercentage = 100.0F
+        pageTable.SpacingBefore = 5.0F
+        pageTable.SpacingAfter = 5.0F
+
+        pageTable.AddCell(New PdfPCell(New Phrase("LOUVRES AND PACK-UP AS PER ATTACHED PRODUCTION SHEETS", baseFontBold12)) With {.Colspan = 6, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+        pageTable.AddCell(New PdfPCell(New Phrase(vbCrLf)) With {.Colspan = 6, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+
+        pageTable.AddCell(New PdfPCell(New Phrase("Quantity:", baseFont)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageTable.AddCell(New PdfPCell(New Phrase(strQuantity, baseFont)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageTable.AddCell(New PdfPCell(New Phrase("SQM:", baseFont)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageTable.AddCell(New PdfPCell(New Phrase(strSQM, baseFont)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageTable.AddCell(New PdfPCell(New Phrase("Colour:", baseFont)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageTable.AddCell(New PdfPCell(New Phrase(strColour, baseFont)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageTable.AddCell(New PdfPCell(New Phrase(vbCrLf)) With {.Colspan = 6, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_CENTER})
+
+        pageTable.AddCell(New PdfPCell(New Phrase("Job Description:", baseFont)) With {.Colspan = 2, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageTable.AddCell(New PdfPCell(New Phrase(strJobDescription, baseFont)) With {.Colspan = 4, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        document.Add(pageTable)
+        pageTable = Nothing
+
+        'delivery notes
+        pageTable = New PdfPTable({100.0F})
+        pageTable.WidthPercentage = 100.0F
+        pageTable.SpacingBefore = 5.0F
+        pageTable.SpacingAfter = 5.0F
+
+        pageTable.AddCell(New PdfPCell(New Phrase("DELIVERY NOTES:", baseFontBold12)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        Dim strDeliveryNote As String = String.Empty
+        For i As Integer = 0 To 15
+            pageTable.AddCell(New PdfPCell(New Phrase(" ", baseFont)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        Next
+
+        'pageTable.AddCell(New PdfPCell(New Phrase(strDeliveryNote, baseFont)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        document.Add(pageTable)
+        pageTable = Nothing
+
+
+        service = Nothing
+
+        'page footer
+        pageTable = New PdfPTable({20.0F, 40.0F, 20.0F, 20.0F})
+        pageTable.WidthPercentage = 100.0F
+        pageTable.SpacingBefore = 5.0F
+        pageTable.SpacingAfter = 5.0F
+
+        pageTable.AddCell(New PdfPCell(New Phrase("Signature:", baseFont)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageTable.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont)) With {.BorderWidthBottom = 1, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageTable.AddCell(New PdfPCell(New Phrase("Despatch Date:", baseFont)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageTable.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont)) With {.BorderWidthBottom = 1, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        pageTable.AddCell(New PdfPCell(New Phrase("Print Name:", baseFont)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageTable.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont)) With {.BorderWidthBottom = 1, .BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageTable.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+        pageTable.AddCell(New PdfPCell(New Phrase(String.Empty, baseFont)) With {.BorderWidth = 0, .HorizontalAlignment = Element.ALIGN_LEFT})
+
+        document.Add(pageTable)
+        pageTable = Nothing
+
+
+        'page number/of
+
+
+
+        'date time generated
+
+
+        document.Close()
+
+        Return True
+
+    End Function
+
+
+
+
+
+End Class

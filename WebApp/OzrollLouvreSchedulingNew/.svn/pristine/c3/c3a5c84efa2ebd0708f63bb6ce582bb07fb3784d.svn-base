@@ -1,0 +1,2707 @@
+﻿Imports System.Data.SqlClient
+Imports System.Reflection
+Imports Microsoft.VisualBasic
+
+Public Class LouvreSpecDesignDAO
+    Function addLouvreSpecDesign(louvreDesign As LouvreSpecDesign, Optional cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As Integer
+
+        Dim bolAddOK As Boolean = True
+        Dim SaveRecord As Boolean = False
+        cnn = Nothing
+        If IsNothing(cnn) Then
+            bolAddOK = False
+            Dim dbConn As New DBConnection
+            cnn = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+            dbConn = Nothing
+        End If
+
+        Dim cmd As New SqlCommand
+        Try
+
+            If bolAddOK = False Then
+                cnn.Open()
+            End If
+
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_addLouvreSpecDesign"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            If bolAddOK = True Then
+                cmd.Transaction = trans
+            End If
+
+            setupCommandParameters(louvreDesign, cmd)
+            Dim ra As Integer = cmd.ExecuteNonQuery
+            If ra < 1 Then
+                EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - add record failed" & Environment.NewLine)
+                bolAddOK = False
+            Else
+                SaveRecord = True
+            End If
+            If bolAddOK = False Then
+                cnn.Close()
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+            bolAddOK = False
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+            If bolAddOK = False Then
+                cnn.Dispose()
+                cnn = Nothing
+            End If
+        End Try
+        Return SaveRecord
+        ''
+
+    End Function
+
+    Function updateLouvreSpecDesign(louvreDesign As LouvreSpecDesign, Optional cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As Boolean
+
+        Dim bolAddOK As Boolean = True
+
+        If IsNothing(cnn) Then
+            bolAddOK = False
+            Dim dbConn As New DBConnection
+            cnn = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+            dbConn = Nothing
+        End If
+
+        Dim cmd As New SqlCommand
+        Try
+
+            If bolAddOK = False Then
+                cnn.Open()
+            End If
+
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_updateLouvreSpecDesign"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            If bolAddOK = True Then
+                cmd.Transaction = trans
+            End If
+
+            setupCommandParameters(louvreDesign, cmd)
+            Dim ra As Integer = cmd.ExecuteNonQuery
+
+            If bolAddOK = False Then
+                cnn.Close()
+            End If
+
+            If ra < 1 Then
+                EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - add record failed" & Environment.NewLine)
+                Return False
+            Else
+                Return True
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+            Return False
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+            If bolAddOK = False Then
+                cnn.Dispose()
+                cnn = Nothing
+            End If
+        End Try
+
+    End Function
+
+    Protected Sub setupCommandParameters(LouvreSpec As LouvreSpecDesign, ByRef cmd As SqlCommand)
+
+        SqlCommandBuilder.DeriveParameters(cmd)
+
+        If LouvreSpec.LouvreDetailsID <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@LouvreDetailsID").Value = LouvreSpec.LouvreDetailsID
+        Else
+            cmd.Parameters("@LouvreDetailsID").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.OpeningHeight <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@OpeningHeight").Value = LouvreSpec.OpeningHeight
+        Else
+            cmd.Parameters("@OpeningHeight").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.OpeningWidth <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@OpeningWidth").Value = LouvreSpec.OpeningWidth
+        Else
+            cmd.Parameters("@OpeningWidth").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.PanelHeight <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@PanelHeight").Value = LouvreSpec.PanelHeight
+        Else
+            cmd.Parameters("@PanelHeight").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.PanelWidth <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@PanelWidth").Value = LouvreSpec.PanelWidth
+        Else
+            cmd.Parameters("@PanelWidth").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.NoOfPanels <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@NoOfPanels").Value = LouvreSpec.NoOfPanels
+        Else
+            cmd.Parameters("@NoOfPanels").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.WeightPersSQM <> Constants.DEFAULT_DECIMAL_VALUE Then
+            cmd.Parameters("@WeightPersSQM").Value = LouvreSpec.WeightPersSQM
+        Else
+            cmd.Parameters("@WeightPersSQM").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.TopTrackHeight <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@TopTrackHeight").Value = LouvreSpec.TopTrackHeight
+        Else
+            cmd.Parameters("@TopTrackHeight").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.TopGapHeight <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@TopGapHeight").Value = LouvreSpec.TopGapHeight
+        Else
+            cmd.Parameters("@TopGapHeight").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.BottomTrackHeight <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@BottomTrackHeight").Value = LouvreSpec.BottomTrackHeight
+        Else
+            cmd.Parameters("@BottomTrackHeight").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.BottomGapHeight <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@BottomGapHeight").Value = LouvreSpec.BottomGapHeight
+        Else
+            cmd.Parameters("@BottomGapHeight").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.LeftSideGap <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@LeftSideGap").Value = LouvreSpec.LeftSideGap
+        Else
+            cmd.Parameters("@LeftSideGap").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.RightSideGap <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@RightSideGap").Value = LouvreSpec.RightSideGap
+        Else
+            cmd.Parameters("@RightSideGap").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.PanelGap <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@PanelGap").Value = LouvreSpec.PanelGap
+        Else
+            cmd.Parameters("@PanelGap").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.PanelGapOverlap <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@PanelGapOverlap").Value = LouvreSpec.PanelGapOverlap
+        Else
+            cmd.Parameters("@PanelGapOverlap").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.NoOfClips <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@NoOfClips").Value = LouvreSpec.NoOfClips
+        Else
+            cmd.Parameters("@NoOfClips").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.NoOfTransom <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@NoOfTransom").Value = LouvreSpec.NoOfTransom
+        Else
+            cmd.Parameters("@NoOfTransom").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.GivenTransomHeight <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@GivenTransomHeight").Value = LouvreSpec.GivenTransomHeight
+        Else
+            cmd.Parameters("@GivenTransomHeight").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.PanelTransomHeight <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@PanelTransomHeight").Value = LouvreSpec.PanelTransomHeight
+        Else
+            cmd.Parameters("@PanelTransomHeight").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.TransomSize <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@TransomSize").Value = LouvreSpec.TransomSize
+        Else
+            cmd.Parameters("@TransomSize").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.TransomWidthSubtraction <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@TransomWidthSubtraction").Value = LouvreSpec.TransomWidthSubtraction
+        Else
+            cmd.Parameters("@TransomWidthSubtraction").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.TransomWidth <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@TransomWidth").Value = LouvreSpec.TransomWidth
+        Else
+            cmd.Parameters("@TransomWidth").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.GivenTransom2Height <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@GivenTransom2Height").Value = LouvreSpec.GivenTransom2Height
+        Else
+            cmd.Parameters("@GivenTransom2Height").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.PanelTransom2Height <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@PanelTransom2Height").Value = LouvreSpec.PanelTransom2Height
+        Else
+            cmd.Parameters("@PanelTransom2Height").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.Transom2Size <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@Transom2Size").Value = LouvreSpec.Transom2Size
+        Else
+            cmd.Parameters("@Transom2Size").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.Transom2WidthSubtraction <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@Transom2WidthSubtraction").Value = LouvreSpec.Transom2WidthSubtraction
+        Else
+            cmd.Parameters("@Transom2WidthSubtraction").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.Transom2Width <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@Transom2Width").Value = LouvreSpec.Transom2Width
+        Else
+            cmd.Parameters("@Transom2Width").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.MiddlePanelSectionHeight <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@MiddlePanelSectionHeight").Value = LouvreSpec.MiddlePanelSectionHeight
+        Else
+            cmd.Parameters("@MiddlePanelSectionHeight").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.BottomPanelSectionHeight <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@BottomPanelSectionHeight").Value = LouvreSpec.BottomPanelSectionHeight
+        Else
+            cmd.Parameters("@BottomPanelSectionHeight").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.CornerPlugHeight <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@CornerPlugHeight").Value = LouvreSpec.CornerPlugHeight
+        Else
+            cmd.Parameters("@CornerPlugHeight").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.NoOfCornerPlugs <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@NoOfCornerPlugs").Value = LouvreSpec.NoOfCornerPlugs
+        Else
+            cmd.Parameters("@NoOfCornerPlugs").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.NoOfHoleCaps <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@NoOfHoleCaps").Value = LouvreSpec.NoOfHoleCaps
+        Else
+            cmd.Parameters("@NoOfHoleCaps").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.PileQuantity <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@PileQuantity").Value = LouvreSpec.PileQuantity
+        Else
+            cmd.Parameters("@PileQuantity").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.PileColour <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@PileColour").Value = LouvreSpec.PileColour
+        Else
+            cmd.Parameters("@PileColour").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.BladeLockQuantity <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@BladeLockQuantity").Value = LouvreSpec.BladeLockQuantity
+        Else
+            cmd.Parameters("@BladeLockQuantity").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.TopFlushBoltsType <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@TopFlushBoltsType").Value = LouvreSpec.TopFlushBoltsType
+        Else
+            cmd.Parameters("@TopFlushBoltsType").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.TopFlushBoltsHeight <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@TopFlushBoltsHeight").Value = LouvreSpec.TopFlushBoltsHeight
+        Else
+            cmd.Parameters("@TopFlushBoltsHeight").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.TopFlushBoltsQuantity <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@TopFlushBoltsQuantity").Value = LouvreSpec.TopFlushBoltsQuantity
+        Else
+            cmd.Parameters("@TopFlushBoltsQuantity").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.BottomFlushBoltsType <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@BottomFlushBoltsType").Value = LouvreSpec.BottomFlushBoltsType
+        Else
+            cmd.Parameters("@BottomFlushBoltsType").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.BottomFlushBoltsHeight <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@BottomFlushBoltsHeight").Value = LouvreSpec.BottomFlushBoltsHeight
+        Else
+            cmd.Parameters("@BottomFlushBoltsHeight").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.BottomFlushBoltsQuantity <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@BottomFlushBoltsQuantity").Value = LouvreSpec.BottomFlushBoltsQuantity
+        Else
+            cmd.Parameters("@BottomFlushBoltsQuantity").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.HingesType <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@HingesType").Value = LouvreSpec.HingesType
+        Else
+            cmd.Parameters("@HingesType").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.HingesQuantity <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@HingesQuantity").Value = LouvreSpec.HingesQuantity
+        Else
+            cmd.Parameters("@HingesQuantity").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.FeltTop <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@FeltTop").Value = LouvreSpec.FeltTop
+        Else
+            cmd.Parameters("@FeltTop").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.FeltSizeTop <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@FeltSizeTop").Value = LouvreSpec.FeltSizeTop
+        Else
+            cmd.Parameters("@FeltSizeTop").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.FeltBottom <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@FeltBottom").Value = LouvreSpec.FeltBottom
+        Else
+            cmd.Parameters("@FeltBottom").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.FeltSizeBottom <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@FeltSizeBottom").Value = LouvreSpec.FeltSizeBottom
+        Else
+            cmd.Parameters("@FeltSizeBottom").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.FeltLeft <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@FeltLeft").Value = LouvreSpec.FeltLeft
+        Else
+            cmd.Parameters("@FeltLeft").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.FeltSizeLeft <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@FeltSizeLeft").Value = LouvreSpec.FeltSizeLeft
+        Else
+            cmd.Parameters("@FeltSizeLeft").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.FeltRight <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@FeltRight").Value = LouvreSpec.FeltRight
+        Else
+            cmd.Parameters("@FeltRight").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.FeltSizeRight <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@FeltSizeRight").Value = LouvreSpec.FeltSizeRight
+        Else
+            cmd.Parameters("@FeltSizeRight").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.FeltInBetweenPanels <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@FeltInBetweenPanels").Value = LouvreSpec.FeltInBetweenPanels
+        Else
+            cmd.Parameters("@FeltInBetweenPanels").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.FeltSizeInBetweenPanels <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@FeltSizeInBetweenPanels").Value = LouvreSpec.FeltSizeInBetweenPanels
+        Else
+            cmd.Parameters("@FeltSizeInBetweenPanels").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.TopPivotsQuantity <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@TopPivotsQuantity").Value = LouvreSpec.TopPivotsQuantity
+        Else
+            cmd.Parameters("@TopPivotsQuantity").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.TopPivotsType <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@TopPivotsType").Value = LouvreSpec.TopPivotsType
+        Else
+            cmd.Parameters("@TopPivotsType").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.TopPivotsPerPanel <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@TopPivotsPerPanel").Value = LouvreSpec.TopPivotsPerPanel
+        Else
+            cmd.Parameters("@TopPivotsPerPanel").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.BottomPivotsQuantity <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@BottomPivotsQuantity").Value = LouvreSpec.BottomPivotsQuantity
+        Else
+            cmd.Parameters("@BottomPivotsQuantity").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.BottomPivotsType <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@BottomPivotsType").Value = LouvreSpec.BottomPivotsType
+        Else
+            cmd.Parameters("@BottomPivotsType").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.BottomPivotsPerPanel <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@BottomPivotsPerPanel").Value = LouvreSpec.BottomPivotsPerPanel
+        Else
+            cmd.Parameters("@BottomPivotsPerPanel").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.BottomPivotsPerPanel <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@BottomPivotsPerPanel").Value = LouvreSpec.BottomPivotsPerPanel
+        Else
+            cmd.Parameters("@BottomPivotsPerPanel").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.StileLength <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@StileLength").Value = LouvreSpec.StileLength
+        Else
+            cmd.Parameters("@StileLength").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.StileQuantity <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@StileQuantity").Value = LouvreSpec.StileQuantity
+        Else
+            cmd.Parameters("@StileQuantity").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.StileHeightSubtraction <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@StileHeightSubtraction").Value = LouvreSpec.StileHeightSubtraction
+        Else
+            cmd.Parameters("@StileHeightSubtraction").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.TopRailsLength <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@TopRailsLength").Value = LouvreSpec.TopRailsLength
+        Else
+            cmd.Parameters("@TopRailsLength").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.TopRailsQuantity <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@TopRailsQuantity").Value = LouvreSpec.TopRailsQuantity
+        Else
+            cmd.Parameters("@TopRailsQuantity").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.TopRailsWidthSubtraction <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@TopRailsWidthSubtraction").Value = LouvreSpec.TopRailsWidthSubtraction
+        Else
+            cmd.Parameters("@TopRailsWidthSubtraction").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.BottomRailsLength <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@BottomRailsLength").Value = LouvreSpec.BottomRailsLength
+        Else
+            cmd.Parameters("@BottomRailsLength").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.BottomRailsQuantity <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@BottomRailsQuantity").Value = LouvreSpec.BottomRailsQuantity
+        Else
+            cmd.Parameters("@BottomRailsQuantity").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.BottomRailsWidthSubtraction <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@BottomRailsWidthSubtraction").Value = LouvreSpec.BottomRailsWidthSubtraction
+        Else
+            cmd.Parameters("@BottomRailsWidthSubtraction").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.FingerGripsLength <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@FingerGripsLength").Value = LouvreSpec.FingerGripsLength
+        Else
+            cmd.Parameters("@FingerGripsLength").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.FingerGripQuantity <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@FingerGripQuantity").Value = LouvreSpec.FingerGripQuantity
+        Else
+            cmd.Parameters("@FingerGripQuantity").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.NoOfProfileSlats <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@NoOfProfileSlats").Value = LouvreSpec.NoOfProfileSlats
+        Else
+            cmd.Parameters("@NoOfProfileSlats").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.ProfileSize <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@ProfileSize").Value = LouvreSpec.ProfileSize
+        Else
+            cmd.Parameters("@ProfileSize").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.ProfileCutLength <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@ProfileCutLength").Value = LouvreSpec.ProfileCutLength
+        Else
+            cmd.Parameters("@ProfileCutLength").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.ProfileCutWidthSubtraction <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@ProfileCutWidthSubtraction").Value = LouvreSpec.ProfileCutWidthSubtraction
+        Else
+            cmd.Parameters("@ProfileCutWidthSubtraction").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.ProfileNumberHeightSubtraction <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@ProfileNumberHeightSubtraction").Value = LouvreSpec.ProfileNumberHeightSubtraction
+        Else
+            cmd.Parameters("@ProfileNumberHeightSubtraction").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.TopFirstBladeHoleStartPoint <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@TopFirstBladeHoleStartPoint").Value = LouvreSpec.TopFirstBladeHoleStartPoint
+        Else
+            cmd.Parameters("@TopFirstBladeHoleStartPoint").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.TopBladeDrillHoleSpaces <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@TopBladeDrillHoleSpaces").Value = LouvreSpec.TopBladeDrillHoleSpaces
+        Else
+            cmd.Parameters("@TopBladeDrillHoleSpaces").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.MiddleFirstBladeHoleStartPoint <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@MiddleFirstBladeHoleStartPoint").Value = LouvreSpec.MiddleFirstBladeHoleStartPoint
+        Else
+            cmd.Parameters("@MiddleFirstBladeHoleStartPoint").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.MiddleBladeDrillHoleSpaces <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@MiddleBladeDrillHoleSpaces").Value = LouvreSpec.MiddleBladeDrillHoleSpaces
+        Else
+            cmd.Parameters("@MiddleBladeDrillHoleSpaces").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.BottomFirstBladeHoleStartPoint <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@BottomFirstBladeHoleStartPoint").Value = LouvreSpec.BottomFirstBladeHoleStartPoint
+        Else
+            cmd.Parameters("@BottomFirstBladeHoleStartPoint").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.BottomBladeDrillHoleSpaces <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@BottomBladeDrillHoleSpaces").Value = LouvreSpec.BottomBladeDrillHoleSpaces
+        Else
+            cmd.Parameters("@BottomBladeDrillHoleSpaces").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.InfillWidthSubtraction <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@InfillWidthSubtraction").Value = LouvreSpec.InfillWidthSubtraction
+        Else
+            cmd.Parameters("@InfillWidthSubtraction").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.TopInfillTopType <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@TopInfillTopType").Value = LouvreSpec.TopInfillTopType
+        Else
+            cmd.Parameters("@TopInfillTopType").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.TopInfillTopLength <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@TopInfillTopLength").Value = LouvreSpec.TopInfillTopLength
+        Else
+            cmd.Parameters("@TopInfillTopLength").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.TopInfillTopQuantity <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@TopInfillTopQuantity").Value = LouvreSpec.TopInfillTopQuantity
+        Else
+            cmd.Parameters("@TopInfillTopQuantity").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.TopInfillTopSize <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@TopInfillTopSize").Value = LouvreSpec.TopInfillTopSize
+        Else
+            cmd.Parameters("@TopInfillTopSize").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.TopInfillBottomLength <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@TopInfillBottomLength").Value = LouvreSpec.TopInfillBottomLength
+        Else
+            cmd.Parameters("@TopInfillBottomLength").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.TopInfillBottomQuantity <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@TopInfillBottomQuantity").Value = LouvreSpec.TopInfillBottomQuantity
+        Else
+            cmd.Parameters("@TopInfillBottomQuantity").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.TopInfillBottomSize <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@TopInfillBottomSize").Value = LouvreSpec.TopInfillBottomSize
+        Else
+            cmd.Parameters("@TopInfillBottomSize").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.MiddleInfillTopLength <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@MiddleInfillTopLength").Value = LouvreSpec.MiddleInfillTopLength
+        Else
+            cmd.Parameters("@MiddleInfillTopLength").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.MiddleInfillTopQuantity <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@MiddleInfillTopQuantity").Value = LouvreSpec.MiddleInfillTopQuantity
+        Else
+            cmd.Parameters("@MiddleInfillTopQuantity").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.MiddleInfillTopSize <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@MiddleInfillTopSize").Value = LouvreSpec.MiddleInfillTopSize
+        Else
+            cmd.Parameters("@MiddleInfillTopSize").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.MiddleInfillBottomLength <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@MiddleInfillBottomLength").Value = LouvreSpec.MiddleInfillBottomLength
+        Else
+            cmd.Parameters("@MiddleInfillBottomLength").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.MiddleInfillBottomQuantity <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@MiddleInfillBottomQuantity").Value = LouvreSpec.MiddleInfillBottomQuantity
+        Else
+            cmd.Parameters("@MiddleInfillBottomQuantity").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.MiddleInfillBottomSize <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@MiddleInfillBottomSize").Value = LouvreSpec.MiddleInfillBottomSize
+        Else
+            cmd.Parameters("@MiddleInfillBottomSize").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.BottomInfillTopLength <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@BottomInfillTopLength").Value = LouvreSpec.BottomInfillTopLength
+        Else
+            cmd.Parameters("@BottomInfillTopLength").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.BottomInfillTopQuantity <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@BottomInfillTopQuantity").Value = LouvreSpec.BottomInfillTopQuantity
+        Else
+            cmd.Parameters("@BottomInfillTopQuantity").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.BottomInfillTopSize <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@BottomInfillTopSize").Value = LouvreSpec.BottomInfillTopSize
+        Else
+            cmd.Parameters("@BottomInfillTopSize").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.BottomInfillBottomLength <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@BottomInfillBottomLength").Value = LouvreSpec.BottomInfillBottomLength
+        Else
+            cmd.Parameters("@BottomInfillBottomLength").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.BottomInfillBottomQuantity <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@BottomInfillBottomQuantity").Value = LouvreSpec.BottomInfillBottomQuantity
+        Else
+            cmd.Parameters("@BottomInfillBottomQuantity").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.BottomInfillBottomSize <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@BottomInfillBottomSize").Value = LouvreSpec.BottomInfillBottomSize
+        Else
+            cmd.Parameters("@BottomInfillBottomSize").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.DummyBladeTopWidth <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@DummyBladeTopWidth").Value = LouvreSpec.DummyBladeTopWidth
+        Else
+            cmd.Parameters("@DummyBladeTopWidth").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.DummyBladeTopWidthSubtraction <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@DummyBladeTopWidthSubtraction").Value = LouvreSpec.DummyBladeTopWidthSubtraction
+        Else
+            cmd.Parameters("@DummyBladeTopWidthSubtraction").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.DummyBladeBottomWidth <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@DummyBladeBottomWidth").Value = LouvreSpec.DummyBladeBottomWidth
+        Else
+            cmd.Parameters("@DummyBladeBottomWidth").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.DummyBladeBottomWidthSubtraction <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@DummyBladeBottomWidthSubtraction").Value = LouvreSpec.DummyBladeBottomWidthSubtraction
+        Else
+            cmd.Parameters("@DummyBladeBottomWidthSubtraction").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.MullionLength <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@MullionLength").Value = LouvreSpec.MullionLength
+        Else
+            cmd.Parameters("@MullionLength").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.MullionQuantity <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@MullionQuantity").Value = LouvreSpec.MullionQuantity
+        Else
+            cmd.Parameters("@MullionQuantity").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.MullionWidth <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@MullionWidth").Value = LouvreSpec.MullionWidth
+        Else
+            cmd.Parameters("@MullionWidth").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.MullionHeightSubtraction <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@MullionHeightSubtraction").Value = LouvreSpec.MullionHeightSubtraction
+        Else
+            cmd.Parameters("@MullionHeightSubtraction").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.TopTrackType <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@TopTrackType").Value = LouvreSpec.TopTrackType
+        Else
+            cmd.Parameters("@TopTrackType").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.TopTrackSize <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@TopTrackSize").Value = LouvreSpec.TopTrackSize
+        Else
+            cmd.Parameters("@TopTrackSize").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.TopTrackLength <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@TopTrackLength").Value = LouvreSpec.TopTrackLength
+        Else
+            cmd.Parameters("@TopTrackLength").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.TopTrackQuantity <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@TopTrackQuantity").Value = LouvreSpec.TopTrackQuantity
+        Else
+            cmd.Parameters("@TopTrackQuantity").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.BottomTrackType <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@BottomTrackType").Value = LouvreSpec.BottomTrackType
+        Else
+            cmd.Parameters("@BottomTrackType").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.BottomTrackSize <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@BottomTrackSize").Value = LouvreSpec.BottomTrackSize
+        Else
+            cmd.Parameters("@BottomTrackSize").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.BottomTrackLength <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@BottomTrackLength").Value = LouvreSpec.BottomTrackLength
+        Else
+            cmd.Parameters("@BottomTrackLength").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.BottomTrackQuantity <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@BottomTrackQuantity").Value = LouvreSpec.BottomTrackQuantity
+        Else
+            cmd.Parameters("@BottomTrackQuantity").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.TopGlassHeight <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@TopGlassHeight").Value = LouvreSpec.TopGlassHeight
+        Else
+            cmd.Parameters("@TopGlassHeight").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.TopGlassWidth <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@TopGlassWidth").Value = LouvreSpec.TopGlassWidth
+        Else
+            cmd.Parameters("@TopGlassWidth").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.TopGlassType <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@TopGlassType").Value = LouvreSpec.TopGlassType
+        Else
+            cmd.Parameters("@TopGlassType").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.TopGlassHeightSubtraction <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@TopGlassHeightSubtraction").Value = LouvreSpec.TopGlassHeightSubtraction
+        Else
+            cmd.Parameters("@TopGlassHeightSubtraction").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.TopGlassHeightAddition <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@TopGlassHeightAddition").Value = LouvreSpec.TopGlassHeightAddition
+        Else
+            cmd.Parameters("@TopGlassHeightAddition").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.TopGlassWidthSubtraction <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@TopGlassWidthSubtraction").Value = LouvreSpec.TopGlassWidthSubtraction
+        Else
+            cmd.Parameters("@TopGlassWidthSubtraction").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.TopGlassWidthAddition <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@TopGlassWidthAddition").Value = LouvreSpec.TopGlassWidthAddition
+        Else
+            cmd.Parameters("@TopGlassWidthAddition").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.MiddleGlassHeight <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@MiddleGlassHeight").Value = LouvreSpec.MiddleGlassHeight
+        Else
+            cmd.Parameters("@MiddleGlassHeight").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.MiddleGlassWidth <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@MiddleGlassWidth").Value = LouvreSpec.MiddleGlassWidth
+        Else
+            cmd.Parameters("@MiddleGlassWidth").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.MiddleGlassType <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@MiddleGlassType").Value = LouvreSpec.MiddleGlassType
+        Else
+            cmd.Parameters("@MiddleGlassType").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.MiddleGlassHeightSubtraction <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@MiddleGlassHeightSubtraction").Value = LouvreSpec.MiddleGlassHeightSubtraction
+        Else
+            cmd.Parameters("@MiddleGlassHeightSubtraction").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.MiddleGlassHeightAddition <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@MiddleGlassHeightAddition").Value = LouvreSpec.MiddleGlassHeightAddition
+        Else
+            cmd.Parameters("@MiddleGlassHeightAddition").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.MiddleGlassWidthSubtraction <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@MiddleGlassWidthSubtraction").Value = LouvreSpec.MiddleGlassWidthSubtraction
+        Else
+            cmd.Parameters("@MiddleGlassWidthSubtraction").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.MiddleGlassWidthAddition <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@MiddleGlassWidthAddition").Value = LouvreSpec.MiddleGlassWidthAddition
+        Else
+            cmd.Parameters("@MiddleGlassWidthAddition").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.BottomGlassHeight <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@BottomGlassHeight").Value = LouvreSpec.BottomGlassHeight
+        Else
+            cmd.Parameters("@BottomGlassHeight").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.BottomGlassWidth <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@BottomGlassWidth").Value = LouvreSpec.BottomGlassWidth
+        Else
+            cmd.Parameters("@BottomGlassWidth").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.BottomGlassType <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@BottomGlassType").Value = LouvreSpec.BottomGlassType
+        Else
+            cmd.Parameters("@BottomGlassType").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.BottomGlassHeightSubtraction <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@BottomGlassHeightSubtraction").Value = LouvreSpec.BottomGlassHeightSubtraction
+        Else
+            cmd.Parameters("@BottomGlassHeightSubtraction").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.BottomGlassHeightAddition <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@BottomGlassHeightAddition").Value = LouvreSpec.BottomGlassHeightAddition
+        Else
+            cmd.Parameters("@BottomGlassHeightAddition").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.BottomGlassWidthSubtraction <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@BottomGlassWidthSubtraction").Value = LouvreSpec.BottomGlassWidthSubtraction
+        Else
+            cmd.Parameters("@BottomGlassWidthSubtraction").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.BottomGlassWidthAddition <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@BottomGlassWidthAddition").Value = LouvreSpec.BottomGlassWidthAddition
+        Else
+            cmd.Parameters("@BottomGlassWidthAddition").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.TopVerticalBladesHeightAddition <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@TopVerticalBladesHeightAddition").Value = LouvreSpec.TopVerticalBladesHeightAddition
+        Else
+            cmd.Parameters("@TopVerticalBladesHeightAddition").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.TopVerticalBladesSubtraction <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@TopVerticalBladesSubtraction").Value = LouvreSpec.TopVerticalBladesSubtraction
+        Else
+            cmd.Parameters("@TopVerticalBladesSubtraction").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.TopVerticalBladesCutLength <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@TopVerticalBladesCutLength").Value = LouvreSpec.TopVerticalBladesCutLength
+        Else
+            cmd.Parameters("@TopVerticalBladesCutLength").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.TopVerticalBladesQuantity <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@TopVerticalBladesQuantity").Value = LouvreSpec.TopVerticalBladesQuantity
+        Else
+            cmd.Parameters("@TopVerticalBladesQuantity").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.MiddleVerticalBladesHeightAddition <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@MiddleVerticalBladesHeightAddition").Value = LouvreSpec.MiddleVerticalBladesHeightAddition
+        Else
+            cmd.Parameters("@MiddleVerticalBladesHeightAddition").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.MiddleVerticalBladesSubtraction <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@MiddleVerticalBladesSubtraction").Value = LouvreSpec.MiddleVerticalBladesSubtraction
+        Else
+            cmd.Parameters("@MiddleVerticalBladesSubtraction").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.MiddleVerticalBladesCutLength <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@MiddleVerticalBladesCutLength").Value = LouvreSpec.MiddleVerticalBladesCutLength
+        Else
+            cmd.Parameters("@MiddleVerticalBladesCutLength").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.MiddleVerticalBladesQuantity <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@MiddleVerticalBladesQuantity").Value = LouvreSpec.MiddleVerticalBladesQuantity
+        Else
+            cmd.Parameters("@MiddleVerticalBladesQuantity").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.BottomVerticalBladesHeightAddition <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@BottomVerticalBladesHeightAddition").Value = LouvreSpec.BottomVerticalBladesHeightAddition
+        Else
+            cmd.Parameters("@BottomVerticalBladesHeightAddition").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.BottomVerticalBladesSubtraction <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@BottomVerticalBladesSubtraction").Value = LouvreSpec.BottomVerticalBladesSubtraction
+        Else
+            cmd.Parameters("@BottomVerticalBladesSubtraction").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.BottomVerticalBladesSubtraction <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@BottomVerticalBladesSubtraction").Value = LouvreSpec.BottomVerticalBladesSubtraction
+        Else
+            cmd.Parameters("@BottomVerticalBladesSubtraction").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.BottomVerticalBladesCutLength <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@BottomVerticalBladesCutLength").Value = LouvreSpec.BottomVerticalBladesCutLength
+        Else
+            cmd.Parameters("@BottomVerticalBladesCutLength").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.BottomVerticalBladesQuantity <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@BottomVerticalBladesQuantity").Value = LouvreSpec.BottomVerticalBladesQuantity
+        Else
+            cmd.Parameters("@BottomVerticalBladesQuantity").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.KeyLocksetType <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@KeyLocksetType").Value = LouvreSpec.KeyLocksetType
+        Else
+            cmd.Parameters("@KeyLocksetType").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.KeyLocksetQuantity <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@KeyLocksetQuantity").Value = LouvreSpec.KeyLocksetQuantity
+        Else
+            cmd.Parameters("@KeyLocksetQuantity").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.KeyLockType <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@KeyLockType").Value = LouvreSpec.KeyLockType
+        Else
+            cmd.Parameters("@KeyLockType").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.KeyLockQuantity <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@KeyLockQuantity").Value = LouvreSpec.KeyLockQuantity
+        Else
+            cmd.Parameters("@KeyLockQuantity").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.KeyLockPinCylinder <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@KeyLockPinCylinder").Value = LouvreSpec.KeyLockPinCylinder
+        Else
+            cmd.Parameters("@KeyLockPinCylinder").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.KeyLockPinCylinderQuantity <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@KeyLockPinCylinderQuantity").Value = LouvreSpec.KeyLockPinCylinderQuantity
+        Else
+            cmd.Parameters("@KeyLockPinCylinderQuantity").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.TopChannelType <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@TopChannelType").Value = LouvreSpec.TopChannelType
+        Else
+            cmd.Parameters("@TopChannelType").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.TopChannelLength <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@TopChannelLength").Value = LouvreSpec.TopChannelLength
+        Else
+            cmd.Parameters("@TopChannelLength").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.TopChannelQuantity <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@TopChannelQuantity").Value = LouvreSpec.TopChannelQuantity
+        Else
+            cmd.Parameters("@TopChannelQuantity").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.BottomChannelType <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@BottomChannelType").Value = LouvreSpec.BottomChannelType
+        Else
+            cmd.Parameters("@BottomChannelType").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.BottomChannelLength <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@BottomChannelLength").Value = LouvreSpec.BottomChannelLength
+        Else
+            cmd.Parameters("@BottomChannelLength").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.BottomChannelQuantity <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@BottomChannelQuantity").Value = LouvreSpec.BottomChannelQuantity
+        Else
+            cmd.Parameters("@BottomChannelQuantity").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.SideAngleType1 <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@SideAngleType1").Value = LouvreSpec.SideAngleType1
+        Else
+            cmd.Parameters("@SideAngleType1").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.SideAngleLength1 <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@SideAngleLength1").Value = LouvreSpec.SideAngleLength1
+        Else
+            cmd.Parameters("@SideAngleLength1").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.SideAngleQuantity1 <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@SideAngleQuantity1").Value = LouvreSpec.SideAngleQuantity1
+        Else
+            cmd.Parameters("@SideAngleQuantity1").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.SideAngleType2 <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@SideAngleType2").Value = LouvreSpec.SideAngleType2
+        Else
+            cmd.Parameters("@SideAngleType2").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.SideAngleLength2 <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@SideAngleLength2").Value = LouvreSpec.SideAngleLength2
+        Else
+            cmd.Parameters("@SideAngleLength2").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.SideAngleQuantity2 <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@SideAngleQuantity2").Value = LouvreSpec.SideAngleQuantity2
+        Else
+            cmd.Parameters("@SideAngleQuantity2").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.HSectionLength <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@HSectionLength").Value = LouvreSpec.HSectionLength
+        Else
+            cmd.Parameters("@HSectionLength").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.HSectionQuantity <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@HSectionQuantity").Value = LouvreSpec.HSectionQuantity
+        Else
+            cmd.Parameters("@HSectionQuantity").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.PackupLengthAdditionHeight <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@PackupLengthAdditionHeight").Value = LouvreSpec.PackupLengthAdditionHeight
+        Else
+            cmd.Parameters("@PackupLengthAdditionHeight").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.PackupLengthAdditionWidth <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@PackupLengthAdditionWidth").Value = LouvreSpec.PackupLengthAdditionWidth
+        Else
+            cmd.Parameters("@PackupLengthAdditionWidth").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.ReadyToGenerate <> Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@ReadyToGenerate").Value = LouvreSpec.ReadyToGenerate
+        Else
+            cmd.Parameters("@ReadyToGenerate").Value = DBNull.Value
+        End If
+
+        If LouvreSpec.GenerationComplete <> Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@GenerationComplete").Value = LouvreSpec.GenerationComplete
+        Else
+            cmd.Parameters("@GenerationComplete").Value = DBNull.Value
+        End If
+
+        Dim bolBladeInfill As Boolean = False
+        Dim bolCLFlatbar As Boolean = False
+        Dim bolHingedParts As Boolean
+
+        For Each param As SqlParameter In cmd.Parameters
+            If param.ParameterName = "@BladeInfillTopSize" Then
+                bolBladeInfill = True
+            End If
+            If param.ParameterName = "@CLFlatbarQuantity" Then
+                bolCLFlatbar = True
+            End If
+            If param.ParameterName = "@PlasticCornersQuantity" Then
+                bolHingedParts = True
+            End If
+        Next
+
+        If bolBladeInfill Then
+            If LouvreSpec.BladeInfillTopSize <> Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@BladeInfillTopSize").Value = LouvreSpec.BladeInfillTopSize
+            Else
+                cmd.Parameters("@BladeInfillTopSize").Value = DBNull.Value
+            End If
+
+            If LouvreSpec.BladeInfillTopQuantity <> Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@BladeInfillTopQuantity").Value = LouvreSpec.BladeInfillTopQuantity
+            Else
+                cmd.Parameters("@BladeInfillTopQuantity").Value = DBNull.Value
+            End If
+
+            If LouvreSpec.BladeInfillMiddleSize <> Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@BladeInfillMiddleSize").Value = LouvreSpec.BladeInfillMiddleSize
+            Else
+                cmd.Parameters("@BladeInfillMiddleSize").Value = DBNull.Value
+            End If
+
+            If LouvreSpec.BladeInfillMiddleQuantity <> Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@BladeInfillMiddleQuantity").Value = LouvreSpec.BladeInfillMiddleQuantity
+            Else
+                cmd.Parameters("@BladeInfillMiddleQuantity").Value = DBNull.Value
+            End If
+
+            If LouvreSpec.BladeInfillBottomSize <> Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@BladeInfillBottomSize").Value = LouvreSpec.BladeInfillBottomSize
+            Else
+                cmd.Parameters("@BladeInfillBottomSize").Value = DBNull.Value
+            End If
+
+            If LouvreSpec.BladeInfillBottomQuantity <> Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@BladeInfillBottomQuantity").Value = LouvreSpec.BladeInfillBottomQuantity
+            Else
+                cmd.Parameters("@BladeInfillBottomQuantity").Value = DBNull.Value
+            End If
+        End If
+
+        If bolCLFlatbar Then
+            If LouvreSpec.CLFlatbarSize <> Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@CLFlatbarSize").Value = LouvreSpec.CLFlatbarSize
+            Else
+                cmd.Parameters("@CLFlatbarSize").Value = DBNull.Value
+            End If
+            If LouvreSpec.CLFlatbarQuantity <> Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@CLFlatbarQuantity").Value = LouvreSpec.CLFlatbarQuantity
+            Else
+                cmd.Parameters("@CLFlatbarQuantity").Value = DBNull.Value
+            End If
+            If LouvreSpec.CLSteppedInsertSize <> Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@CLSteppedInsertSize").Value = LouvreSpec.CLSteppedInsertSize
+            Else
+                cmd.Parameters("@CLSteppedInsertSize").Value = DBNull.Value
+            End If
+            If LouvreSpec.CLSteppedInsertQuantity <> Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@CLSteppedInsertQuantity").Value = LouvreSpec.CLSteppedInsertQuantity
+            Else
+                cmd.Parameters("@CLSteppedInsertQuantity").Value = DBNull.Value
+            End If
+            If LouvreSpec.CLTopAngleSize <> Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@CLTopAngleSize").Value = LouvreSpec.CLTopAngleSize
+            Else
+                cmd.Parameters("@CLTopAngleSize").Value = DBNull.Value
+            End If
+            If LouvreSpec.CLTopAngleQuantity <> Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@CLTopAngleQuantity").Value = LouvreSpec.CLTopAngleQuantity
+            Else
+                cmd.Parameters("@CLTopAngleQuantity").Value = DBNull.Value
+            End If
+            If LouvreSpec.CLBottomAngleSize <> Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@CLBottomAngleSize").Value = LouvreSpec.CLBottomAngleSize
+            Else
+                cmd.Parameters("@CLBottomAngleSize").Value = DBNull.Value
+            End If
+            If LouvreSpec.CLBottomAngleQuantity <> Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@CLBottomAngleQuantity").Value = LouvreSpec.CLBottomAngleQuantity
+            Else
+                cmd.Parameters("@CLBottomAngleQuantity").Value = DBNull.Value
+            End If
+            If LouvreSpec.WideRail <> Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@WideRail").Value = LouvreSpec.WideRail
+            Else
+                cmd.Parameters("@WideRail").Value = DBNull.Value
+            End If
+        End If
+
+        If bolHingedParts Then
+            If LouvreSpec.PlasticCornersQuantity <> Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@PlasticCornersQuantity").Value = LouvreSpec.PlasticCornersQuantity
+            Else
+                cmd.Parameters("@PlasticCornersQuantity").Value = DBNull.Value
+            End If
+
+            If LouvreSpec.CornerPlatesQuantity <> Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@CornerPlatesQuantity").Value = LouvreSpec.CornerPlatesQuantity
+            Else
+                cmd.Parameters("@CornerPlatesQuantity").Value = DBNull.Value
+            End If
+
+            If LouvreSpec.MeetingStileAdaptorSize <> Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@MeetingStileAdaptorSize").Value = LouvreSpec.MeetingStileAdaptorSize
+            Else
+                cmd.Parameters("@MeetingStileAdaptorSize").Value = DBNull.Value
+            End If
+
+            If LouvreSpec.MeetingStileAdaptorQuantity <> Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@MeetingStileAdaptorQuantity").Value = LouvreSpec.MeetingStileAdaptorQuantity
+            Else
+                cmd.Parameters("@MeetingStileAdaptorQuantity").Value = DBNull.Value
+            End If
+
+            If LouvreSpec.HingedTopBottomInfillSize <> Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@HingedTopBottomInfillSize").Value = LouvreSpec.HingedTopBottomInfillSize
+            Else
+                cmd.Parameters("@HingedTopBottomInfillSize").Value = DBNull.Value
+            End If
+
+            If LouvreSpec.HingedTopBottomInfillQuantity <> Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@HingedTopBottomInfillQuantity").Value = LouvreSpec.HingedTopBottomInfillQuantity
+            Else
+                cmd.Parameters("@HingedTopBottomInfillQuantity").Value = DBNull.Value
+            End If
+
+            If LouvreSpec.HingedSidesInfillSize <> Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@HingedSidesInfillSize").Value = LouvreSpec.HingedSidesInfillSize
+            Else
+                cmd.Parameters("@HingedSidesInfillSize").Value = DBNull.Value
+            End If
+
+            If LouvreSpec.HingedSidesInfillQuantity <> Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@HingedSidesInfillQuantity").Value = LouvreSpec.HingedSidesInfillQuantity
+            Else
+                cmd.Parameters("@HingedSidesInfillQuantity").Value = DBNull.Value
+            End If
+
+            If LouvreSpec.HingedTopBottomRevealFrameSize <> Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@HingedTopBottomRevealFrameSize").Value = LouvreSpec.HingedTopBottomRevealFrameSize
+            Else
+                cmd.Parameters("@HingedTopBottomRevealFrameSize").Value = DBNull.Value
+            End If
+
+            If LouvreSpec.HingedTopBottomRevealFrameQuantity <> Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@HingedTopBottomRevealFrameQuantity").Value = LouvreSpec.HingedTopBottomRevealFrameQuantity
+            Else
+                cmd.Parameters("@HingedTopBottomRevealFrameQuantity").Value = DBNull.Value
+            End If
+
+            If LouvreSpec.HingedSidesRevealFrameSize <> Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@HingedSidesRevealFrameSize").Value = LouvreSpec.HingedSidesRevealFrameSize
+            Else
+                cmd.Parameters("@HingedSidesRevealFrameSize").Value = DBNull.Value
+            End If
+
+            If LouvreSpec.HingedSidesRevealFrameQuantity <> Constants.DEFAULT_INTEGER_VALUE Then
+                cmd.Parameters("@HingedSidesRevealFrameQuantity").Value = LouvreSpec.HingedSidesRevealFrameQuantity
+            Else
+                cmd.Parameters("@HingedSidesRevealFrameQuantity").Value = DBNull.Value
+            End If
+        End If
+
+    End Sub
+
+    Function GetLouvreSpecDesignRecordByLouvreDetailsID(intLouvreDetailsID As Integer, Optional cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As DataTable
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+        Dim bolAddOK As Boolean = True
+
+        If IsNothing(cnn) Then
+            bolAddOK = False
+            Dim dbConn As New DBConnection
+            cnn = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+            dbConn = Nothing
+        End If
+
+        Dim cmd As New SqlCommand
+        Try
+
+            If bolAddOK = False Then
+                cnn.Open()
+            End If
+
+            cmd.Connection = cnn
+            cmd.CommandText = "select * from dbo.tblLouvreSpecDesign where LouvreDetailsID = " & intLouvreDetailsID.ToString
+            cmd.CommandType = CommandType.Text
+
+
+            If bolAddOK = True Then
+                cmd.Transaction = trans
+            End If
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+
+            If bolAddOK = False Then
+                cnn.Close()
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+            bolAddOK = False
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+            If bolAddOK = False Then
+                cnn.Dispose()
+                cnn = Nothing
+            End If
+        End Try
+        Return dt
+    End Function
+
+    Function getLouvreSpecDesignRecordDetails(dt As DataTable) As LouvreSpecDesign
+
+        Dim cLouvreSpec As New LouvreSpecDesign
+
+        If dt.Rows.Count > 0 Then
+            If Not IsDBNull(dt.Rows(0)("LouvreDetailsID")) Then
+                cLouvreSpec.LouvreDetailsID = CInt(dt.Rows(0)("LouvreDetailsID"))
+            Else
+                cLouvreSpec.LouvreDetailsID = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("OpeningHeight")) Then
+                cLouvreSpec.OpeningHeight = CInt(dt.Rows(0)("OpeningHeight"))
+            Else
+                cLouvreSpec.OpeningHeight = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("OpeningWidth")) Then
+                cLouvreSpec.OpeningHeight = CInt(dt.Rows(0)("OpeningHeight"))
+            Else
+                cLouvreSpec.OpeningHeight = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("PanelHeight")) Then
+                cLouvreSpec.PanelHeight = CInt(dt.Rows(0)("PanelHeight"))
+            Else
+                cLouvreSpec.PanelHeight = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("PanelWidth")) Then
+                cLouvreSpec.PanelWidth = CInt(dt.Rows(0)("PanelWidth"))
+            Else
+                cLouvreSpec.PanelWidth = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("NoOfPanels")) Then
+                cLouvreSpec.NoOfPanels = CInt(dt.Rows(0)("NoOfPanels"))
+            Else
+                cLouvreSpec.NoOfPanels = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("WeightPersSQM")) Then
+                cLouvreSpec.WeightPersSQM = CDec(dt.Rows(0)("WeightPersSQM"))
+            Else
+                cLouvreSpec.WeightPersSQM = Constants.DEFAULT_DECIMAL_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("TopTrackHeight")) Then
+                cLouvreSpec.TopTrackHeight = CInt(dt.Rows(0)("TopTrackHeight"))
+            Else
+                cLouvreSpec.TopTrackHeight = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("TopGapHeight")) Then
+                cLouvreSpec.TopGapHeight = CInt(dt.Rows(0)("TopGapHeight"))
+            Else
+                cLouvreSpec.TopGapHeight = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("BottomTrackHeight")) Then
+                cLouvreSpec.BottomTrackHeight = CInt(dt.Rows(0)("BottomTrackHeight"))
+            Else
+                cLouvreSpec.BottomTrackHeight = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("BottomGapHeight")) Then
+                cLouvreSpec.BottomGapHeight = CInt(dt.Rows(0)("BottomGapHeight"))
+            Else
+                cLouvreSpec.BottomGapHeight = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("LeftSideGap")) Then
+                cLouvreSpec.LeftSideGap = CInt(dt.Rows(0)("LeftSideGap"))
+            Else
+                cLouvreSpec.LeftSideGap = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("RightSideGap")) Then
+                cLouvreSpec.RightSideGap = CInt(dt.Rows(0)("RightSideGap"))
+            Else
+                cLouvreSpec.RightSideGap = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("PanelGap")) Then
+                cLouvreSpec.PanelGap = CInt(dt.Rows(0)("PanelGap"))
+            Else
+                cLouvreSpec.PanelGap = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("PanelGapOverlap")) Then
+                cLouvreSpec.PanelGapOverlap = CInt(dt.Rows(0)("PanelGapOverlap"))
+            Else
+                cLouvreSpec.PanelGapOverlap = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("NoOfClips")) Then
+                cLouvreSpec.NoOfClips = CInt(dt.Rows(0)("NoOfClips"))
+            Else
+                cLouvreSpec.NoOfClips = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("NoOfTransom")) Then
+                cLouvreSpec.NoOfTransom = CInt(dt.Rows(0)("NoOfTransom"))
+            Else
+                cLouvreSpec.NoOfTransom = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("GivenTransomHeight")) Then
+                cLouvreSpec.GivenTransomHeight = CInt(dt.Rows(0)("GivenTransomHeight"))
+            Else
+                cLouvreSpec.GivenTransomHeight = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("PanelTransomHeight")) Then
+                cLouvreSpec.PanelTransomHeight = CInt(dt.Rows(0)("PanelTransomHeight"))
+            Else
+                cLouvreSpec.PanelTransomHeight = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("TransomSize")) Then
+                cLouvreSpec.TransomSize = CInt(dt.Rows(0)("TransomSize"))
+            Else
+                cLouvreSpec.TransomSize = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("TransomWidthSubtraction")) Then
+                cLouvreSpec.TransomWidthSubtraction = CInt(dt.Rows(0)("TransomWidthSubtraction"))
+            Else
+                cLouvreSpec.TransomWidthSubtraction = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("TransomWidth")) Then
+                cLouvreSpec.TransomWidth = CInt(dt.Rows(0)("TransomWidth"))
+            Else
+                cLouvreSpec.TransomWidth = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("GivenTransom2Height")) Then
+                cLouvreSpec.GivenTransom2Height = CInt(dt.Rows(0)("GivenTransom2Height"))
+            Else
+                cLouvreSpec.GivenTransom2Height = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("PanelTransom2Height")) Then
+                cLouvreSpec.PanelTransom2Height = CInt(dt.Rows(0)("PanelTransom2Height"))
+            Else
+                cLouvreSpec.PanelTransom2Height = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Transom2Size")) Then
+                cLouvreSpec.Transom2Size = CInt(dt.Rows(0)("Transom2Size"))
+            Else
+                cLouvreSpec.Transom2Size = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Transom2WidthSubtraction")) Then
+                cLouvreSpec.Transom2WidthSubtraction = CInt(dt.Rows(0)("Transom2WidthSubtraction"))
+            Else
+                cLouvreSpec.Transom2WidthSubtraction = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("Transom2Width")) Then
+                cLouvreSpec.Transom2Width = CInt(dt.Rows(0)("Transom2Width"))
+            Else
+                cLouvreSpec.Transom2Width = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("MiddlePanelSectionHeight")) Then
+                cLouvreSpec.MiddlePanelSectionHeight = CInt(dt.Rows(0)("MiddlePanelSectionHeight"))
+            Else
+                cLouvreSpec.MiddlePanelSectionHeight = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("BottomPanelSectionHeight")) Then
+                cLouvreSpec.BottomPanelSectionHeight = CInt(dt.Rows(0)("BottomPanelSectionHeight"))
+            Else
+                cLouvreSpec.BottomPanelSectionHeight = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("CornerPlugHeight")) Then
+                cLouvreSpec.CornerPlugHeight = CInt(dt.Rows(0)("CornerPlugHeight"))
+            Else
+                cLouvreSpec.CornerPlugHeight = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("NoOfCornerPlugs")) Then
+                cLouvreSpec.NoOfCornerPlugs = CInt(dt.Rows(0)("NoOfCornerPlugs"))
+            Else
+                cLouvreSpec.NoOfCornerPlugs = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("NoOfHoleCaps")) Then
+                cLouvreSpec.NoOfHoleCaps = CInt(dt.Rows(0)("NoOfHoleCaps"))
+            Else
+                cLouvreSpec.NoOfHoleCaps = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("PileQuantity")) Then
+                cLouvreSpec.PileQuantity = CInt(dt.Rows(0)("PileQuantity"))
+            Else
+                cLouvreSpec.PileQuantity = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("PileColour")) Then
+                cLouvreSpec.PileColour = CInt(dt.Rows(0)("PileColour"))
+            Else
+                cLouvreSpec.PileColour = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("BladeLockQuantity")) Then
+                cLouvreSpec.BladeLockQuantity = CInt(dt.Rows(0)("BladeLockQuantity"))
+            Else
+                cLouvreSpec.BladeLockQuantity = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("TopFlushBoltsType")) Then
+                cLouvreSpec.TopFlushBoltsType = CInt(dt.Rows(0)("TopFlushBoltsType"))
+            Else
+                cLouvreSpec.TopFlushBoltsType = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("TopFlushBoltsHeight")) Then
+                cLouvreSpec.TopFlushBoltsHeight = CInt(dt.Rows(0)("TopFlushBoltsHeight"))
+            Else
+                cLouvreSpec.TopFlushBoltsHeight = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("TopFlushBoltsQuantity")) Then
+                cLouvreSpec.TopFlushBoltsQuantity = CInt(dt.Rows(0)("TopFlushBoltsQuantity"))
+            Else
+                cLouvreSpec.TopFlushBoltsQuantity = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("BottomFlushBoltsType")) Then
+                cLouvreSpec.BottomFlushBoltsType = CInt(dt.Rows(0)("BottomFlushBoltsType"))
+            Else
+                cLouvreSpec.BottomFlushBoltsType = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("BottomFlushBoltsHeight")) Then
+                cLouvreSpec.BottomFlushBoltsHeight = CInt(dt.Rows(0)("BottomFlushBoltsHeight"))
+            Else
+                cLouvreSpec.BottomFlushBoltsHeight = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("BottomFlushBoltsQuantity")) Then
+                cLouvreSpec.BottomFlushBoltsQuantity = CInt(dt.Rows(0)("BottomFlushBoltsQuantity"))
+            Else
+                cLouvreSpec.BottomFlushBoltsQuantity = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("HingesType")) Then
+                cLouvreSpec.HingesType = CInt(dt.Rows(0)("HingesType"))
+            Else
+                cLouvreSpec.HingesType = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("HingesQuantity")) Then
+                cLouvreSpec.HingesQuantity = CInt(dt.Rows(0)("HingesQuantity"))
+            Else
+                cLouvreSpec.HingesQuantity = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("FeltTop")) Then
+                cLouvreSpec.FeltTop = CInt(dt.Rows(0)("FeltTop"))
+            Else
+                cLouvreSpec.FeltTop = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("FeltSizeTop")) Then
+                cLouvreSpec.FeltSizeTop = CInt(dt.Rows(0)("FeltSizeTop"))
+            Else
+                cLouvreSpec.FeltSizeTop = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("FeltBottom")) Then
+                cLouvreSpec.FeltBottom = CInt(dt.Rows(0)("FeltBottom"))
+            Else
+                cLouvreSpec.FeltBottom = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("FeltSizeBottom")) Then
+                cLouvreSpec.FeltSizeBottom = CInt(dt.Rows(0)("FeltSizeBottom"))
+            Else
+                cLouvreSpec.FeltSizeBottom = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("FeltLeft")) Then
+                cLouvreSpec.FeltLeft = CInt(dt.Rows(0)("FeltLeft"))
+            Else
+                cLouvreSpec.FeltLeft = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("FeltSizeLeft")) Then
+                cLouvreSpec.FeltSizeLeft = CInt(dt.Rows(0)("FeltSizeLeft"))
+            Else
+                cLouvreSpec.FeltSizeLeft = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("FeltRight")) Then
+                cLouvreSpec.FeltRight = CInt(dt.Rows(0)("FeltRight"))
+            Else
+                cLouvreSpec.FeltRight = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("FeltSizeRight")) Then
+                cLouvreSpec.FeltSizeRight = CInt(dt.Rows(0)("FeltSizeRight"))
+            Else
+                cLouvreSpec.FeltSizeRight = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("FeltInBetweenPanels")) Then
+                cLouvreSpec.FeltInBetweenPanels = CInt(dt.Rows(0)("FeltInBetweenPanels"))
+            Else
+                cLouvreSpec.FeltInBetweenPanels = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("FeltSizeInBetweenPanels")) Then
+                cLouvreSpec.FeltSizeInBetweenPanels = CInt(dt.Rows(0)("FeltSizeInBetweenPanels"))
+            Else
+                cLouvreSpec.FeltSizeInBetweenPanels = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("TopPivotsQuantity")) Then
+                cLouvreSpec.TopPivotsQuantity = CInt(dt.Rows(0)("TopPivotsQuantity"))
+            Else
+                cLouvreSpec.TopPivotsQuantity = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("TopPivotsType")) Then
+                cLouvreSpec.TopPivotsType = CInt(dt.Rows(0)("TopPivotsType"))
+            Else
+                cLouvreSpec.TopPivotsType = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("TopPivotsPerPanel")) Then
+                cLouvreSpec.TopPivotsPerPanel = CInt(dt.Rows(0)("TopPivotsPerPanel"))
+            Else
+                cLouvreSpec.TopPivotsPerPanel = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("BottomPivotsQuantity")) Then
+                cLouvreSpec.BottomPivotsQuantity = CInt(dt.Rows(0)("BottomPivotsQuantity"))
+            Else
+                cLouvreSpec.BottomPivotsQuantity = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("BottomPivotsType")) Then
+                cLouvreSpec.BottomPivotsType = CInt(dt.Rows(0)("BottomPivotsType"))
+            Else
+                cLouvreSpec.BottomPivotsType = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("BottomPivotsPerPanel")) Then
+                cLouvreSpec.BottomPivotsPerPanel = CInt(dt.Rows(0)("BottomPivotsPerPanel"))
+            Else
+                cLouvreSpec.BottomPivotsPerPanel = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("StileLength")) Then
+                cLouvreSpec.StileLength = CInt(dt.Rows(0)("StileLength"))
+            Else
+                cLouvreSpec.StileLength = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("StileQuantity")) Then
+                cLouvreSpec.StileQuantity = CInt(dt.Rows(0)("StileQuantity"))
+            Else
+                cLouvreSpec.StileQuantity = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("StileHeightSubtraction")) Then
+                cLouvreSpec.StileHeightSubtraction = CInt(dt.Rows(0)("StileHeightSubtraction"))
+            Else
+                cLouvreSpec.StileHeightSubtraction = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("TopRailsLength")) Then
+                cLouvreSpec.TopRailsLength = CInt(dt.Rows(0)("TopRailsLength"))
+            Else
+                cLouvreSpec.TopRailsLength = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("TopRailsQuantity")) Then
+                cLouvreSpec.TopRailsQuantity = CInt(dt.Rows(0)("TopRailsQuantity"))
+            Else
+                cLouvreSpec.TopRailsQuantity = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("TopRailsWidthSubtraction")) Then
+                cLouvreSpec.TopRailsWidthSubtraction = CInt(dt.Rows(0)("TopRailsWidthSubtraction"))
+            Else
+                cLouvreSpec.TopRailsWidthSubtraction = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("BottomRailsLength")) Then
+                cLouvreSpec.BottomRailsLength = CInt(dt.Rows(0)("BottomRailsLength"))
+            Else
+                cLouvreSpec.BottomRailsLength = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("BottomRailsQuantity")) Then
+                cLouvreSpec.BottomRailsQuantity = CInt(dt.Rows(0)("BottomRailsQuantity"))
+            Else
+                cLouvreSpec.BottomRailsQuantity = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("BottomRailsWidthSubtraction")) Then
+                cLouvreSpec.BottomRailsWidthSubtraction = CInt(dt.Rows(0)("BottomRailsWidthSubtraction"))
+            Else
+                cLouvreSpec.BottomRailsWidthSubtraction = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("FingerGripsLength")) Then
+                cLouvreSpec.FingerGripsLength = CInt(dt.Rows(0)("FingerGripsLength"))
+            Else
+                cLouvreSpec.FingerGripsLength = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("FingerGripQuantity")) Then
+                cLouvreSpec.FingerGripQuantity = CInt(dt.Rows(0)("FingerGripQuantity"))
+            Else
+                cLouvreSpec.FingerGripQuantity = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("NoOfProfileSlats")) Then
+                cLouvreSpec.NoOfProfileSlats = CInt(dt.Rows(0)("NoOfProfileSlats"))
+            Else
+                cLouvreSpec.NoOfProfileSlats = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("ProfileSize")) Then
+                cLouvreSpec.ProfileSize = CInt(dt.Rows(0)("ProfileSize"))
+            Else
+                cLouvreSpec.ProfileSize = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("ProfileCutLength")) Then
+                cLouvreSpec.ProfileCutLength = CInt(dt.Rows(0)("ProfileCutLength"))
+            Else
+                cLouvreSpec.ProfileCutLength = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("ProfileCutWidthSubtraction")) Then
+                cLouvreSpec.ProfileCutWidthSubtraction = CInt(dt.Rows(0)("ProfileCutWidthSubtraction"))
+            Else
+                cLouvreSpec.ProfileCutWidthSubtraction = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("ProfileNumberHeightSubtraction")) Then
+                cLouvreSpec.ProfileNumberHeightSubtraction = CInt(dt.Rows(0)("ProfileNumberHeightSubtraction"))
+            Else
+                cLouvreSpec.ProfileNumberHeightSubtraction = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("TopFirstBladeHoleStartPoint")) Then
+                cLouvreSpec.TopFirstBladeHoleStartPoint = CInt(dt.Rows(0)("TopFirstBladeHoleStartPoint"))
+            Else
+                cLouvreSpec.TopFirstBladeHoleStartPoint = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("TopBladeDrillHoleSpaces")) Then
+                cLouvreSpec.TopBladeDrillHoleSpaces = CInt(dt.Rows(0)("TopBladeDrillHoleSpaces"))
+            Else
+                cLouvreSpec.TopBladeDrillHoleSpaces = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("MiddleFirstBladeHoleStartPoint")) Then
+                cLouvreSpec.MiddleFirstBladeHoleStartPoint = CInt(dt.Rows(0)("MiddleFirstBladeHoleStartPoint"))
+            Else
+                cLouvreSpec.MiddleFirstBladeHoleStartPoint = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("MiddleBladeDrillHoleSpaces")) Then
+                cLouvreSpec.MiddleBladeDrillHoleSpaces = CInt(dt.Rows(0)("MiddleBladeDrillHoleSpaces"))
+            Else
+                cLouvreSpec.MiddleBladeDrillHoleSpaces = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("BottomFirstBladeHoleStartPoint")) Then
+                cLouvreSpec.BottomFirstBladeHoleStartPoint = CInt(dt.Rows(0)("BottomFirstBladeHoleStartPoint"))
+            Else
+                cLouvreSpec.BottomFirstBladeHoleStartPoint = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("BottomBladeDrillHoleSpaces")) Then
+                cLouvreSpec.BottomBladeDrillHoleSpaces = CInt(dt.Rows(0)("BottomBladeDrillHoleSpaces"))
+            Else
+                cLouvreSpec.BottomBladeDrillHoleSpaces = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("InfillWidthSubtraction")) Then
+                cLouvreSpec.InfillWidthSubtraction = CInt(dt.Rows(0)("InfillWidthSubtraction"))
+            Else
+                cLouvreSpec.InfillWidthSubtraction = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("TopInfillTopType")) Then
+                cLouvreSpec.TopInfillTopType = CInt(dt.Rows(0)("TopInfillTopType"))
+            Else
+                cLouvreSpec.TopInfillTopType = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("TopInfillTopLength")) Then
+                cLouvreSpec.TopInfillTopLength = CInt(dt.Rows(0)("TopInfillTopLength"))
+            Else
+                cLouvreSpec.TopInfillTopLength = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("TopInfillTopQuantity")) Then
+                cLouvreSpec.TopInfillTopQuantity = CInt(dt.Rows(0)("TopInfillTopQuantity"))
+            Else
+                cLouvreSpec.TopInfillTopQuantity = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("TopInfillTopSize")) Then
+                cLouvreSpec.TopInfillTopSize = CInt(dt.Rows(0)("TopInfillTopSize"))
+            Else
+                cLouvreSpec.TopInfillTopSize = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("TopInfillBottomLength")) Then
+                cLouvreSpec.TopInfillBottomLength = CInt(dt.Rows(0)("TopInfillBottomLength"))
+            Else
+                cLouvreSpec.TopInfillBottomLength = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("TopInfillBottomQuantity")) Then
+                cLouvreSpec.TopInfillBottomQuantity = CInt(dt.Rows(0)("TopInfillBottomQuantity"))
+            Else
+                cLouvreSpec.TopInfillBottomQuantity = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("TopInfillBottomSize")) Then
+                cLouvreSpec.TopInfillBottomSize = CInt(dt.Rows(0)("TopInfillBottomSize"))
+            Else
+                cLouvreSpec.TopInfillBottomSize = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("MiddleInfillTopLength")) Then
+                cLouvreSpec.MiddleInfillTopLength = CInt(dt.Rows(0)("MiddleInfillTopLength"))
+            Else
+                cLouvreSpec.MiddleInfillTopLength = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("MiddleInfillTopQuantity")) Then
+                cLouvreSpec.MiddleInfillTopQuantity = CInt(dt.Rows(0)("MiddleInfillTopQuantity"))
+            Else
+                cLouvreSpec.MiddleInfillTopQuantity = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("MiddleInfillTopSize")) Then
+                cLouvreSpec.MiddleInfillTopSize = CInt(dt.Rows(0)("MiddleInfillTopSize"))
+            Else
+                cLouvreSpec.MiddleInfillTopSize = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("MiddleInfillBottomLength")) Then
+                cLouvreSpec.MiddleInfillBottomLength = CInt(dt.Rows(0)("MiddleInfillBottomLength"))
+            Else
+                cLouvreSpec.MiddleInfillBottomLength = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("MiddleInfillBottomQuantity")) Then
+                cLouvreSpec.MiddleInfillBottomQuantity = CInt(dt.Rows(0)("MiddleInfillBottomQuantity"))
+            Else
+                cLouvreSpec.MiddleInfillBottomQuantity = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("MiddleInfillBottomSize")) Then
+                cLouvreSpec.MiddleInfillBottomSize = CInt(dt.Rows(0)("MiddleInfillBottomSize"))
+            Else
+                cLouvreSpec.MiddleInfillBottomSize = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("BottomInfillTopLength")) Then
+                cLouvreSpec.BottomInfillTopLength = CInt(dt.Rows(0)("BottomInfillTopLength"))
+            Else
+                cLouvreSpec.BottomInfillTopLength = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("BottomInfillTopQuantity")) Then
+                cLouvreSpec.BottomInfillTopQuantity = CInt(dt.Rows(0)("BottomInfillTopQuantity"))
+            Else
+                cLouvreSpec.BottomInfillTopQuantity = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("BottomInfillTopSize")) Then
+                cLouvreSpec.BottomInfillTopSize = CInt(dt.Rows(0)("BottomInfillTopSize"))
+            Else
+                cLouvreSpec.BottomInfillTopSize = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("BottomInfillBottomLength")) Then
+                cLouvreSpec.BottomInfillBottomLength = CInt(dt.Rows(0)("BottomInfillBottomLength"))
+            Else
+                cLouvreSpec.BottomInfillBottomLength = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("BottomInfillBottomQuantity")) Then
+                cLouvreSpec.BottomInfillBottomQuantity = CInt(dt.Rows(0)("BottomInfillBottomQuantity"))
+            Else
+                cLouvreSpec.BottomInfillBottomQuantity = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("BottomInfillBottomSize")) Then
+                cLouvreSpec.BottomInfillBottomSize = CInt(dt.Rows(0)("BottomInfillBottomSize"))
+            Else
+                cLouvreSpec.BottomInfillBottomSize = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("DummyBladeTopWidth")) Then
+                cLouvreSpec.DummyBladeTopWidth = CInt(dt.Rows(0)("DummyBladeTopWidth"))
+            Else
+                cLouvreSpec.DummyBladeTopWidth = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("DummyBladeTopWidthSubtraction")) Then
+                cLouvreSpec.DummyBladeTopWidthSubtraction = CInt(dt.Rows(0)("DummyBladeTopWidthSubtraction"))
+            Else
+                cLouvreSpec.DummyBladeTopWidthSubtraction = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("DummyBladeBottomWidth")) Then
+                cLouvreSpec.DummyBladeBottomWidth = CInt(dt.Rows(0)("DummyBladeBottomWidth"))
+            Else
+                cLouvreSpec.DummyBladeBottomWidth = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("DummyBladeBottomWidthSubtraction")) Then
+                cLouvreSpec.DummyBladeBottomWidthSubtraction = CInt(dt.Rows(0)("DummyBladeBottomWidthSubtraction"))
+            Else
+                cLouvreSpec.DummyBladeBottomWidthSubtraction = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("MullionLength")) Then
+                cLouvreSpec.MullionLength = CInt(dt.Rows(0)("MullionLength"))
+            Else
+                cLouvreSpec.MullionLength = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("MullionQuantity")) Then
+                cLouvreSpec.MullionQuantity = CInt(dt.Rows(0)("MullionQuantity"))
+            Else
+                cLouvreSpec.MullionQuantity = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("MullionWidth")) Then
+                cLouvreSpec.MullionWidth = CInt(dt.Rows(0)("MullionWidth"))
+            Else
+                cLouvreSpec.MullionWidth = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("MullionHeightSubtraction")) Then
+                cLouvreSpec.MullionHeightSubtraction = CInt(dt.Rows(0)("MullionHeightSubtraction"))
+            Else
+                cLouvreSpec.MullionHeightSubtraction = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("TopTrackType")) Then
+                cLouvreSpec.TopTrackType = CInt(dt.Rows(0)("TopTrackType"))
+            Else
+                cLouvreSpec.TopTrackType = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("TopTrackSize")) Then
+                cLouvreSpec.TopTrackSize = CInt(dt.Rows(0)("TopTrackSize"))
+            Else
+                cLouvreSpec.TopTrackSize = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("TopTrackLength")) Then
+                cLouvreSpec.TopTrackLength = CInt(dt.Rows(0)("TopTrackLength"))
+            Else
+                cLouvreSpec.TopTrackLength = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("TopTrackQuantity")) Then
+                cLouvreSpec.TopTrackQuantity = CInt(dt.Rows(0)("TopTrackQuantity"))
+            Else
+                cLouvreSpec.TopTrackQuantity = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("BottomTrackType")) Then
+                cLouvreSpec.BottomTrackType = CInt(dt.Rows(0)("BottomTrackType"))
+            Else
+                cLouvreSpec.BottomTrackType = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("BottomTrackSize")) Then
+                cLouvreSpec.BottomTrackSize = CInt(dt.Rows(0)("BottomTrackSize"))
+            Else
+                cLouvreSpec.BottomTrackSize = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("BottomTrackLength")) Then
+                cLouvreSpec.BottomTrackLength = CInt(dt.Rows(0)("BottomTrackLength"))
+            Else
+                cLouvreSpec.BottomTrackLength = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("BottomTrackQuantity")) Then
+                cLouvreSpec.BottomTrackQuantity = CInt(dt.Rows(0)("BottomTrackQuantity"))
+            Else
+                cLouvreSpec.BottomTrackQuantity = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("TopGlassHeight")) Then
+                cLouvreSpec.TopGlassHeight = CInt(dt.Rows(0)("TopGlassHeight"))
+            Else
+                cLouvreSpec.TopGlassHeight = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("TopGlassWidth")) Then
+                cLouvreSpec.TopGlassWidth = CInt(dt.Rows(0)("TopGlassWidth"))
+            Else
+                cLouvreSpec.TopGlassWidth = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("TopGlassType")) Then
+                cLouvreSpec.TopGlassType = CInt(dt.Rows(0)("TopGlassType"))
+            Else
+                cLouvreSpec.TopGlassType = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("TopGlassHeightSubtraction")) Then
+                cLouvreSpec.TopGlassHeightSubtraction = CInt(dt.Rows(0)("TopGlassHeightSubtraction"))
+            Else
+                cLouvreSpec.TopGlassHeightSubtraction = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("TopGlassHeightAddition")) Then
+                cLouvreSpec.TopGlassHeightAddition = CInt(dt.Rows(0)("TopGlassHeightAddition"))
+            Else
+                cLouvreSpec.TopGlassHeightAddition = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("TopGlassWidthSubtraction")) Then
+                cLouvreSpec.TopGlassWidthSubtraction = CInt(dt.Rows(0)("TopGlassWidthSubtraction"))
+            Else
+                cLouvreSpec.TopGlassWidthSubtraction = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("TopGlassWidthAddition")) Then
+                cLouvreSpec.TopGlassWidthAddition = CInt(dt.Rows(0)("TopGlassWidthAddition"))
+            Else
+                cLouvreSpec.TopGlassWidthAddition = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("MiddleGlassHeight")) Then
+                cLouvreSpec.MiddleGlassHeight = CInt(dt.Rows(0)("MiddleGlassHeight"))
+            Else
+                cLouvreSpec.MiddleGlassHeight = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("MiddleGlassWidth")) Then
+                cLouvreSpec.MiddleGlassWidth = CInt(dt.Rows(0)("MiddleGlassWidth"))
+            Else
+                cLouvreSpec.MiddleGlassWidth = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("MiddleGlassType")) Then
+                cLouvreSpec.MiddleGlassType = CInt(dt.Rows(0)("MiddleGlassType"))
+            Else
+                cLouvreSpec.MiddleGlassType = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("MiddleGlassHeightSubtraction")) Then
+                cLouvreSpec.MiddleGlassHeightSubtraction = CInt(dt.Rows(0)("MiddleGlassHeightSubtraction"))
+            Else
+                cLouvreSpec.MiddleGlassHeightSubtraction = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("MiddleGlassHeightAddition")) Then
+                cLouvreSpec.MiddleGlassHeightAddition = CInt(dt.Rows(0)("MiddleGlassHeightAddition"))
+            Else
+                cLouvreSpec.MiddleGlassHeightAddition = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("MiddleGlassWidthSubtraction")) Then
+                cLouvreSpec.MiddleGlassWidthSubtraction = CInt(dt.Rows(0)("MiddleGlassWidthSubtraction"))
+            Else
+                cLouvreSpec.MiddleGlassWidthSubtraction = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("MiddleGlassWidthAddition")) Then
+                cLouvreSpec.MiddleGlassWidthAddition = CInt(dt.Rows(0)("MiddleGlassWidthAddition"))
+            Else
+                cLouvreSpec.MiddleGlassWidthAddition = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("BottomGlassHeight")) Then
+                cLouvreSpec.BottomGlassHeight = CInt(dt.Rows(0)("BottomGlassHeight"))
+            Else
+                cLouvreSpec.BottomGlassHeight = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("BottomGlassWidth")) Then
+                cLouvreSpec.BottomGlassWidth = CInt(dt.Rows(0)("BottomGlassWidth"))
+            Else
+                cLouvreSpec.BottomGlassWidth = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("BottomGlassType")) Then
+                cLouvreSpec.BottomGlassType = CInt(dt.Rows(0)("BottomGlassType"))
+            Else
+                cLouvreSpec.BottomGlassType = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("BottomGlassHeightSubtraction")) Then
+                cLouvreSpec.BottomGlassHeightSubtraction = CInt(dt.Rows(0)("BottomGlassHeightSubtraction"))
+            Else
+                cLouvreSpec.BottomGlassHeightSubtraction = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("BottomGlassHeightAddition")) Then
+                cLouvreSpec.BottomGlassHeightAddition = CInt(dt.Rows(0)("BottomGlassHeightAddition"))
+            Else
+                cLouvreSpec.BottomGlassHeightAddition = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("BottomGlassWidthSubtraction")) Then
+                cLouvreSpec.BottomGlassWidthSubtraction = CInt(dt.Rows(0)("BottomGlassWidthSubtraction"))
+            Else
+                cLouvreSpec.BottomGlassWidthSubtraction = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("BottomGlassWidthAddition")) Then
+                cLouvreSpec.BottomGlassWidthAddition = CInt(dt.Rows(0)("BottomGlassWidthAddition"))
+            Else
+                cLouvreSpec.BottomGlassWidthAddition = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("TopVerticalBladesHeightAddition")) Then
+                cLouvreSpec.TopVerticalBladesHeightAddition = CInt(dt.Rows(0)("TopVerticalBladesHeightAddition"))
+            Else
+                cLouvreSpec.TopVerticalBladesHeightAddition = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("TopVerticalBladesSubtraction")) Then
+                cLouvreSpec.TopVerticalBladesSubtraction = CInt(dt.Rows(0)("TopVerticalBladesSubtraction"))
+            Else
+                cLouvreSpec.TopVerticalBladesSubtraction = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("TopVerticalBladesCutLength")) Then
+                cLouvreSpec.TopVerticalBladesCutLength = CInt(dt.Rows(0)("TopVerticalBladesCutLength"))
+            Else
+                cLouvreSpec.TopVerticalBladesCutLength = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("TopVerticalBladesQuantity")) Then
+                cLouvreSpec.TopVerticalBladesQuantity = CInt(dt.Rows(0)("TopVerticalBladesQuantity"))
+            Else
+                cLouvreSpec.TopVerticalBladesQuantity = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("MiddleVerticalBladesHeightAddition")) Then
+                cLouvreSpec.MiddleVerticalBladesHeightAddition = CInt(dt.Rows(0)("MiddleVerticalBladesHeightAddition"))
+            Else
+                cLouvreSpec.MiddleVerticalBladesHeightAddition = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("MiddleVerticalBladesSubtraction")) Then
+                cLouvreSpec.MiddleVerticalBladesSubtraction = CInt(dt.Rows(0)("MiddleVerticalBladesSubtraction"))
+            Else
+                cLouvreSpec.MiddleVerticalBladesSubtraction = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("MiddleVerticalBladesCutLength")) Then
+                cLouvreSpec.MiddleVerticalBladesCutLength = CInt(dt.Rows(0)("MiddleVerticalBladesCutLength"))
+            Else
+                cLouvreSpec.MiddleVerticalBladesCutLength = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("MiddleVerticalBladesQuantity")) Then
+                cLouvreSpec.MiddleVerticalBladesQuantity = CInt(dt.Rows(0)("MiddleVerticalBladesQuantity"))
+            Else
+                cLouvreSpec.MiddleVerticalBladesQuantity = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("BottomVerticalBladesHeightAddition")) Then
+                cLouvreSpec.BottomVerticalBladesHeightAddition = CInt(dt.Rows(0)("BottomVerticalBladesHeightAddition"))
+            Else
+                cLouvreSpec.BottomVerticalBladesHeightAddition = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("BottomVerticalBladesSubtraction")) Then
+                cLouvreSpec.BottomVerticalBladesSubtraction = CInt(dt.Rows(0)("BottomVerticalBladesSubtraction"))
+            Else
+                cLouvreSpec.BottomVerticalBladesSubtraction = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("BottomVerticalBladesCutLength")) Then
+                cLouvreSpec.BottomVerticalBladesCutLength = CInt(dt.Rows(0)("BottomVerticalBladesCutLength"))
+            Else
+                cLouvreSpec.BottomVerticalBladesCutLength = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("BottomVerticalBladesQuantity")) Then
+                cLouvreSpec.BottomVerticalBladesQuantity = CInt(dt.Rows(0)("BottomVerticalBladesQuantity"))
+            Else
+                cLouvreSpec.BottomVerticalBladesQuantity = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("KeyLocksetType")) Then
+                cLouvreSpec.KeyLocksetType = CInt(dt.Rows(0)("KeyLocksetType"))
+            Else
+                cLouvreSpec.KeyLocksetType = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("KeyLocksetQuantity")) Then
+                cLouvreSpec.KeyLocksetQuantity = CInt(dt.Rows(0)("KeyLocksetQuantity"))
+            Else
+                cLouvreSpec.KeyLocksetQuantity = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("KeyLockType")) Then
+                cLouvreSpec.KeyLockType = CInt(dt.Rows(0)("KeyLockType"))
+            Else
+                cLouvreSpec.KeyLockType = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("KeyLockQuantity")) Then
+                cLouvreSpec.KeyLockQuantity = CInt(dt.Rows(0)("KeyLockQuantity"))
+            Else
+                cLouvreSpec.KeyLockQuantity = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("KeyLockPinCylinder")) Then
+                cLouvreSpec.KeyLockPinCylinder = CInt(dt.Rows(0)("KeyLockPinCylinder"))
+            Else
+                cLouvreSpec.KeyLockPinCylinder = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("KeyLockPinCylinderQuantity")) Then
+                cLouvreSpec.KeyLockPinCylinderQuantity = CInt(dt.Rows(0)("KeyLockPinCylinderQuantity"))
+            Else
+                cLouvreSpec.KeyLockPinCylinderQuantity = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("TopChannelType")) Then
+                cLouvreSpec.TopChannelType = CInt(dt.Rows(0)("TopChannelType"))
+            Else
+                cLouvreSpec.TopChannelType = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("TopChannelLength")) Then
+                cLouvreSpec.TopChannelLength = CInt(dt.Rows(0)("TopChannelLength"))
+            Else
+                cLouvreSpec.TopChannelLength = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("TopChannelQuantity")) Then
+                cLouvreSpec.TopChannelQuantity = CInt(dt.Rows(0)("TopChannelQuantity"))
+            Else
+                cLouvreSpec.TopChannelQuantity = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("BottomChannelType")) Then
+                cLouvreSpec.BottomChannelType = CInt(dt.Rows(0)("BottomChannelType"))
+            Else
+                cLouvreSpec.BottomChannelType = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("BottomChannelLength")) Then
+                cLouvreSpec.BottomChannelLength = CInt(dt.Rows(0)("BottomChannelLength"))
+            Else
+                cLouvreSpec.BottomChannelLength = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("BottomChannelQuantity")) Then
+                cLouvreSpec.BottomChannelQuantity = CInt(dt.Rows(0)("BottomChannelQuantity"))
+            Else
+                cLouvreSpec.BottomChannelQuantity = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("SideAngleType1")) Then
+                cLouvreSpec.SideAngleType1 = CInt(dt.Rows(0)("SideAngleType1"))
+            Else
+                cLouvreSpec.SideAngleType1 = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("SideAngleLength1")) Then
+                cLouvreSpec.SideAngleLength1 = CInt(dt.Rows(0)("SideAngleLength1"))
+            Else
+                cLouvreSpec.SideAngleLength1 = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("SideAngleQuantity1")) Then
+                cLouvreSpec.SideAngleQuantity1 = CInt(dt.Rows(0)("SideAngleQuantity1"))
+            Else
+                cLouvreSpec.SideAngleQuantity1 = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("SideAngleType2")) Then
+                cLouvreSpec.SideAngleType2 = CInt(dt.Rows(0)("SideAngleType2"))
+            Else
+                cLouvreSpec.SideAngleType2 = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("SideAngleLength2")) Then
+                cLouvreSpec.SideAngleLength2 = CInt(dt.Rows(0)("SideAngleLength2"))
+            Else
+                cLouvreSpec.SideAngleLength2 = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("SideAngleQuantity2")) Then
+                cLouvreSpec.SideAngleQuantity2 = CInt(dt.Rows(0)("SideAngleQuantity2"))
+            Else
+                cLouvreSpec.SideAngleQuantity2 = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("HSectionLength")) Then
+                cLouvreSpec.HSectionLength = CInt(dt.Rows(0)("HSectionLength"))
+            Else
+                cLouvreSpec.HSectionLength = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("HSectionQuantity")) Then
+                cLouvreSpec.HSectionQuantity = CInt(dt.Rows(0)("HSectionQuantity"))
+            Else
+                cLouvreSpec.HSectionQuantity = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("PackupLengthAdditionHeight")) Then
+                cLouvreSpec.PackupLengthAdditionHeight = CInt(dt.Rows(0)("PackupLengthAdditionHeight"))
+            Else
+                cLouvreSpec.PackupLengthAdditionHeight = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("PackupLengthAdditionWidth")) Then
+                cLouvreSpec.PackupLengthAdditionWidth = CInt(dt.Rows(0)("PackupLengthAdditionWidth"))
+            Else
+                cLouvreSpec.PackupLengthAdditionWidth = Constants.DEFAULT_INTEGER_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("ReadyToGenerate")) Then
+                cLouvreSpec.ReadyToGenerate = CDate(dt.Rows(0)("ReadyToGenerate"))
+            Else
+                cLouvreSpec.ReadyToGenerate = Constants.DEFAULT_DATE_VALUE
+            End If
+
+            If Not IsDBNull(dt.Rows(0)("GenerationComplete")) Then
+                cLouvreSpec.GenerationComplete = CDate(dt.Rows(0)("GenerationComplete"))
+            Else
+                cLouvreSpec.GenerationComplete = Constants.DEFAULT_DATE_VALUE
+            End If
+
+
+            If dt.Columns.Contains("BladeInfillTopSize") Then
+                If Not IsDBNull(dt.Rows(0)("BladeInfillTopSize")) Then
+                    cLouvreSpec.BladeInfillTopSize = CInt(dt.Rows(0)("BladeInfillTopSize"))
+                Else
+                    cLouvreSpec.BladeInfillTopSize = Constants.DEFAULT_INTEGER_VALUE
+                End If
+
+                If Not IsDBNull(dt.Rows(0)("BladeInfillTopQuantity")) Then
+                    cLouvreSpec.BladeInfillTopQuantity = CInt(dt.Rows(0)("BladeInfillTopQuantity"))
+                Else
+                    cLouvreSpec.BladeInfillTopQuantity = Constants.DEFAULT_INTEGER_VALUE
+                End If
+
+                If Not IsDBNull(dt.Rows(0)("BladeInfillMiddleSize")) Then
+                    cLouvreSpec.BladeInfillMiddleSize = CInt(dt.Rows(0)("BladeInfillMiddleSize"))
+                Else
+                    cLouvreSpec.BladeInfillMiddleSize = Constants.DEFAULT_INTEGER_VALUE
+                End If
+
+                If Not IsDBNull(dt.Rows(0)("BladeInfillMiddleQuantity")) Then
+                    cLouvreSpec.BladeInfillMiddleQuantity = CInt(dt.Rows(0)("BladeInfillMiddleQuantity"))
+                Else
+                    cLouvreSpec.BladeInfillMiddleQuantity = Constants.DEFAULT_INTEGER_VALUE
+                End If
+
+                If Not IsDBNull(dt.Rows(0)("BladeInfillBottomSize")) Then
+                    cLouvreSpec.BladeInfillBottomSize = CInt(dt.Rows(0)("BladeInfillBottomSize"))
+                Else
+                    cLouvreSpec.BladeInfillBottomSize = Constants.DEFAULT_INTEGER_VALUE
+                End If
+
+                If Not IsDBNull(dt.Rows(0)("BladeInfillBottomQuantity")) Then
+                    cLouvreSpec.BladeInfillBottomQuantity = CInt(dt.Rows(0)("BladeInfillBottomQuantity"))
+                Else
+                    cLouvreSpec.BladeInfillBottomQuantity = Constants.DEFAULT_INTEGER_VALUE
+                End If
+            End If
+
+            If dt.Columns.Contains("CLFlatbarQuantity") Then
+                If Not IsDBNull(dt.Rows(0)("CLFlatbarSize")) Then
+                    cLouvreSpec.CLFlatbarSize = CInt(dt.Rows(0)("CLFlatbarSize"))
+                Else
+                    cLouvreSpec.CLFlatbarSize = Constants.DEFAULT_INTEGER_VALUE
+                End If
+
+                If Not IsDBNull(dt.Rows(0)("CLFlatbarQuantity")) Then
+                    cLouvreSpec.CLFlatbarQuantity = CInt(dt.Rows(0)("CLFlatbarQuantity"))
+                Else
+                    cLouvreSpec.CLFlatbarQuantity = Constants.DEFAULT_INTEGER_VALUE
+                End If
+
+                If Not IsDBNull(dt.Rows(0)("CLSteppedInsertSize")) Then
+                    cLouvreSpec.CLSteppedInsertSize = CInt(dt.Rows(0)("CLSteppedInsertSize"))
+                Else
+                    cLouvreSpec.CLSteppedInsertSize = Constants.DEFAULT_INTEGER_VALUE
+                End If
+
+                If Not IsDBNull(dt.Rows(0)("CLSteppedInsertQuantity")) Then
+                    cLouvreSpec.CLSteppedInsertQuantity = CInt(dt.Rows(0)("CLSteppedInsertQuantity"))
+                Else
+                    cLouvreSpec.CLSteppedInsertQuantity = Constants.DEFAULT_INTEGER_VALUE
+                End If
+
+                If Not IsDBNull(dt.Rows(0)("CLTopAngleSize")) Then
+                    cLouvreSpec.CLTopAngleSize = CInt(dt.Rows(0)("CLTopAngleSize"))
+                Else
+                    cLouvreSpec.CLTopAngleSize = Constants.DEFAULT_INTEGER_VALUE
+                End If
+
+                If Not IsDBNull(dt.Rows(0)("CLTopAngleQuantity")) Then
+                    cLouvreSpec.CLTopAngleQuantity = CInt(dt.Rows(0)("CLTopAngleQuantity"))
+                Else
+                    cLouvreSpec.CLTopAngleQuantity = Constants.DEFAULT_INTEGER_VALUE
+                End If
+
+                If Not IsDBNull(dt.Rows(0)("CLBottomAngleQuantity")) Then
+                    cLouvreSpec.CLBottomAngleQuantity = CInt(dt.Rows(0)("CLBottomAngleQuantity"))
+                Else
+                    cLouvreSpec.CLBottomAngleQuantity = Constants.DEFAULT_INTEGER_VALUE
+                End If
+
+                If Not IsDBNull(dt.Rows(0)("CLBottomAngleSize")) Then
+                    cLouvreSpec.CLBottomAngleSize = CInt(dt.Rows(0)("CLBottomAngleSize"))
+                Else
+                    cLouvreSpec.CLBottomAngleSize = Constants.DEFAULT_INTEGER_VALUE
+                End If
+
+                If Not IsDBNull(dt.Rows(0)("WideRail")) Then
+                    cLouvreSpec.WideRail = CInt(dt.Rows(0)("WideRail"))
+                Else
+                    cLouvreSpec.WideRail = Constants.DEFAULT_INTEGER_VALUE
+                End If
+
+            End If
+
+            If dt.Columns.Contains("PlasticCornersQuantity") Then
+                If Not IsDBNull(dt.Rows(0)("PlasticCornersQuantity")) Then
+                    cLouvreSpec.PlasticCornersQuantity = CInt(dt.Rows(0)("PlasticCornersQuantity"))
+                Else
+                    cLouvreSpec.PlasticCornersQuantity = Constants.DEFAULT_INTEGER_VALUE
+                End If
+
+                If Not IsDBNull(dt.Rows(0)("CornerPlatesQuantity")) Then
+                    cLouvreSpec.CornerPlatesQuantity = CInt(dt.Rows(0)("CornerPlatesQuantity"))
+                Else
+                    cLouvreSpec.CornerPlatesQuantity = Constants.DEFAULT_INTEGER_VALUE
+                End If
+
+                If Not IsDBNull(dt.Rows(0)("MeetingStileAdaptorSize")) Then
+                    cLouvreSpec.MeetingStileAdaptorSize = CInt(dt.Rows(0)("MeetingStileAdaptorSize"))
+                Else
+                    cLouvreSpec.MeetingStileAdaptorSize = Constants.DEFAULT_INTEGER_VALUE
+                End If
+
+                If Not IsDBNull(dt.Rows(0)("MeetingStileAdaptorQuantity")) Then
+                    cLouvreSpec.MeetingStileAdaptorQuantity = CInt(dt.Rows(0)("MeetingStileAdaptorQuantity"))
+                Else
+                    cLouvreSpec.MeetingStileAdaptorQuantity = Constants.DEFAULT_INTEGER_VALUE
+                End If
+
+                If Not IsDBNull(dt.Rows(0)("HingedTopBottomInfillSize")) Then
+                    cLouvreSpec.HingedTopBottomInfillSize = CInt(dt.Rows(0)("HingedTopBottomInfillSize"))
+                Else
+                    cLouvreSpec.HingedTopBottomInfillSize = Constants.DEFAULT_INTEGER_VALUE
+                End If
+
+                If Not IsDBNull(dt.Rows(0)("HingedTopBottomInfillQuantity")) Then
+                    cLouvreSpec.HingedTopBottomInfillQuantity = CInt(dt.Rows(0)("HingedTopBottomInfillQuantity"))
+                Else
+                    cLouvreSpec.HingedTopBottomInfillQuantity = Constants.DEFAULT_INTEGER_VALUE
+                End If
+
+                If Not IsDBNull(dt.Rows(0)("HingedSidesInfillSize")) Then
+                    cLouvreSpec.HingedSidesInfillSize = CInt(dt.Rows(0)("HingedSidesInfillSize"))
+                Else
+                    cLouvreSpec.HingedSidesInfillSize = Constants.DEFAULT_INTEGER_VALUE
+                End If
+
+                If Not IsDBNull(dt.Rows(0)("HingedSidesInfillQuantity")) Then
+                    cLouvreSpec.HingedSidesInfillQuantity = CInt(dt.Rows(0)("HingedSidesInfillQuantity"))
+                Else
+                    cLouvreSpec.HingedSidesInfillQuantity = Constants.DEFAULT_INTEGER_VALUE
+                End If
+
+                If Not IsDBNull(dt.Rows(0)("HingedTopBottomRevealFrameSize")) Then
+                    cLouvreSpec.HingedTopBottomRevealFrameSize = CInt(dt.Rows(0)("HingedTopBottomRevealFrameSize"))
+                Else
+                    cLouvreSpec.HingedTopBottomRevealFrameSize = Constants.DEFAULT_INTEGER_VALUE
+                End If
+
+                If Not IsDBNull(dt.Rows(0)("HingedTopBottomRevealFrameQuantity")) Then
+                    cLouvreSpec.HingedTopBottomRevealFrameQuantity = CInt(dt.Rows(0)("HingedTopBottomRevealFrameQuantity"))
+                Else
+                    cLouvreSpec.HingedTopBottomRevealFrameQuantity = Constants.DEFAULT_INTEGER_VALUE
+                End If
+
+                If Not IsDBNull(dt.Rows(0)("HingedSidesRevealFrameSize")) Then
+                    cLouvreSpec.HingedSidesRevealFrameSize = CInt(dt.Rows(0)("HingedSidesRevealFrameSize"))
+                Else
+                    cLouvreSpec.HingedSidesRevealFrameSize = Constants.DEFAULT_INTEGER_VALUE
+                End If
+
+                If Not IsDBNull(dt.Rows(0)("HingedSidesRevealFrameQuantity")) Then
+                    cLouvreSpec.HingedSidesRevealFrameQuantity = CInt(dt.Rows(0)("HingedSidesRevealFrameQuantity"))
+                Else
+                    cLouvreSpec.HingedSidesRevealFrameQuantity = Constants.DEFAULT_INTEGER_VALUE
+                End If
+            End If
+
+        End If
+
+        Return cLouvreSpec
+
+    End Function
+
+    Function GetLouvreSpecDesignRecord(ByVal LouvreDetails As LouvreSpecDesign, VariableName As String, VarValue As String, Optional VarType As String = "string", Optional cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As DataTable
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+        Dim bolAddOK As Boolean = True, SaveRecord As Boolean = False, SqlStr As String = ""
+        If IsNothing(cnn) Then
+            bolAddOK = False
+            Dim dbConn As New DBConnection
+            cnn = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+            dbConn = Nothing
+        End If
+
+        Dim cmd As New SqlCommand
+        Try
+
+            If bolAddOK = False Then
+                cnn.Open()
+            End If
+
+            SqlStr = "  Select * from  LouvreSpecDesign where "
+            SqlStr += VariableName + IIf(VarType = "string", "='", "=") + VarValue + IIf(VarType = "string", "'", "")
+
+            cmd.Connection = cnn
+            cmd.CommandText = SqlStr
+            cmd.CommandType = CommandType.Text
+
+
+            If bolAddOK = True Then
+                cmd.Transaction = trans
+            End If
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+
+            If bolAddOK = False Then
+                cnn.Close()
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+            bolAddOK = False
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+            If bolAddOK = False Then
+                cnn.Dispose()
+                cnn = Nothing
+            End If
+        End Try
+        Return dt
+    End Function
+
+    Function ConvertRcdToLouvreSpecDesign(ByVal dwLouvreSpecDesigTBL As DataRow) As LouvreSpecDesign
+        Dim clsLouvreSpecDesign As New LouvreSpecDesign
+
+        Dim _type As Type = clsLouvreSpecDesign.GetType()
+        Dim properties() As PropertyInfo = _type.GetProperties()
+        Dim tblName = dwLouvreSpecDesigTBL.Table.Columns
+
+        For Each _property As PropertyInfo In properties
+            If IsDBNull(dwLouvreSpecDesigTBL(_property.Name)) Then
+                _property.SetValue(tblName, dwLouvreSpecDesigTBL(_property.Name), Nothing)
+            End If
+        Next
+
+        ' go through each column
+        Dim p As PropertyInfo
+        For Each _col As DataColumn In dwLouvreSpecDesigTBL.Table.Columns
+            ' find the property for the column
+            p = tblName.[GetType]().GetProperty(_col.ColumnName)
+
+            ' if exists, set the value
+            If p IsNot Nothing AndAlso dwLouvreSpecDesigTBL(_col) <> DBNull.Value Then
+                p.SetValue(tblName, dwLouvreSpecDesigTBL(_col), Nothing)
+            End If
+        Next
+
+        Return clsLouvreSpecDesign
+
+    End Function
+
+End Class

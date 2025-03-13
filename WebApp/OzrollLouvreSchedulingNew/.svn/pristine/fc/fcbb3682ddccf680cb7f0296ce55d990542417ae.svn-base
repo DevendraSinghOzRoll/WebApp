@@ -1,0 +1,930 @@
+﻿Imports System.Data
+Imports System.Configuration
+Imports System.Data.SqlClient
+Partial Class testpage
+    Inherits System.Web.UI.Page
+
+
+    Private Sub Page_Error(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.Error
+
+        Dim objErr1 As Exception = Server.GetLastError().GetBaseException()
+        Dim strErrorMessage As String = String.Empty
+
+        strErrorMessage &= "Error In: " & Request.Url.ToString() & Environment.NewLine & Environment.NewLine
+
+        strErrorMessage &= "Server.GetLastError().GetBaseException()" & Environment.NewLine & Environment.NewLine
+
+        strErrorMessage &= "Error Message: " & objErr1.Message & Environment.NewLine
+        strErrorMessage &= "Stack Trace:" & Environment.NewLine
+        strErrorMessage &= objErr1.StackTrace & Environment.NewLine & Environment.NewLine
+
+        Dim objErr2 As Exception = Server.GetLastError()
+
+        strErrorMessage &= "Server.GetLastError()" & Environment.NewLine & Environment.NewLine
+
+        strErrorMessage &= "Error Message: " & objErr2.Message & Environment.NewLine
+        strErrorMessage &= "Stack Trace:" & Environment.NewLine
+        strErrorMessage &= objErr2.StackTrace & Environment.NewLine
+
+        EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & strErrorMessage & " - " & getPageInfo())
+
+        Server.ClearError()
+        Response.Redirect("GenericErrorPage.aspx", False)
+
+    End Sub
+
+    Private Function getPageInfo() As String
+
+        Dim strPageInfo As String = String.Empty
+        Dim strName As String = String.Empty
+        If Session.Contents.Count > 0 Then
+            strPageInfo &= "Session Variables" & Environment.NewLine
+            For Each strName In Session.Contents
+                strPageInfo &= strName & ": " & CStr(Session.Contents(strName)) & Environment.NewLine
+            Next
+        Else
+            strPageInfo &= "No Session Variables" & Environment.NewLine
+        End If
+
+        strPageInfo &= Environment.NewLine
+
+        If Me.form1.HasControls Then
+            strPageInfo &= "Form Controls" & Environment.NewLine
+            getPageControls(Me.form1, strPageInfo)
+        Else
+            strPageInfo &= "No Form Controls" & Environment.NewLine
+        End If
+        Return strPageInfo
+
+    End Function
+
+    Private Sub getPageControls(ByVal ctrl As Control, ByRef strPageControls As String)
+
+        If ctrl.HasControls Then
+            For Each childCtrl As Control In ctrl.Controls
+                getPageControls(childCtrl, strPageControls)
+            Next
+        Else
+            Select Case ctrl.GetType.Name
+                Case "TextBox"
+                    Dim frmTxt As TextBox
+                    frmTxt = DirectCast(ctrl, TextBox)
+                    strPageControls &= frmTxt.ID & ": " & Left(frmTxt.Text, 100) & Environment.NewLine
+                Case "DropDownList"
+                    Dim frmCbo As DropDownList
+                    frmCbo = DirectCast(ctrl, DropDownList)
+                    If frmCbo.Items.Count > 0 Then
+                        strPageControls &= frmCbo.ID & ": " & frmCbo.SelectedItem.Text & " (" & frmCbo.SelectedValue & ")" & Environment.NewLine
+                    Else
+                        strPageControls &= frmCbo.ID & ": Not Populated" & Environment.NewLine
+                    End If
+                Case "CheckBox"
+                    Dim frmChk As CheckBox
+                    frmChk = DirectCast(ctrl, CheckBox)
+                    strPageControls &= frmChk.ID & ": " & frmChk.Checked & Environment.NewLine
+                Case "RadioButton"
+                    Dim frmRdo As RadioButton
+                    frmRdo = DirectCast(ctrl, RadioButton)
+                    strPageControls &= frmRdo.ID & ": " & frmRdo.Checked & Environment.NewLine
+            End Select
+        End If
+
+    End Sub
+
+    Private Sub Page_Load(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.Load
+
+        If Not IsPostBack Then
+
+            runShuttersData()
+
+        End If
+
+    End Sub
+
+    Private Sub btnHome_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles btnHome.Click
+
+        Response.Redirect("Home.aspx?", False)
+
+    End Sub
+
+    Private Sub btnLogout_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles btnLogout.Click
+
+        Response.Redirect("Logout.aspx", False)
+
+    End Sub
+
+    Private Sub btnRecalculate_Click(sender As Object, e As EventArgs) Handles btnRecalculate.Click
+
+        runRecalculate()
+
+    End Sub
+
+
+    Protected Function runRecalculate() As Boolean
+
+        Dim service As New AppService
+        Dim dt As DataTable = service.runSQLScheduling("select * from dbo.tblPlantationJobDetails where PlantationScheduleListID=2603")
+        For i As Integer = 0 To dt.Rows.Count - 1
+
+            Dim cPlantationJobDetails As PlantationJobDetails = service.getPlantationJobDetailsRecord(CInt(dt.Rows(i)("PSDetailID")))
+
+            cPlantationJobDetails.CostPrice = CalculatePlantationShutterPrice(2, cPlantationJobDetails)
+
+            Dim strUpdate As String = "update dbo.Table_1 set NewCostPrice=" & cPlantationJobDetails.CostPrice & " where PSDetailsID = " & dt.Rows(i)("PSDetailsID").ToString
+            service.executeSQLScheduling(strUpdate)
+
+        Next
+        dt.Dispose()
+        dt = Nothing
+
+        service = Nothing
+
+        Return True
+
+    End Function
+
+
+    Protected Function CalculatePlantationShutterPrice(intManufactureLocation As Integer, cPlantationJobDetail As PlantationJobDetails) As Decimal
+
+        Dim service As New AppService
+
+        Dim intMaterial As Integer = 0
+        Dim intInstallationArea As Integer = 0
+        Dim intMountMethod As Integer = 0
+        Dim intControlType As Integer = 0
+
+        Dim intBladeSizeID As Integer = 0
+
+        Dim dteEffectiveDate As Date = DateTime.Now
+
+        Dim decCostPrice As Decimal = 0
+        Dim intHeight As Integer = 0
+        Dim intWidth As Integer = 0
+        Dim intPanelQty As Integer = 0
+
+
+        Try
+            If cPlantationJobDetail.Height <> Constants.DEFAULT_INTEGER_VALUE Then
+                intHeight = cPlantationJobDetail.Height
+            End If
+
+            If cPlantationJobDetail.Width <> Constants.DEFAULT_INTEGER_VALUE Then
+                intWidth = cPlantationJobDetail.Width
+            End If
+
+            If cPlantationJobDetail.PanelQtyID <> Constants.DEFAULT_INTEGER_VALUE Then
+                intPanelQty = cPlantationJobDetail.PanelQtyID
+            End If
+
+            If cPlantationJobDetail.MaterialID <> Constants.DEFAULT_INTEGER_VALUE Then
+                intMaterial = cPlantationJobDetail.MaterialID
+            End If
+
+            If cPlantationJobDetail.InstallationAreaID <> Constants.DEFAULT_INTEGER_VALUE Then
+                intInstallationArea = cPlantationJobDetail.InstallationAreaID
+            End If
+
+            If cPlantationJobDetail.MountMethodID <> Constants.DEFAULT_INTEGER_VALUE Then
+                intMountMethod = cPlantationJobDetail.MountMethodID
+            End If
+
+            If cPlantationJobDetail.ControlTypeID <> Constants.DEFAULT_INTEGER_VALUE Then
+                intControlType = cPlantationJobDetail.ControlTypeID
+            End If
+
+            If cPlantationJobDetail.BladeSizeID <> Constants.DEFAULT_INTEGER_VALUE Then
+                intBladeSizeID = cPlantationJobDetail.BladeSizeID
+            End If
+
+
+            Dim intPanelWidth As Decimal = 0
+            Dim PerOpening As Integer = 1
+            Dim LMHeight As Decimal = CInt(intHeight) / 1000
+            Dim dblSQ As Double = (intHeight / 1000) * (intWidth / 1000)
+            Dim intqty As Integer = intPanelQty
+            Dim dblLM As Double = intWidth / 1000
+
+            'If dblSQ < 1 Then
+            '    dblSQ = 1
+            'End If
+
+            Dim bolContinue As Boolean = True
+
+            If intPanelQty > 0 Then
+                intPanelWidth = CInt(intWidth / intPanelQty)
+            Else
+                bolContinue = False
+            End If
+
+            If bolContinue Then
+                Dim dt As DataTable = service.getPSPrice(intMaterial, intInstallationArea, intMountMethod, intManufactureLocation, intControlType, dteEffectiveDate, intPanelWidth, intBladeSizeID)
+
+                If dt.Rows.Count > 0 Then
+
+                    decCostPrice = 0
+
+                    For i As Integer = 0 To dt.Rows.Count - 1
+                        Dim j As Integer = SharedFunctions.nz(dt.Rows(i).Item("CalculationID"), 0)
+
+                        If j = 1 Then 'M2
+                            'Dim dblSQ As Double = (intHeight / 1000) * (intWidth / 1000)
+
+                            decCostPrice += SharedFunctions.nz(dt.Rows(i).Item("CostPrice"), 0) * dblSQ
+                        End If
+
+                        'If j = 2 Then 'Per Panel
+                        '    'Dim intqty As Integer = intPanelQty
+                        '    decCostPrice += SharedFunctions.nz(dt.Rows(i).Item("CostPrice"), 0) * intqty
+                        'End If
+
+                        'If j = 3 Then 'Per LM
+
+                        '    'Dim dblLM As Double = intWidth / 1000
+                        '    'intLM = ((intHeight / 1000) * 2) + ((intWidth / 1000) * 2)
+
+                        '    decCostPrice += SharedFunctions.nz(dt.Rows(i).Item("CostPrice"), 0) * dblLM
+                        'End If
+
+                        'If j = 4 Then 'Per Opening
+                        '    decCostPrice += SharedFunctions.nz(dt.Rows(i).Item("CostPrice"), 0) * 1
+                        'End If
+                    Next
+                End If
+                dt.Dispose()
+                dt = Nothing
+            End If
+
+            If intMountMethod = 3 Or intMountMethod = 4 Or intMountMethod = 5 Then
+                'sliding, bifold in and bifold out     
+                Dim intTrack As Integer = 0
+                If cPlantationJobDetail.Track <> Constants.DEFAULT_INTEGER_VALUE Then
+                    intTrack = cPlantationJobDetail.Track
+                End If
+                If intInstallationArea <= 0 Or intTrack <= 0 Then
+                    bolContinue = False
+                Else
+                    Dim intNoOfTrack As Integer = 0
+
+                    If intMountMethod = 5 Then
+                        'sliding - qty of track selected
+                        intNoOfTrack = intTrack
+                    Else
+                        'bifold - sinlge track only available
+                        If intTrack = 1 Then
+                            intNoOfTrack = 1
+                        End If
+                    End If
+
+                    If intNoOfTrack > 0 Then
+                        Dim dtPrice As DataTable
+                        If intMaterial = 1 Then
+                            dtPrice = service.getPSPriceMount(intInstallationArea, intManufactureLocation, intMountMethod, intNoOfTrack, dteEffectiveDate, 0, 0, intMaterial)
+                        Else
+                            dtPrice = service.getPSPriceMount(intManufactureLocation, 0, intMountMethod, intNoOfTrack, dteEffectiveDate, 0, 0, intMaterial)
+                        End If
+
+                        'Dim dtPrice As DataTable = service.getPSPriceMount(CInt(txtCurSiteID.Text), CInt(cboInstallationArea.SelectedValue), 2, CInt(cboMountingMethod.SelectedValue), intNoOfTrack, CDate(txtCurQuoteDate.Text), 0, 0)
+                        If dtPrice.Rows.Count > 0 Then
+                            For i As Integer = 0 To dtPrice.Rows.Count - 1
+
+                                If CInt(dtPrice.Rows(i).Item("CalculationID")) = 5 Then ' Per LM by Height
+                                    decCostPrice += CDec(dtPrice.Rows(i).Item("CostPrice")) * LMHeight
+                                    'ElseIf CInt(dtPrice.Rows(i).Item("CalculationID")) = 4 Then 'Per Opening
+                                    '    decCostPrice += CDec(dtPrice.Rows(i).Item("CostPrice")) * PerOpening
+                                End If
+                            Next
+
+                        Else
+                            bolContinue = False
+                        End If
+                    End If
+
+                    If bolContinue = True Then
+                        Dim intSideboards As Integer = 0
+                        If cPlantationJobDetail.Sideboards <> Constants.DEFAULT_INTEGER_VALUE Then
+                            intSideboards = cPlantationJobDetail.Sideboards
+                        End If
+
+                        If intSideboards = 1 Then
+                            '1=yes, 2=no
+                            Dim dtPrice As DataTable
+                            If intMaterial = 1 Then
+                                dtPrice = service.getPSPriceMount(intInstallationArea, intManufactureLocation, intMountMethod, intNoOfTrack, dteEffectiveDate, 0, 0, intMaterial)
+                            Else
+                                dtPrice = service.getPSPriceMount(intInstallationArea, 0, intMountMethod, intNoOfTrack, dteEffectiveDate, 0, 0, intMaterial)
+                            End If
+
+                            'Dim dtPrice As DataTable = service.getPSPriceMount(CInt(txtCurSiteID.Text), CInt(cboInstallationArea.SelectedValue), 2, CInt(cboMountingMethod.SelectedValue), intNoOfTrack, CDate(txtCurQuoteDate.Text), CInt(cboSideboards.SelectedValue), 0)
+                            If dtPrice.Rows.Count > 0 Then
+                                For i As Integer = 0 To dtPrice.Rows.Count - 1
+
+                                    If CInt(dtPrice.Rows(i).Item("CalculationID")) = 4 Then 'Per Opening
+                                        decCostPrice += CDec(dtPrice.Rows(i).Item("CostPrice")) * PerOpening
+                                    End If
+                                Next
+
+                            Else
+                                bolContinue = False
+                            End If
+                        End If
+                    End If
+
+                    If bolContinue = True Then
+                        Dim intBottomBoards As Integer = 0
+                        If cPlantationJobDetail.Bottomboards <> Constants.DEFAULT_INTEGER_VALUE Then
+                            intBottomBoards = cPlantationJobDetail.Bottomboards
+                        End If
+                        If intBottomBoards = 1 Then
+                            '1=yes, 2 = no
+                            Dim dtPrice As DataTable
+                            If intMaterial = 1 Then
+                                dtPrice = service.getPSPriceMount(intInstallationArea, intManufactureLocation, intMountMethod, intNoOfTrack, dteEffectiveDate, 0, 0, intMaterial)
+                            Else
+                                dtPrice = service.getPSPriceMount(intInstallationArea, 0, intMountMethod, intNoOfTrack, dteEffectiveDate, 0, 0, intMaterial)
+                            End If
+
+                            'Dim dtPrice As DataTable = service.getPSPriceMount(CInt(txtCurSiteID.Text), CInt(cboInstallationArea.SelectedValue), 2, CInt(cboMountingMethod.SelectedValue), intNoOfTrack, CDate(txtCurQuoteDate.Text), 0, CInt(cboBottomboards.SelectedValue))
+                            If dtPrice.Rows.Count > 0 Then
+                                For i As Integer = 0 To dtPrice.Rows.Count - 1
+
+                                    If CInt(dtPrice.Rows(i).Item("CalculationID")) = 4 Then 'Per Opening
+                                        decCostPrice += CDec(dtPrice.Rows(i).Item("CostPrice")) * PerOpening
+                                    End If
+                                Next
+
+                            Else
+                                bolContinue = False
+                            End If
+                        End If
+                    End If
+                End If
+            End If
+
+            Dim intFrameType As Integer = 0
+            If cPlantationJobDetail.FrameTypeID <> Constants.DEFAULT_INTEGER_VALUE Then
+                intFrameType = cPlantationJobDetail.FrameTypeID
+            End If
+
+            If intFrameType = 1 Or intFrameType = 2 Or intFrameType = 3 Then
+                '1=l frame, 2=z frame, 3=u channel
+                Dim dtPrice As DataTable
+                If bolContinue = True Then
+                    If ((intFrameType = 1 Or intFrameType = 2)) Then
+                        'corner post
+                        Dim strLayout As String = String.Empty
+                        Dim bolFlag As Boolean = False
+
+                        Dim intLayout As Integer = 0
+                        If cPlantationJobDetail.LayoutID <> Constants.DEFAULT_INTEGER_VALUE Then
+                            intLayout = cPlantationJobDetail.LayoutID
+                        End If
+                        If intLayout = 23 Then
+                            'other
+                            strLayout = cPlantationJobDetail.LayoutOther
+                        Else
+                            strLayout = cPlantationJobDetail.Layout
+                        End If
+
+                        Dim intCount As Integer = 0
+                        If Not strLayout = String.Empty Then
+                            For i As Integer = 0 To Len(strLayout) - 1
+
+                                If strLayout.Substring(i, 1) = "C" Then
+                                    intCount += 1
+                                End If
+                            Next
+                        End If
+
+                        If intMaterial = 1 Then
+                            dtPrice = service.getPSPriceFrame(intManufactureLocation, intFrameType, dteEffectiveDate, 0, 1, intMaterial)
+                        Else
+                            dtPrice = service.getPSPriceFrame(0, 0, dteEffectiveDate, 0, 0, intMaterial)
+                        End If
+
+                        'dtPrice = service.getPSPriceFrame(CInt(txtCurSiteID.Text), 2, CInt(cboFrameType.SelectedValue), CDate(txtCurQuoteDate.Text), 0, 1)
+                        If dtPrice.Rows.Count > 0 Then
+                            For i As Integer = 0 To dtPrice.Rows.Count - 1
+                                If CInt(dtPrice.Rows(i).Item("CalculationID")) = 5 Then ' Per LM by Height
+                                    decCostPrice += CDec(dtPrice.Rows(i).Item("CostPrice")) * LMHeight * intCount
+                                End If
+                            Next
+
+                        Else
+                            bolContinue = False
+                        End If
+                    End If
+                End If
+
+                If bolContinue = True Then
+                    If ((intFrameType = 1 Or intFrameType = 2 Or intFrameType = 3)) Then
+
+                        Dim intCount As Integer = 0
+                        If intMountMethod = 5 Then
+                            'sliding
+                            Dim strLayout As String = String.Empty
+                            Dim bolFlag As Boolean = False
+
+                            Dim intLayout As Integer = 0
+                            If cPlantationJobDetail.LayoutID <> Constants.DEFAULT_INTEGER_VALUE Then
+                                intLayout = cPlantationJobDetail.LayoutID
+                            End If
+                            If intLayout = 23 Then
+                                'other
+                                strLayout = cPlantationJobDetail.LayoutOther
+                            Else
+                                strLayout = cPlantationJobDetail.Layout
+                            End If
+
+                            If Not strLayout = String.Empty Then
+                                For i As Integer = 0 To Len(strLayout) - 1
+
+                                    If strLayout.Substring(i, 1) = "B" Then
+                                        intCount += 1
+                                    End If
+                                Next
+                            End If
+                        End If
+
+                        'bay post
+                        If intMaterial = 1 Then
+                            dtPrice = service.getPSPriceFrame(intManufactureLocation, intFrameType, dteEffectiveDate, 1, 0, intMaterial)
+                        Else
+                            dtPrice = service.getPSPriceFrame(0, 0, dteEffectiveDate, 0, 0, intMaterial)
+                        End If
+
+                        'dtPrice = service.getPSPriceFrame(CInt(txtCurSiteID.Text), 2, CInt(cboFrameType.SelectedValue), CDate(txtCurQuoteDate.Text), 1, 0)
+                        If dtPrice.Rows.Count > 0 Then
+                            For i As Integer = 0 To dtPrice.Rows.Count - 1
+                                If CInt(dtPrice.Rows(i).Item("CalculationID")) = 5 Then ' Per LM by Height
+                                    decCostPrice += CDec(dtPrice.Rows(i).Item("CostPrice")) * LMHeight * intCount
+                                End If
+                            Next
+
+                        Else
+                            bolContinue = False
+                        End If
+                    End If
+                End If
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine & getPageInfo())
+        End Try
+
+        service = Nothing
+
+        Return decCostPrice
+
+    End Function
+
+
+    Protected Sub runShuttersData()
+
+        Dim dt As DataTable = getShuttersDataForGraph(1, 1)
+
+    End Sub
+
+    Protected Function getShuttersDataForGraph(intDateRange As Integer, intReportType As Integer) As DataTable
+
+        Dim dteDate As Date
+        Dim intWeekID As Integer
+        Dim intMonthID As Integer
+
+        Dim dteStartDate As Date
+        Dim dteEndDate As Date
+
+        Dim service As New AppService
+
+        'get current date, weekid and monthid 
+        Dim dtDate As DataTable = service.runSQLScheduling("SELECT GETDATE() AS LocalDate")
+        If dtDate.Rows.Count > 0 Then
+            dteDate = dtDate.Rows(0)(0)
+        Else
+            dteDate = DateTime.Now
+        End If
+        dtDate.Dispose()
+        dtDate = Nothing
+
+        'this gets the weekid and monthid for the current date
+        Dim strSQL As String = "Select loctblDays.DayDate, loctblDays.WeekID, loctblWeeks.MonthID from loctblDays Inner Join loctblWeeks ON loctblDays.WeekID = loctblWeeks.WeekID Where loctblDays.DayDate = '" & Format(dteDate, "yyyy-MM-dd") & "'"
+        dtDate = service.runSQLScheduling(strSQL)
+        If dtDate.Rows.Count > 0 Then
+            intWeekID = CInt(dtDate.Rows(0).Item("WeekID").ToString)
+            intMonthID = CInt(dtDate.Rows(0).Item("MonthID").ToString)
+        End If
+        dtDate.Dispose()
+        dtDate = Nothing
+
+        'get earliest date for each date range
+        Dim dte2Weeks As Date = DateAdd(DateInterval.Day, -13, dteDate)
+
+        Dim dte3MonthsStart As Date
+        Dim dte12MonthsStart As Date
+
+        Dim intWeek3Months As Integer = intWeekID - 12
+        strSQL = "Select min(loctblDays.DayDate) as daydate "
+        strSQL += "From loctblDays "
+        strSQL += "Where (loctblDays.WeekID = " & intWeek3Months & ")"
+        dtDate = service.runSQLScheduling(strSQL)
+        If dtDate.Rows.Count > 0 Then
+            dte3MonthsStart = CDate(dtDate.Rows(0)(0))
+        End If
+        dtDate.Dispose()
+        dtDate = Nothing
+
+        Dim int12Months As Integer = intMonthID - 11
+        strSQL = "Select min(loctblDays.DayDate) as daydate "
+        strSQL += "from loctblDays  inner join dbo.loctblWeeks on loctblDays.WeekID = loctblWeeks.WeekID "
+        strSQL += "where (loctblWeeks.MonthID = " & int12Months & ")"
+        dtDate = service.runSQLScheduling(strSQL)
+        If dtDate.Rows.Count > 0 Then
+            dte12MonthsStart = CDate(dtDate.Rows(0)(0))
+        End If
+        dtDate.Dispose()
+        dtDate = Nothing
+
+        'get data for each range from each database
+        Select Case intDateRange
+            Case 1
+                dteStartDate = dte2Weeks
+            Case 2
+                dteStartDate = dte3MonthsStart
+            Case 3
+                dteStartDate = dte12MonthsStart
+        End Select
+
+        dteEndDate = dteDate
+
+        Dim strSQLOZOTS As String = String.Empty
+        Dim strSQLTracking As String = String.Empty
+
+        If intReportType = 1 Then
+            'sold date query from OZOTS
+            strSQLOZOTS = "Select count(dbo.[order].id) As NoOfJobs, dbo.[order].customer_id as CustomerID, sum(q1.NoOfShutters) As NoOfShutters, sum(q2.SalesPrice) As SalesPrice, CAST(dbo.[order].created AS DATE) as DayDate "
+            strSQLOZOTS &= "From dbo.[order] INNER Join dbo.customer ON dbo.[order].customer_id = dbo.customer.id "
+            strSQLOZOTS &= "inner Join(SELECT count(dbo.order_assembled_detail_complete.id) As NoOfShutters, dbo.order_assembled_detail_complete.order_id FROM dbo.order_assembled_detail_complete group by dbo.order_assembled_detail_complete.order_id) q1 on q1.order_id = dbo.[order].id "
+            strSQLOZOTS &= "inner Join(SELECT sum(dbo.order_line.sell_price) As SalesPrice, dbo.order_line.order_id FROM dbo.order_line group by dbo.order_line.order_id) q2 on q2.order_id = dbo.[order].id "
+            strSQLOZOTS &= "Left outer join dbo.invoice_details on dbo.invoice_details.order_id = dbo.[order].id "
+            strSQLOZOTS &= "where dbo.[order].status In (4, 5, 9) and (CAST(dbo.[order].created AS DATE) >= '" & Format(dteStartDate, "yyyy-MM-dd") & "' and CAST(dbo.[order].created AS DATE) <= '" & Format(dteEndDate, "yyyy-MM-dd") & "') "
+            strSQLOZOTS &= "Group by dbo.[order].customer_id, CAST(dbo.[order].created AS DATE) "
+        Else
+            'invoiced date query from OZOTS
+            strSQLOZOTS = "Select count(dbo.[order].id) As NoOfJobs, dbo.[order].customer_id as CustomerID, sum(q1.NoOfShutters) As NoOfShutters, sum(q2.SalesPrice) As SalesPrice, CAST(dbo.[invoice_details].issued_date AS DATE) as invoiced_date as DayDate "
+            strSQLOZOTS &= "From dbo.[order] INNER Join dbo.customer ON dbo.[order].customer_id = dbo.customer.id "
+            strSQLOZOTS &= "inner Join(SELECT count(dbo.order_assembled_detail_complete.id) As NoOfShutters, dbo.order_assembled_detail_complete.order_id FROM dbo.order_assembled_detail_complete group by dbo.order_assembled_detail_complete.order_id) q1 on q1.order_id = dbo.[order].id "
+            strSQLOZOTS &= "inner Join(SELECT sum(dbo.order_line.sell_price) As SalesPrice, dbo.order_line.order_id FROM dbo.order_line group by dbo.order_line.order_id) q2 on q2.order_id = dbo.[order].id "
+            strSQLOZOTS &= "Left outer join dbo.invoice_details on dbo.invoice_details.order_id = dbo.[order].id "
+            strSQLOZOTS &= "where dbo.[order].status In (9) and (CAST(dbo.[invoice_details].issued_date AS DATE) >= '" & Format(dteStartDate, "yyyy-MM-dd") & "' and CAST(dbo.[invoice_details].issued_date AS DATE) <= '" & Format(dteEndDate, "yyyy-MM-dd") & "') "
+            strSQLOZOTS &= "Group by dbo.[order].customer_id, CAST(dbo.[invoice_details].issued_date AS DATE) "
+        End If
+
+        If intReportType = 1 Then
+            'sold date query from Ozroll Tracking
+            strSQLTracking = "Select count(dbo.tblTracking.lngID) As NoOfJobs, dbo.tblTracking.CustomerID, sum(q1.NoOfShutters) As NoOfShutters, sum(dbo.tblTracking.sngShutterPrice) As SalesPrice, dbo.tblTracking.datDate as DayDate "
+            strSQLTracking &= "From dbo.tblTracking INNER Join dbo.tblCustomerDetails ON dbo.tblTracking.CustomerID = dbo.tblCustomerDetails.customer_number "
+            strSQLTracking &= "inner Join(SELECT count(dbo.tblOrderDetails.lngID) As NoOfShutters, dbo.tblOrderDetails.lngTrackingID FROM dbo.tblOrderDetails group by dbo.tblOrderDetails.lngTrackingID) q1 on q1.lngTrackingID = dbo.tblTracking.lngID "
+            strSQLTracking &= "where dbo.tblTracking.blnDisabled=0 and dbo.tblTracking.intOrderType=1 and (CAST(dbo.tblTracking.datDate AS DATE) >= '" & Format(dteStartDate, "yyyy-MM-dd") & "' and CAST(dbo.tblTracking.datDate AS DATE) <= '" & Format(dteEndDate, "yyyy-MM-dd") & "') "
+            strSQLTracking &= "Group by dbo.tblTracking.CustomerID, dbo.tblTracking.datDate "
+        Else
+            'invoiced date query from Ozroll Tracking
+            strSQLTracking = "Select count(dbo.tblTracking.lngID) As NoOfJobs, dbo.tblTracking.CustomerID, sum(q1.NoOfShutters) As NoOfShutters, sum(dbo.tblTracking.sngShutterPrice) As SalesPrice, dbo.tblTracking.datInvoiced as DayDate "
+            strSQLTracking &= "From dbo.tblTracking INNER Join dbo.tblCustomerDetails ON dbo.tblTracking.CustomerID = dbo.tblCustomerDetails.customer_number "
+            strSQLTracking &= "inner Join(SELECT count(dbo.tblOrderDetails.lngID) As NoOfShutters, dbo.tblOrderDetails.lngTrackingID FROM dbo.tblOrderDetails group by dbo.tblOrderDetails.lngTrackingID) q1 on q1.lngTrackingID = dbo.tblTracking.lngID "
+            strSQLTracking &= "where dbo.tblTracking.blnDisabled=0 and dbo.tblTracking.intOrderType=1 and (CAST(dbo.tblTracking.datInvoiced AS DATE) >= '" & Format(dteStartDate, "yyyy-MM-dd") & "' and CAST(dbo.tblTracking.datInvoiced AS DATE) <= '" & Format(dteEndDate, "yyyy-MM-dd") & "') "
+            strSQLTracking &= "Group by dbo.tblTracking.CustomerID, dbo.tblTracking.datInvoiced "
+        End If
+
+
+        Dim dtDataOZOTS As DataTable = service.runSQLOZOTS(strSQLOZOTS)
+        Dim dtDataOzrollTracking As DataTable = service.runSQLOzrollTracking(strSQLTracking)
+
+        'update ozots data with ozroll tracking customerid values for merging
+        Dim dtCustomerMapping As DataTable = service.runSQLOzrollTracking("select * from dbo.tblOZOTSCustomerMapping")
+        dtDataOZOTS = updateOZOTSDatatableWithTrackingCustomerID(dtDataOZOTS, dtCustomerMapping)
+
+        'filter for selection data
+
+
+        'update data with weekid and monthid
+        strSQL = "Select loctblDays.DayDate, loctblDays.WeekID, loctblWeeks.MonthID, loctblWeeks.WeekNumber, loctblMonths.MonthAbb, loctblMonths.YearID from loctblDays Inner Join loctblWeeks ON loctblDays.WeekID = loctblWeeks.WeekID  inner join dbo.loctblMonths on loctblWeeks.MonthID = loctblMonths.MonthID Where (loctblDays.DayDate >= '" & Format(dteStartDate, "yyyy-MM-dd") & "') and (loctblDays.DayDate <= '" & Format(dteEndDate, "yyyy-MM-dd") & "')"
+        Dim dtDateRange As DataTable = service.runSQLScheduling(strSQL)
+        dtDataOZOTS = updateOZOTSDatatableWithWeekMonth(dtDataOZOTS, dtDateRange)
+        dtDataOzrollTracking = updateOZOTSDatatableWithWeekMonth(dtDataOzrollTracking, dtDateRange)
+
+        'merge both tables together
+        Dim dtDataCombined As DataTable = combineDatatables(dtDataOZOTS, dtDataOzrollTracking)
+
+        Dim dt2Weeks As DataTable = create2WeeksDatatable()
+        Dim dt3Months As DataTable = create3MonthsDatatable()
+        Dim dt12Months As DataTable = create12MonthsDatatable()
+
+        'fill datatables for the three date ranges to display on graph
+        dt2Weeks = fill2WeeksDatatable(dt2Weeks, dtDataCombined, dte2Weeks, dteDate)
+        dt3Months = fill3MonthsDatatable(dt3Months, dtDataCombined, intWeek3Months, intWeekID, dtDateRange)
+        dt12Months = fill12MonthsDatatable(dt12Months, dtDataCombined, int12Months, intMonthID, dtDateRange)
+
+        Dim dtReturnDatatable As DataTable = New DataTable
+
+        Select Case intDateRange
+            Case 1
+                dtReturnDatatable = dt2Weeks.Copy
+            Case 2
+                dtReturnDatatable = dt3Months.Copy
+            Case 3
+                dtReturnDatatable = dt12Months.Copy
+        End Select
+
+
+        Return dtReturnDatatable
+
+    End Function
+
+    Protected Function combineDatatables(dtOZOTS As DataTable, dtTracking As DataTable) As DataTable
+
+        For i As Integer = 0 To dtOZOTS.Rows.Count - 1
+            Dim drow As DataRow = dtTracking.NewRow
+            For Each col As DataColumn In dtTracking.Columns
+                drow(col.ColumnName) = (dtOZOTS.Rows(i)(col.ColumnName))
+            Next
+            dtTracking.Rows.Add(drow)
+            drow = Nothing
+        Next
+
+        Return dtTracking
+
+    End Function
+
+
+    Protected Function updateOZOTSDatatableWithWeekMonth(dtData As DataTable, dtDaysWeeksMonths As DataTable) As DataTable
+
+        Dim col As DataColumn = New DataColumn
+        col.ColumnName = "WeekID"
+        col.DataType = System.Type.GetType("System.Int32")
+        dtData.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "MonthID"
+        col.DataType = System.Type.GetType("System.Int32")
+        dtData.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "WeekNumber"
+        col.DataType = System.Type.GetType("System.Int32")
+        dtData.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "MonthAbb"
+        col.DataType = System.Type.GetType("System.String")
+        dtData.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "YearID"
+        col.DataType = System.Type.GetType("System.Int32")
+        dtData.Columns.Add(col)
+        col = Nothing
+
+
+        For i As Integer = 0 To dtData.Rows.Count - 1
+            Dim drows() As DataRow = dtDaysWeeksMonths.Select("DayDate = '" & Format(dtData.Rows(i)("DayDate"), "dd-MM-yyyy") & "'")
+            If drows.Length > 0 Then
+                dtData.Rows(i)("WeekID") = drows(0)("WeekID")
+                dtData.Rows(i)("MonthID") = drows(0)("MonthID")
+                dtData.Rows(i)("WeekNumber") = drows(0)("WeekNumber")
+                dtData.Rows(i)("MonthAbb") = drows(0)("MonthAbb")
+                dtData.Rows(i)("YearID") = drows(0)("YearID")
+            End If
+            drows = Nothing
+        Next
+
+        Return dtData
+
+    End Function
+
+    Protected Function updateOZOTSDatatableWithTrackingCustomerID(dtData As DataTable, dtCustomerMapping As DataTable) As DataTable
+
+        For i As Integer = 0 To dtData.Rows.Count - 1
+            Dim drows() As DataRow = dtCustomerMapping.Select("OZOTSCustomerID = " & dtData.Rows(i)("CustomerID").ToString)
+            If drows.Length > 0 Then
+                dtData.Rows(i)("CustomerID") = drows(0)("TrackingCustomerID")
+            End If
+            drows = Nothing
+        Next
+
+        Return dtData
+
+    End Function
+
+    Protected Function fill2WeeksDatatable(dt As DataTable, dtData As DataTable, dteStartDate As Date, dteEndDate As Date) As DataTable
+
+        Dim dteDate As Date = dteStartDate
+
+        While dteDate <= dteEndDate
+            'Dim drows() As DataRow =  dtData.Select("DayDate = '" & Format(dtData.Rows("DayDate"), "dd-MM-yyyy") & "'")
+            Dim decJobs As Decimal = 0
+            Dim decShutters As Decimal = 0
+            Dim decSalesPrice As Decimal = 0
+
+            decJobs = SharedFunctions.performDatatableSelectSum(dtData, "NoOfJobs", "DayDate = '" & Format(dteDate, "dd-MM-yyyy") & "'")
+            decShutters = SharedFunctions.performDatatableSelectSum(dtData, "NoOfShutters", "DayDate = '" & Format(dteDate, "dd-MM-yyyy") & "'")
+            decSalesPrice = SharedFunctions.performDatatableSelectSum(dtData, "SalesPrice", "DayDate = '" & Format(dteDate, "dd-MM-yyyy") & "'")
+
+            Dim drow As DataRow = dt.NewRow
+            drow("DayDate") = dteDate
+            drow("Display") = Format(dteDate, "d MMM yyyy")
+            drow("NoOfJobs") = CInt(decJobs)
+            drow("NoOfShutters") = CInt(decShutters)
+            drow("SalesPrice") = decSalesPrice
+            dt.Rows.Add(drow)
+            drow = Nothing
+
+            dteDate = DateAdd(DateInterval.Day, 1, dteDate)
+        End While
+
+        Return dt
+
+    End Function
+
+    Protected Function fill3MonthsDatatable(dt As DataTable, dtData As DataTable, intStartWeekID As Integer, intEndWeekID As Integer, dtDateRange As DataTable) As DataTable
+
+        For intWeek As Integer = intStartWeekID To intEndWeekID
+            'Dim drows() As DataRow = dtData.Select("WeekID = " & intWeek.ToString)
+
+            Dim decJobs As Decimal = 0
+            Dim decShutters As Decimal = 0
+            Dim decSalesPrice As Decimal = 0
+
+            decJobs = SharedFunctions.performDatatableSelectSum(dtData, "NoOfJobs", "WeekID = " & intWeek.ToString)
+            decShutters = SharedFunctions.performDatatableSelectSum(dtData, "NoOfShutters", "WeekID = " & intWeek.ToString)
+            decSalesPrice = SharedFunctions.performDatatableSelectSum(dtData, "SalesPrice", "WeekID = " & intWeek.ToString)
+
+            Dim drow As DataRow = dt.NewRow
+            drow("WeekID") = intWeek
+
+            Dim drows() As DataRow = dtDateRange.Select("WeekID = " & intWeek.ToString)
+            If drows.Length > 0 Then
+                drow("Display") = drows(0)("MonthAbb").ToString & " Wk" & drows(0)("WeekNumber").ToString
+            End If
+            drows = Nothing
+
+            drow("NoOfJobs") = CInt(decJobs)
+            drow("NoOfShutters") = CInt(decShutters)
+            drow("SalesPrice") = decSalesPrice
+            dt.Rows.Add(drow)
+            drow = Nothing
+        Next
+
+        Return dt
+
+    End Function
+
+    Protected Function fill12MonthsDatatable(dt As DataTable, dtData As DataTable, intStartMonthID As Integer, intEndMonthID As Integer, dtDateRange As DataTable) As DataTable
+
+        For intMonth As Integer = intStartMonthID To intEndMonthID
+            'Dim drows() As DataRow = dtData.Select("MonthID = " & intMonth.ToString)
+            Dim decJobs As Decimal = 0
+            Dim decShutters As Decimal = 0
+            Dim decSalesPrice As Decimal = 0
+
+            decJobs = SharedFunctions.performDatatableSelectSum(dtData, "NoOfJobs", "MonthID = " & intMonth.ToString)
+            decShutters = SharedFunctions.performDatatableSelectSum(dtData, "NoOfShutters", "MonthID = " & intMonth.ToString)
+            decSalesPrice = SharedFunctions.performDatatableSelectSum(dtData, "SalesPrice", "MonthID = " & intMonth.ToString)
+
+            Dim drow As DataRow = dt.NewRow
+            drow("MonthID") = intMonth
+
+            Dim drows() As DataRow = dtDateRange.Select("MonthID =" & intMonth.ToString)
+            If drows.Length > 0 Then
+                drow("Display") = drows(0)("MonthAbb").ToString & " " & drows(0)("YearID").ToString
+            End If
+            drows = Nothing
+
+            drow("NoOfJobs") = CInt(decJobs)
+            drow("NoOfShutters") = CInt(decShutters)
+            drow("SalesPrice") = decSalesPrice
+            dt.Rows.Add(drow)
+            drow = Nothing
+        Next
+
+        Return dt
+
+    End Function
+
+    Protected Function create2WeeksDatatable() As DataTable
+
+        Dim dt As DataTable = New DataTable
+
+        Dim col As DataColumn = New DataColumn
+        col.ColumnName = "DayDate"
+        col.DataType = System.Type.GetType("System.DateTime")
+        dt.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "Display"
+        col.DataType = System.Type.GetType("System.String")
+        dt.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "NoOfJobs"
+        col.DataType = System.Type.GetType("System.Int32")
+        dt.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "NoOfShutters"
+        col.DataType = System.Type.GetType("System.Int32")
+        dt.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "SalesPrice"
+        col.DataType = System.Type.GetType("System.Decimal")
+        dt.Columns.Add(col)
+        col = Nothing
+
+        Return dt
+
+    End Function
+
+    Protected Function create3MonthsDatatable() As DataTable
+
+        Dim dt As DataTable = New DataTable
+
+        Dim col As DataColumn = New DataColumn
+        col.ColumnName = "WeekID"
+        col.DataType = System.Type.GetType("System.Int32")
+        dt.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "Display"
+        col.DataType = System.Type.GetType("System.String")
+        dt.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "NoOfJobs"
+        col.DataType = System.Type.GetType("System.Int32")
+        dt.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "NoOfShutters"
+        col.DataType = System.Type.GetType("System.Int32")
+        dt.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "SalesPrice"
+        col.DataType = System.Type.GetType("System.Decimal")
+        dt.Columns.Add(col)
+        col = Nothing
+
+        Return dt
+
+    End Function
+
+    Protected Function create12MonthsDatatable() As DataTable
+
+        Dim dt As DataTable = New DataTable
+
+        Dim col As DataColumn = New DataColumn
+        col.ColumnName = "MonthID"
+        col.DataType = System.Type.GetType("System.Int32")
+        dt.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "Display"
+        col.DataType = System.Type.GetType("System.String")
+        dt.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "NoOfJobs"
+        col.DataType = System.Type.GetType("System.Int32")
+        dt.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "NoOfShutters"
+        col.DataType = System.Type.GetType("System.Int32")
+        dt.Columns.Add(col)
+        col = Nothing
+
+        col = New DataColumn
+        col.ColumnName = "SalesPrice"
+        col.DataType = System.Type.GetType("System.Decimal")
+        dt.Columns.Add(col)
+        col = Nothing
+
+        Return dt
+
+    End Function
+
+End Class

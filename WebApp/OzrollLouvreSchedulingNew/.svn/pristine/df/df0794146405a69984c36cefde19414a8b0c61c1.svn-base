@@ -1,0 +1,120 @@
+﻿Imports Microsoft.VisualBasic
+
+Public Class LouvrePrice
+    Implements ICloneable
+
+    Private _ID As Integer
+    Private _CostPrice As Decimal
+    Private _SalePrice As Decimal
+    Private _CategoryID As Integer
+    Private _LouvreStyleID As Integer
+    Private _LouvreTypeID As Integer
+    Private _CoatingTypeID As Integer
+    Private _Height As Integer
+    Private _Width As Integer
+    Private _EffectiveDateTime As Date
+    Private _CreationDateTime As Date
+
+    Public Property ID() As Integer
+        Get
+            Return _ID
+        End Get
+        Set(ByVal value As Integer)
+            _ID = value
+        End Set
+    End Property
+
+    Public Property CostPrice As Decimal
+        Get
+            Return _CostPrice
+        End Get
+        Set(value As Decimal)
+            _CostPrice = value
+        End Set
+    End Property
+
+    Public Property SalePrice As Decimal
+        Get
+            Return _SalePrice
+        End Get
+        Set(value As Decimal)
+            _SalePrice = value
+        End Set
+    End Property
+
+    Public Property CategoryID As Integer
+        Get
+            Return _CategoryID
+        End Get
+        Set(value As Integer)
+            _CategoryID = value
+        End Set
+    End Property
+
+    Public Property LouvreStyleID As Integer
+        Get
+            Return _LouvreStyleID
+        End Get
+        Set(value As Integer)
+            _LouvreStyleID = value
+        End Set
+    End Property
+
+    Public Property LouvreTypeID As Integer
+        Get
+            Return _LouvreTypeID
+        End Get
+        Set(value As Integer)
+            _LouvreTypeID = value
+        End Set
+    End Property
+
+    Public Property CoatingTypeID As Integer
+        Get
+            Return _CoatingTypeID
+        End Get
+        Set(value As Integer)
+            _CoatingTypeID = value
+        End Set
+    End Property
+
+    Public Property EffectiveDateTime As Date
+        Get
+            Return _EffectiveDateTime
+        End Get
+        Set(value As Date)
+            _EffectiveDateTime = value
+        End Set
+    End Property
+
+    Public Property CreationDateTime As Date
+        Get
+            Return _CreationDateTime
+        End Get
+        Set(value As Date)
+            _CreationDateTime = value
+        End Set
+    End Property
+
+    Public Property Height As Integer
+        Get
+            Return _Height
+        End Get
+        Set(value As Integer)
+            _Height = value
+        End Set
+    End Property
+
+    Public Property Width As Integer
+        Get
+            Return _Width
+        End Get
+        Set(value As Integer)
+            _Width = value
+        End Set
+    End Property
+
+    Public Function Clone() As Object Implements System.ICloneable.Clone
+        Return MyBase.MemberwiseClone
+    End Function
+End Class

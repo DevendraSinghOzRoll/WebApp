@@ -1,0 +1,208 @@
+﻿<%@ Page Language="VB" AutoEventWireup="false" CodeFile="UpdateProductionLead.aspx.vb" Inherits="UpdateProductionLead" %>
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head runat="server">
+    <title>Update Production Lead</title>
+        
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <meta http-equiv="expires" content="0" />
+    <meta http-equiv="pragma" content="no-cache" />
+    <meta http-equiv="cache-control" content="no-cache" />
+    <meta name="format-detection" content="telephone=no" />
+    
+    <link href="stylesheets/reset.css" rel="stylesheet" type="text/css" media="screen" />
+    <!--[if IE]><link href="stylesheets/explorer.css" rel="stylesheet" type="text/css" media="screen" /><![endif]-->
+    <link href="stylesheets/style.css?version=<%= Now.Year() & Now.Month & Now.Day() %>" rel="stylesheet" type="text/css" media="screen" />
+
+
+    <link href="stylesheets/jquery.fancybox.css" rel="stylesheet" type="text/css" />
+    <link href="stylesheets/smoothness/jquery-ui-1.10.2.custom.min.css" rel="stylesheet" type="text/css" />
+
+    <!--[if lt IE 8]><script src="javascript/IE-fix.js" type="text/javascript"></script><![endif]-->
+
+    <script src="javascript/jquery-1.9.1.js" type="text/javascript"></script>
+
+    <script src="javascript/jquery-ui-1.10.2.custom.min.js" type="text/javascript"></script>
+   
+    <link href="favicon.ico" rel="shortcut icon" type="image/x-icon" />
+    
+        <script language="javascript" type="text/javascript">
+
+            (function (document, navigator, standalone) {
+                if ((standalone in navigator) && navigator[standalone]) {
+                    var curnode, location = document.location, stop = /^(a|html)$/i;
+                    document.addEventListener('click', function (e) {
+                        curnode = e.target;
+                        while (!(stop).test(curnode.nodeName))
+                            curnode = curnode.parentNode;
+                        if ('href' in curnode) {
+                            e.preventDefault();
+                            location.href = curnode.href;
+                        }
+                    }, false);
+                }
+            })(document, window.navigator, 'standalone');
+
+            $(function () {
+                $("#dialog-alert").dialog({
+                    modal: true,
+                    autoOpen: false,
+                    draggable: false,
+                    buttons: {
+                        "Ok": function () {
+                            $(this).dialog("close");
+                            return true;
+                        }
+                    }
+                });
+
+                $("#dialog-confirm").dialog({
+                    modal: true,
+                    autoOpen: false,
+                    draggable: false,
+                    buttons: {
+                        "Yes": function () {
+                            $(this).dialog("close");
+                            __doPostBack('<%=btnLogout.ClientID %>', '');
+                            return true;
+                        },
+                        "No": function () {
+                            $(this).dialog("close");
+                            return false;
+                        }
+                    }
+                });
+            });
+
+
+            if (window.history.forward(1) != null)
+                window.history.forward(1);
+
+            function ConfirmLeave() {
+                document.getElementById("dialog-confirm-message").innerHTML = "Are you sure you want to logout?";
+                $("#dialog-confirm").dialog("open");
+                return false;
+            }
+
+            function saveLocation() {
+                localStorage.setItem('sTopLevelPage', window.location);
+            }
+
+             function isNumberKey(evt) {
+	        var charCode = (evt.which) ? evt.which : event.keyCode;
+	        if (charCode != 46 && charCode > 31 && (charCode < 48 || charCode > 57))
+	            return false;
+	        return true;
+	    }
+
+    </script>
+
+    <style type="text/css">
+        .auto-style1 {
+            background-color: #ffffff;
+            border-top: 5px solid #ffffff;
+            padding: 5px 10px 5px 10px;
+            text-align: right;
+            vertical-align: middle;
+            width: 50%;
+            height: 42px;
+        }
+    </style>
+</head>
+<body onload="saveLocation();">
+    <form runat="server" id="form1" method="post">
+
+    <asp:ScriptManager ID="ScriptManager1" runat="server" EnablePartialRendering="true">
+    <Scripts>
+    <asp:ScriptReference Path="javascript/fixfocus.js" />
+    </Scripts>
+    </asp:ScriptManager>
+    <div id="middle-container-diallerview" >
+
+        <div id="logo" style="height: 100px; text-align: center;" ></div>
+        <div style="height: 50px; text-align: center;">
+            <asp:Button ID="btnHome" runat="server" CssClass="form-button" Text="Home" UseSubmitBehavior="false" />
+            <asp:Button ID="btnLogout" runat="server" CssClass="form-button" Visible="true" Text="Logout" OnClientClick="javascript:return ConfirmLeave();" UseSubmitBehavior="false" />
+	    </div>
+    
+        <h1>Production Lead Days</h1>
+
+        <div class="form" style="text-align: center;">
+
+            <br />
+
+            <asp:UpdatePanel ID="pnlDetails" runat="server" UpdateMode="Conditional">
+            <ContentTemplate>
+                <div style="text-align: center; width: 100%;">
+                    <table class="form-table" style="width: 100%; text-align: center;" cellspacing="0" summary="">
+                    <tr>
+                        <td class="auto-style1"  style="text-align: right;"><img id="imgLoading2" src="images/indicator.gif" width="16px" height="16px" alt="loading" style="visibility: hidden; vertical-align: middle;" />&nbsp;&nbsp;&nbsp;&nbsp; Standard Colour Days :</td>
+                        <td class="auto-style1"  style="text-align: left;"><asp:TextBox ID="txtStandardDays" onkeypress="return isNumberKey(event);" width="15%" runat="server" CssClass="form-field"></asp:TextBox>
+                            </td>
+                    </tr>
+                        <tr>
+                            <td class="form-submit-td" style="width: 50%; text-align: right;">Powdercoat Colour Days :</td>
+                            <td class="form-submit-td" style="width: 50%; text-align: left;">
+                                <asp:TextBox ID="txtPowdercoatDays" runat="server" width="15%" onkeypress="return isNumberKey(event);" CssClass="form-field"></asp:TextBox>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+
+                <table class="form-table" style="width: 100%; text-align: center;" cellspacing="0" summary="">
+                    <tr>
+                        <td class="form-submit-td"  style="width: 50%; text-align: right;"><img id="imgLoading2" src="images/indicator.gif" width="16px" height="16px" alt="loading" style="visibility: hidden; vertical-align: middle;" />&nbsp;&nbsp;&nbsp;&nbsp;
+                            <asp:Button ID="btnCancel" runat="server" CssClass="form-button" Text="Cancel" OnClientClick="return cancelchanges();" UseSubmitBehavior="false" />
+                        </td>
+                        <td class="form-submit-td"  style="width: 50%; text-align: left;">&nbsp;<asp:Button ID="btnSave" runat="server" CssClass="form-button" Text="Save" UseSubmitBehavior="false" />
+                            &nbsp;&nbsp; <img id="imgLoading1" src="images/indicator.gif" width="16px" height="16px" alt="loading" style="visibility: hidden; vertical-align: middle;" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="form-submit-td" colspan="2" style="text-align: left;"><asp:Label ID="lblStatus" runat="server" Text="" ForeColor="Red" /></td>
+                    </tr>
+                    </table>
+                </div>
+
+            </ContentTemplate>
+            </asp:UpdatePanel>
+
+        </div>
+
+    </div>
+
+        <asp:TextBox ID="txtTempID" runat="server" CssClass="HideElement" TabIndex="-1" Text="" Visible="false"></asp:TextBox>
+
+    <div id="dialog-alert" title="Insufficient Information">
+        <p id="dialog-alert-message" style="text-align: left;"></p>
+    </div>
+    <div id="dialog-confirm" title="Please Confirm" >
+        <p id="dialog-confirm-message" style="text-align: left;"></p>
+    </div>
+        
+    <div id="dialog-confirm-cancel" title="Please Confirm" >
+        <p id="dialog-confirm-cancel-message" style="text-align: left;"></p>
+    </div>
+
+    <div runat="server" id="DivCur1" style="display:none;">
+                <br />
+        ProductTypeID<asp:TextBox id="txtProductTypeID" runat="server" TabIndex="-1" Text="0"></asp:TextBox>
+        <br />
+
+    </div>
+
+    <script type="text/javascript">
+        $(function () {
+            $("input#txtReceivedDate").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'dd M yy', gotoCurrent: true, showAnim: 'slideDown', minDate: '-1d', maxDate: '+5w' });
+        });
+    </script>
+
+   
+
+
+    </form>
+</body>
+
+</html>

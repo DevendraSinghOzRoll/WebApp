@@ -1,0 +1,768 @@
+﻿Imports Microsoft.VisualBasic
+
+Public Class ProductionSchedule
+
+    Implements ICloneable
+
+    Private _ID As Integer
+    Private _CustomerID As Integer
+    Private _JobNumber As Integer
+    Private _EnteredDatetime As Date
+    Private _OrderDate As Date
+    Private _OrderReference As String
+    Private _CustomerName As String
+    Private _State As String
+    Private _OrderStatus As SharedEnums.ProductionScheduleStatus
+    Private _InvoiceMonth As Integer
+    Private _InvoiceWeek As Integer
+    Private _CostPrice As Decimal
+    Private _CostPriceGST As Decimal
+    Private _TotalSQM As Decimal
+    Private _TotalPanels As Integer
+    Private _PanelsLess700 As Integer
+    Private _PanelsMore700 As Integer
+    Private _QtyHinges As Integer
+    Private _QtySliding As Integer
+    Private _QtyBifold As Integer
+    Private _QtyFixed As Integer
+    Private _QtyZFrame As Integer
+    Private _QtyLFrame As Integer
+    Private _OffWhite As Integer
+    Private _BrightWhite As Integer
+    Private _GRARemakes As String
+    Private _UpdatesText As String
+    Private _BOMCosted As String
+    Private _ShutterPro As String
+    Private _ShippingDetails As String
+    Private _PlannedShippingDate As String
+    Private _ActualShippingDate As Date
+
+    Private _PriorityLevel As Integer
+    Private _OrderTypeID As Integer
+    Private _ShutterProNumber As String
+    Private _ScheduledDate As Date
+
+    Private _RemakeReasonID As Integer
+    Private _RemakeLiablePartyID As Integer
+    Private _RemakeIssueDescription As String
+
+    Private _OriginalOrderNumber As String
+
+    Private _InvoicedDate As Date
+    Private _EnteredShutterProDate As Date
+    Private _CollectedFactoryDate As Date
+
+    Private _ExpectedShippingDate As Date
+
+    Private _OnHold As Integer
+    Private _ReceivedDate As Date
+
+    Private _CompletedDate As Date
+
+    Private _FreightAmount As Decimal
+    Private _FreightAmountGST As Decimal
+    Private _ProductTypeID As Integer
+
+    Private _OzrollContractNo As String
+
+    Private _Deleted As Integer
+    Private _DeliveryAddressID As Integer
+
+    Private _CreditOverrideUserID As Integer
+    Private _CreditOverrideDateTime As Date
+    Private _OutstandingItemsConfirmID As Integer
+    Private _OutstandingItemsConfirmDateTime As Date
+
+    Private _PickingDate As Date
+    Private _PromisedDate As Date
+
+    Private _RetailDiscount As Decimal
+    Private _SalePrice As Decimal
+    Private _SalePriceGST As Decimal
+
+    Private _SalePriceIsValid As Boolean
+    Private _AddressZoneID As Integer
+    Private _QuoteExpiryDateTime As Date
+
+
+    Public Property ID() As Integer
+        Get
+            Return _ID
+        End Get
+        Set(ByVal value As Integer)
+            _ID = value
+        End Set
+    End Property
+
+    Public Property CustomerID() As Integer
+        Get
+            Return _CustomerID
+        End Get
+        Set(ByVal value As Integer)
+            _CustomerID = value
+        End Set
+    End Property
+
+    Public Property JobNumber() As Integer
+        Get
+            Return _JobNumber
+        End Get
+        Set(ByVal value As Integer)
+            _JobNumber = value
+        End Set
+    End Property
+
+    Public Property EnteredDatetime() As Date
+        Get
+            Return _EnteredDatetime
+        End Get
+        Set(ByVal value As Date)
+            _EnteredDatetime = value
+        End Set
+    End Property
+
+    Public Property OrderDate() As Date
+        Get
+            Return _OrderDate
+        End Get
+        Set(ByVal value As Date)
+            _OrderDate = value
+        End Set
+    End Property
+
+    Public Property OrderReference() As String
+        Get
+            Return _OrderReference
+        End Get
+        Set(ByVal value As String)
+            _OrderReference = value
+        End Set
+    End Property
+
+    Public Property CustomerName() As String
+        Get
+            Return _CustomerName
+        End Get
+        Set(ByVal value As String)
+            _CustomerName = value
+        End Set
+    End Property
+
+    Public Property State() As String
+        Get
+            Return _State
+        End Get
+        Set(ByVal value As String)
+            _State = value
+        End Set
+    End Property
+
+    Public Property OrderStatus() As SharedEnums.ProductionScheduleStatus
+        Get
+            Return _OrderStatus
+        End Get
+        Set(ByVal value As SharedEnums.ProductionScheduleStatus)
+            _OrderStatus = value
+        End Set
+    End Property
+
+    Public Property InvoiceMonth() As Integer
+        Get
+            Return _InvoiceMonth
+        End Get
+        Set(ByVal value As Integer)
+            _InvoiceMonth = value
+        End Set
+    End Property
+
+    Public Property InvoiceWeek() As Integer
+        Get
+            Return _InvoiceWeek
+        End Get
+        Set(ByVal value As Integer)
+            _InvoiceWeek = value
+        End Set
+    End Property
+
+    Public Property CostPrice() As Decimal
+        Get
+            Return _CostPrice
+        End Get
+        Set(ByVal value As Decimal)
+            _CostPrice = value
+        End Set
+    End Property
+
+    Public Property CostPriceGST() As Decimal
+        Get
+            Return _CostPriceGST
+        End Get
+        Set(ByVal value As Decimal)
+            _CostPriceGST = value
+        End Set
+    End Property
+
+    Public Property TotalSQM() As Decimal
+        Get
+            Return _TotalSQM
+        End Get
+        Set(ByVal value As Decimal)
+            _TotalSQM = value
+        End Set
+    End Property
+
+    Public Property TotalPanels() As Integer
+        Get
+            Return _TotalPanels
+        End Get
+        Set(ByVal value As Integer)
+            _TotalPanels = value
+        End Set
+    End Property
+
+    Public Property PanelsLess700() As Integer
+        Get
+            Return _PanelsLess700
+        End Get
+        Set(ByVal value As Integer)
+            _PanelsLess700 = value
+        End Set
+    End Property
+
+    Public Property PanelsMore700() As Integer
+        Get
+            Return _PanelsMore700
+        End Get
+        Set(ByVal value As Integer)
+            _PanelsMore700 = value
+        End Set
+    End Property
+
+    Public Property QtyHinges() As Integer
+        Get
+            Return _QtyHinges
+        End Get
+        Set(ByVal value As Integer)
+            _QtyHinges = value
+        End Set
+    End Property
+
+    Public Property QtySliding() As Integer
+        Get
+            Return _QtySliding
+        End Get
+        Set(ByVal value As Integer)
+            _QtySliding = value
+        End Set
+    End Property
+
+    Public Property QtyBifold() As Integer
+        Get
+            Return _QtyBifold
+        End Get
+        Set(ByVal value As Integer)
+            _QtyBifold = value
+        End Set
+    End Property
+
+    Public Property QtyFixed() As Integer
+        Get
+            Return _QtyFixed
+        End Get
+        Set(ByVal value As Integer)
+            _QtyFixed = value
+        End Set
+    End Property
+
+    Public Property QtyZFrame() As Integer
+        Get
+            Return _QtyZFrame
+        End Get
+        Set(ByVal value As Integer)
+            _QtyZFrame = value
+        End Set
+    End Property
+
+    Public Property QtyLFrame() As Integer
+        Get
+            Return _QtyLFrame
+        End Get
+        Set(ByVal value As Integer)
+            _QtyLFrame = value
+        End Set
+    End Property
+
+    Public Property OffWhite() As Integer
+        Get
+            Return _OffWhite
+        End Get
+        Set(ByVal value As Integer)
+            _OffWhite = value
+        End Set
+    End Property
+
+    Public Property BrightWhite() As Integer
+        Get
+            Return _BrightWhite
+        End Get
+        Set(ByVal value As Integer)
+            _BrightWhite = value
+        End Set
+    End Property
+
+    Public Property GRARemakes() As String
+        Get
+            Return _GRARemakes
+        End Get
+        Set(ByVal value As String)
+            _GRARemakes = value
+        End Set
+    End Property
+
+    Public Property UpdatesText() As String
+        Get
+            Return _UpdatesText
+        End Get
+        Set(ByVal value As String)
+            _UpdatesText = value
+        End Set
+    End Property
+
+    Public Property BOMCosted() As String
+        Get
+            Return _BOMCosted
+        End Get
+        Set(ByVal value As String)
+            _BOMCosted = value
+        End Set
+    End Property
+
+    Public Property ShutterPro() As String
+        Get
+            Return _ShutterPro
+        End Get
+        Set(ByVal value As String)
+            _ShutterPro = value
+        End Set
+    End Property
+
+    Public Property ShippingDetails() As String
+        Get
+            Return _ShippingDetails
+        End Get
+        Set(ByVal value As String)
+            _ShippingDetails = value
+        End Set
+    End Property
+
+    Public Property PlannedShippingDate() As String
+        Get
+            Return _PlannedShippingDate
+        End Get
+        Set(ByVal value As String)
+            _PlannedShippingDate = value
+        End Set
+    End Property
+
+    Public Property ActualShippingDate() As Date
+        Get
+            Return _ActualShippingDate
+        End Get
+        Set(ByVal value As Date)
+            _ActualShippingDate = value
+        End Set
+    End Property
+
+    Public Property PriorityLevel() As Integer
+        Get
+            Return _PriorityLevel
+        End Get
+        Set(ByVal value As Integer)
+            _PriorityLevel = value
+        End Set
+    End Property
+
+    Public Property OrderTypeID() As Integer
+        Get
+            Return _OrderTypeID
+        End Get
+        Set(ByVal value As Integer)
+            _OrderTypeID = value
+        End Set
+    End Property
+
+    Public Property ShutterProNumber() As String
+        Get
+            Return _ShutterProNumber
+        End Get
+        Set(ByVal value As String)
+            _ShutterProNumber = value
+        End Set
+    End Property
+
+    Public Property ScheduledDate() As Date
+        Get
+            Return _ScheduledDate
+        End Get
+        Set(ByVal value As Date)
+            _ScheduledDate = value
+        End Set
+    End Property
+
+    Public Property RemakeReasonID() As Integer
+        Get
+            Return _RemakeReasonID
+        End Get
+        Set(ByVal value As Integer)
+            _RemakeReasonID = value
+        End Set
+    End Property
+
+    Public Property RemakeLiablePartyID() As Integer
+        Get
+            Return _RemakeLiablePartyID
+        End Get
+        Set(ByVal value As Integer)
+            _RemakeLiablePartyID = value
+        End Set
+    End Property
+
+    Public Property RemakeIssueDescription() As String
+        Get
+            Return _RemakeIssueDescription
+        End Get
+        Set(ByVal value As String)
+            _RemakeIssueDescription = value
+        End Set
+    End Property
+
+    Public Property OriginalOrderNumber() As String
+        Get
+            Return _OriginalOrderNumber
+        End Get
+        Set(ByVal value As String)
+            _OriginalOrderNumber = value
+        End Set
+    End Property
+
+    Public Property InvoicedDate() As Date
+        Get
+            Return _InvoicedDate
+        End Get
+        Set(ByVal value As Date)
+            _InvoicedDate = value
+        End Set
+    End Property
+
+    Public Property EnteredShutterProDate() As Date
+        Get
+            Return _EnteredShutterProDate
+        End Get
+        Set(ByVal value As Date)
+            _EnteredShutterProDate = value
+        End Set
+    End Property
+
+    Public Property CollectedFactoryDate() As Date
+        Get
+            Return _CollectedFactoryDate
+        End Get
+        Set(ByVal value As Date)
+            _CollectedFactoryDate = value
+        End Set
+    End Property
+
+    Public Property ExpectedShippingDate() As Date
+        Get
+            Return _ExpectedShippingDate
+        End Get
+        Set(ByVal value As Date)
+            _ExpectedShippingDate = value
+        End Set
+    End Property
+
+    Public Property OnHold() As Integer
+        Get
+            Return _OnHold
+        End Get
+        Set(ByVal value As Integer)
+            _OnHold = value
+        End Set
+    End Property
+
+    Public Property ReceivedDate() As Date
+        Get
+            Return _ReceivedDate
+        End Get
+        Set(ByVal value As Date)
+            _ReceivedDate = value
+        End Set
+    End Property
+
+    Public Property CompletedDate() As Date
+        Get
+            Return _CompletedDate
+        End Get
+        Set(ByVal value As Date)
+            _CompletedDate = value
+        End Set
+    End Property
+    Public Property FreightAmount() As Decimal
+        Get
+            Return _FreightAmount
+        End Get
+        Set(ByVal value As Decimal)
+            _FreightAmount = value
+        End Set
+    End Property
+    Public Property FreightAmountGST() As Decimal
+        Get
+            Return _FreightAmountGST
+        End Get
+        Set(ByVal value As Decimal)
+            _FreightAmountGST = value
+        End Set
+    End Property
+    Public Property ProductTypeID() As Integer
+        Get
+            Return _ProductTypeID
+        End Get
+        Set(ByVal value As Integer)
+            _ProductTypeID = value
+        End Set
+    End Property
+
+    Public Property OzrollContractNo() As String
+        Get
+            Return _OzrollContractNo
+        End Get
+        Set(ByVal value As String)
+            _OzrollContractNo = value
+        End Set
+    End Property
+
+    Public Property Deleted() As Integer
+        Get
+            Return _Deleted
+        End Get
+        Set(ByVal value As Integer)
+            _Deleted = value
+        End Set
+    End Property
+
+    Public Property DeliveryAddressID() As Integer
+        Get
+            Return _DeliveryAddressID
+        End Get
+        Set(ByVal value As Integer)
+            _DeliveryAddressID = value
+        End Set
+    End Property
+
+    Public Property CreditOverrideUserID() As Integer
+        Get
+            Return _CreditOverrideUserID
+        End Get
+        Set(ByVal value As Integer)
+            _CreditOverrideUserID = value
+        End Set
+    End Property
+
+    Public Property CreditOverrideDateTime() As Date
+        Get
+            Return _CreditOverrideDateTime
+        End Get
+        Set(ByVal value As Date)
+            _CreditOverrideDateTime = value
+        End Set
+    End Property
+
+    Public Property OutstandingItemsConfirmID() As Integer
+        Get
+            Return _OutstandingItemsConfirmID
+        End Get
+        Set(ByVal value As Integer)
+            _OutstandingItemsConfirmID = value
+        End Set
+    End Property
+
+    Public Property OutstandingItemsConfirmDateTime() As Date
+        Get
+            Return _OutstandingItemsConfirmDateTime
+        End Get
+        Set(ByVal value As Date)
+            _OutstandingItemsConfirmDateTime = value
+        End Set
+    End Property
+
+    Public Property PickingDate() As Date
+        Get
+            Return _PickingDate
+        End Get
+        Set(ByVal value As Date)
+            _PickingDate = value
+        End Set
+    End Property
+
+    Public Property PromisedDate() As Date
+        Get
+            Return _PromisedDate
+        End Get
+        Set(ByVal value As Date)
+            _PromisedDate = value
+        End Set
+    End Property
+
+    Public Property RetailDiscount() As Decimal
+        Get
+            Return _RetailDiscount
+        End Get
+        Set(ByVal value As Decimal)
+            _RetailDiscount = value
+        End Set
+    End Property
+
+    Public Property SalePrice() As Decimal
+        Get
+            Return _SalePrice
+        End Get
+        Set(ByVal value As Decimal)
+            _SalePrice = value
+        End Set
+    End Property
+
+    Public Property SalePriceGST() As Decimal
+        Get
+            Return _SalePriceGST
+        End Get
+        Set(ByVal value As Decimal)
+            _SalePriceGST = value
+        End Set
+    End Property
+
+    Public Property SalePriceIsValid As Boolean
+        Get
+            Return _SalePriceIsValid
+        End Get
+        Set(value As Boolean)
+            _SalePriceIsValid = value
+        End Set
+    End Property
+
+    Public Property AddressZoneID As Integer
+        Get
+            Return _AddressZoneID
+        End Get
+        Set(value As Integer)
+            _AddressZoneID = value
+        End Set
+    End Property
+
+    Public Property QuoteExpiryDateTime As Date
+        Get
+            Return _QuoteExpiryDateTime
+        End Get
+        Set(value As Date)
+            _QuoteExpiryDateTime = value
+        End Set
+    End Property
+
+    Public ReadOnly Property FreightPriceIsValid As Boolean
+        Get
+            Return (_AddressZoneID > 0)
+        End Get
+    End Property
+
+    Public ReadOnly Property IsPickup As Boolean
+        Get
+            Return ((_AddressZoneID <= 0) AndAlso (_DeliveryAddressID <= 0))
+        End Get
+    End Property
+
+    Public Sub New()
+
+        _ID = Constants.DEFAULT_INTEGER_VALUE
+        _CustomerID = Constants.DEFAULT_INTEGER_VALUE
+        _JobNumber = Constants.DEFAULT_INTEGER_VALUE
+        _EnteredDatetime = Constants.DEFAULT_DATE_VALUE
+        _OrderDate = Constants.DEFAULT_DATE_VALUE
+        _OrderReference = String.Empty
+        _CustomerName = String.Empty
+        _State = String.Empty
+        _OrderStatus = Constants.DEFAULT_INTEGER_VALUE
+        _InvoiceMonth = Constants.DEFAULT_INTEGER_VALUE
+        _InvoiceWeek = Constants.DEFAULT_INTEGER_VALUE
+        _CostPrice = 0
+        _CostPriceGST = 0
+        _TotalSQM = 0
+        _TotalPanels = 0
+        _PanelsLess700 = 0
+        _PanelsMore700 = 0
+        _QtyHinges = 0
+        _QtySliding = 0
+        _QtyBifold = 0
+        _QtyFixed = 0
+        _QtyZFrame = 0
+        _QtyLFrame = 0
+        _OffWhite = Constants.DEFAULT_INTEGER_VALUE
+        _BrightWhite = Constants.DEFAULT_INTEGER_VALUE
+        _GRARemakes = String.Empty
+        _UpdatesText = String.Empty
+        _BOMCosted = String.Empty
+        _ShutterPro = String.Empty
+        _ShippingDetails = String.Empty
+        _PlannedShippingDate = String.Empty
+        _ActualShippingDate = Constants.DEFAULT_DATE_VALUE
+        _PriorityLevel = Constants.DEFAULT_INTEGER_VALUE
+        _OrderTypeID = Constants.DEFAULT_INTEGER_VALUE
+        _ShutterProNumber = String.Empty
+        _ScheduledDate = Constants.DEFAULT_DATE_VALUE
+        _RemakeReasonID = Constants.DEFAULT_INTEGER_VALUE
+        _RemakeLiablePartyID = Constants.DEFAULT_INTEGER_VALUE
+        _RemakeIssueDescription = String.Empty
+        _OriginalOrderNumber = String.Empty
+
+        _InvoicedDate = Constants.DEFAULT_DATE_VALUE
+        _EnteredShutterProDate = Constants.DEFAULT_DATE_VALUE
+        _CollectedFactoryDate = Constants.DEFAULT_DATE_VALUE
+
+        _ExpectedShippingDate = Constants.DEFAULT_DATE_VALUE
+
+        _OnHold = Constants.DEFAULT_INTEGER_VALUE
+        _ReceivedDate = Constants.DEFAULT_DATE_VALUE
+
+        _CompletedDate = Constants.DEFAULT_DATE_VALUE
+
+        _FreightAmount = 0
+        _FreightAmountGST = 0
+
+        _ProductTypeID = Constants.DEFAULT_INTEGER_VALUE
+
+        _OzrollContractNo = String.Empty
+        _Deleted = 0
+        _DeliveryAddressID = 0
+
+        _CreditOverrideUserID = Constants.DEFAULT_INTEGER_VALUE
+        _CreditOverrideDateTime = Constants.DEFAULT_DATE_VALUE
+        _OutstandingItemsConfirmID = Constants.DEFAULT_INTEGER_VALUE
+        _OutstandingItemsConfirmDateTime = Constants.DEFAULT_DATE_VALUE
+
+        _PickingDate = Constants.DEFAULT_DATE_VALUE
+        _PromisedDate = Constants.DEFAULT_DATE_VALUE
+
+        _RetailDiscount = 0
+        _SalePrice = 0
+        _SalePriceGST = 0
+        _SalePriceIsValid = False
+        _AddressZoneID = 0
+
+        _QuoteExpiryDateTime = Constants.MAX_DATE
+
+    End Sub
+
+    Public Function Clone() As Object Implements System.ICloneable.Clone
+
+        Return MyBase.MemberwiseClone
+
+    End Function
+End Class

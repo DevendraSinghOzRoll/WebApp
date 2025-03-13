@@ -1,0 +1,142 @@
+﻿Imports Microsoft.VisualBasic
+Imports System.Data.SqlClient
+
+Public Class NotesDAO
+    ''' <summary>
+    ''' Gets the notes for the given customer ID from the tblNotes database table.
+    ''' </summary>
+    ''' <param name="intCustomerID">The ID of the customer to get notes records for.</param>
+    ''' <returns>A <see cref="DataTable"/> representing the database table.</returns>
+    Function getNotesByCustomerID(ByVal intCustomerID As Integer) As DataTable
+
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getNotesByCustomerID"
+            cmd.CommandType = CommandType.StoredProcedure
+            SqlCommandBuilder.DeriveParameters(cmd)
+            cmd.Parameters("@CustomerID").Value = intCustomerID
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Close()
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+
+        Return dt
+
+    End Function
+
+    ''' <summary>
+    ''' Adds a new notes record to the tblNotes database table.
+    ''' </summary>
+    ''' <param name="nNote">The <see cref="Note"/> object to add to the database.</param>
+    ''' <param name="cnn">The <see cref="SqlConnection"/> object.</param>
+    ''' <param name="trans">The <see cref="SqlTransaction"/> object.</param>
+    ''' <returns>The ID of the new note record in the database.</returns>
+    Function addNoteRecord(nNote As Note, Optional cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As Integer
+
+        Dim bolAddOK As Boolean = True
+        Dim SaveRecord As Boolean = False
+        Dim cmd As New SqlCommand
+
+        If IsNothing(cnn) Then
+            bolAddOK = False
+            Dim dbConn As New DBConnection
+            cnn = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+            dbConn = Nothing
+        End If
+
+        Try
+            If bolAddOK = False Then
+                cnn.Open()
+            End If
+
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_addNote"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            If bolAddOK = True Then
+                cmd.Transaction = trans
+            End If
+
+            setupCommandParameters(nNote, cmd)
+
+            Dim ra As Integer = cmd.ExecuteNonQuery
+
+            If ra < 1 Then
+                EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - add record failed" & Environment.NewLine)
+                bolAddOK = False
+            Else
+                SaveRecord = True
+            End If
+
+            If bolAddOK = False Then
+                cnn.Close()
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+            bolAddOK = False
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+            If bolAddOK = False Then
+                cnn.Dispose()
+                cnn = Nothing
+            End If
+        End Try
+
+        Return SaveRecord
+    End Function
+
+    ''' <summary>
+    ''' Setup the command parameters for the given note.
+    ''' </summary>
+    ''' <param name="nNotes">The <see cref="Note"/> to use to configure the command parameters.</param>
+    ''' <param name="cmd">The <see cref="SqlCommand"/> object to configure.</param>
+    Protected Sub setupCommandParameters(nNotes As Note, ByRef cmd As SqlCommand)
+
+        SqlCommandBuilder.DeriveParameters(cmd)
+
+        If nNotes.CustomerID <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@CustomerID").Value = nNotes.CustomerID
+        Else
+            cmd.Parameters("@CustomerID").Value = DBNull.Value
+        End If
+
+        If nNotes.NoteText <> String.Empty Then
+            cmd.Parameters("@NoteText").Value = nNotes.NoteText
+        Else
+            cmd.Parameters("@NoteText").Value = DBNull.Value
+        End If
+
+        If nNotes.CreationDateTime <> Constants.DEFAULT_DATE_VALUE Then
+            cmd.Parameters("@CreationDateTime").Value = nNotes.CreationDateTime
+        Else
+            cmd.Parameters("@CreationDateTime").Value = DBNull.Value
+        End If
+
+        If nNotes.UserID <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@UserID").Value = nNotes.UserID
+        Else
+            cmd.Parameters("@UserID").Value = DBNull.Value
+        End If
+
+    End Sub
+End Class

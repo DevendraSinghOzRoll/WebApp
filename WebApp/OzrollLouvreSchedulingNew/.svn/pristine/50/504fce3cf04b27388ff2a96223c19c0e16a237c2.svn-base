@@ -1,0 +1,31 @@
+﻿Imports Microsoft.VisualBasic
+
+Public Class LouvreCategory
+    Implements ICloneable
+
+    Private _ID As Integer
+    Private _Name As Integer
+
+    Public Property ID() As Integer
+        Get
+            Return _ID
+        End Get
+        Set(ByVal value As Integer)
+            _ID = value
+        End Set
+    End Property
+
+    Public Property Name() As String
+        Get
+            Return _Name
+        End Get
+        Set(ByVal value As String)
+            _Name = value
+        End Set
+    End Property
+
+    Public Function Clone() As Object Implements System.ICloneable.Clone
+        Return MyBase.MemberwiseClone
+    End Function
+
+End Class

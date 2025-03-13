@@ -1,0 +1,229 @@
+﻿Imports Microsoft.VisualBasic
+Imports System.Data.SqlClient
+
+Public Class LouvrePricesDAO
+
+    ''' <summary>
+    ''' Gets the louvre prices for the given parameters from the tblLouvrePrices database table.
+    ''' </summary>
+    ''' <param name="intCategoryID">The optional Category ID to get the Louvre Prices for.</param>
+    ''' <param name="intLouvreStyleID">The optional Louvre Style ID to get the Louvre Prices for.</param>
+    ''' <param name="intLouvreTypeID">The optional Louvre Type ID to get the Louvre Prices for.</param>
+    ''' <param name="intCoatingTypeID">The optional Coating Type ID to get the Louvre Prices for.</param>
+    ''' <param name="dteEffectiveDateTime">The optional Effective Date Time to get the Louvre Extra Prices for.</param>
+    ''' <param name="intHeight">The optional Height Date to get the Louvre Extra Prices for.</param>
+    ''' <param name="intWidth">The optional Width Date to get the Louvre Extra Prices for.</param>
+    ''' <returns>A <see cref="DataTable"/> representing the database table.</returns>
+    Function getLouvrePriceRecordsByParameters(
+            Optional intCategoryID As Integer? = Nothing,
+            Optional intLouvreStyleID As Integer? = Nothing,
+            Optional intLouvreTypeID As Integer? = Nothing,
+            Optional intCoatingTypeID As Integer? = Nothing,
+            Optional dteEffectiveDateTime As Date? = Nothing,
+            Optional intHeight As Integer? = Nothing,
+            Optional intWidth As Integer? = Nothing
+        ) As DataTable
+
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim dt As New DataTable
+
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getLouvrePricesByParameters"
+            cmd.CommandType = CommandType.StoredProcedure
+            SqlCommandBuilder.DeriveParameters(cmd)
+
+            If intCategoryID.HasValue Then
+                cmd.Parameters("@CategoryID").Value = intCategoryID.Value
+            End If
+
+            If intLouvreStyleID.HasValue Then
+                cmd.Parameters("@LouvreStyleID").Value = intLouvreStyleID.Value
+            End If
+
+            If intLouvreTypeID.HasValue Then
+                cmd.Parameters("@LouvreTypeID").Value = intLouvreTypeID.Value
+            End If
+
+            If intCoatingTypeID.HasValue Then
+                cmd.Parameters("@CoatingTypeID").Value = intCoatingTypeID.Value
+            End If
+
+            If dteEffectiveDateTime.HasValue Then
+                cmd.Parameters("@EffectiveDateTime").Value = dteEffectiveDateTime.Value
+            End If
+
+            If intHeight.HasValue Then
+                cmd.Parameters("@Height").Value = intHeight.Value
+            End If
+
+            If intWidth.HasValue Then
+                cmd.Parameters("@Width").Value = intWidth.Value
+            End If
+
+            adp.SelectCommand = cmd
+            adp.Fill(dt)
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Close()
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+
+        Return dt
+
+    End Function
+
+    Public Function getLouvrePricesByParameters(
+            Optional intCategoryID As Integer? = Nothing,
+            Optional intLouvreStyleID As Integer? = Nothing,
+            Optional intLouvreTypeID As Integer? = Nothing,
+            Optional intCoatingTypeID As Integer? = Nothing,
+            Optional dteEffectiveDateTime As Date? = Nothing,
+            Optional intHeight As Integer? = Nothing,
+            Optional intWidth As Integer? = Nothing
+        ) As List(Of LouvrePrice)
+
+        Dim cLouvrePrice As LouvrePrice
+        Dim lLouvrePrices As New List(Of LouvrePrice)
+
+        Dim dtAddresses As DataTable = getLouvrePriceRecordsByParameters(intCategoryID,
+                                                                        intLouvreStyleID,
+                                                                        intLouvreTypeID,
+                                                                        intCoatingTypeID,
+                                                                        dteEffectiveDateTime,
+                                                                        intHeight,
+                                                                        intWidth)
+
+        For Each r As DataRow In dtAddresses.Rows
+            cLouvrePrice = convertLouvrePriceRecordToObject(r)
+            lLouvrePrices.Add(cLouvrePrice)
+        Next
+
+        Return lLouvrePrices
+    End Function
+
+    Private Function convertLouvrePriceRecordToObject(drLouvrePrice As DataRow) As LouvrePrice
+        Dim cLouvrePrice As New LouvrePrice
+
+        With cLouvrePrice
+            .ID = CInt(drLouvrePrice("ID"))
+            .CategoryID = CInt(drLouvrePrice("CategoryID"))
+            .CoatingTypeID = CInt(drLouvrePrice("CoatingTypeID"))
+            .CostPrice = CDec(drLouvrePrice("CostPrice"))
+            .CreationDateTime = CDate(drLouvrePrice("CreationDateTime"))
+            .EffectiveDateTime = CDate(drLouvrePrice("EffectiveDateTime"))
+            .LouvreStyleID = CInt(drLouvrePrice("LouvreStyleID"))
+            .LouvreTypeID = CInt(drLouvrePrice("LouvreTypeID"))
+            .SalePrice = CDec(drLouvrePrice("SalePrice"))
+            .Width = CInt(drLouvrePrice("Width"))
+            .Height = CInt(drLouvrePrice("Height"))
+        End With
+
+        Return cLouvrePrice
+    End Function
+
+    ''' <summary>
+    ''' Adds or Updates a Louvre Price record to the tblLouvrePrices database table. ID of less than 1 is an add, greater than 0 is an update.
+    ''' </summary>
+    ''' <param name="aLouvrePrice">The <see cref="LouvrePrice"/> object to add/update in the database.</param>
+    ''' <param name="cnn">The <see cref="SqlConnection"/> object.</param>
+    ''' <param name="trans">The <see cref="SqlTransaction"/> object.</param>
+    ''' <returns>The ID of the new or updated Louvre Price record in the database.</returns>
+    Function addOrUpdateLouvrePriceRecord(aLouvrePrice As LouvrePrice, Optional cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As Integer
+
+        Dim bolAddOK As Boolean = True
+        Dim intRecordID As Integer = 0
+        Dim cmd As New SqlCommand
+
+        If IsNothing(cnn) Then
+            bolAddOK = False
+            Dim dbConn As New DBConnection
+            cnn = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+            dbConn = Nothing
+        End If
+
+        Try
+            If bolAddOK = False Then
+                cnn.Open()
+            End If
+
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_addOrUpdateLouvrePrice"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            If bolAddOK = True Then
+                cmd.Transaction = trans
+            End If
+
+            setupCommandParameters(aLouvrePrice, cmd, True)
+
+            Dim ra As Integer = cmd.ExecuteNonQuery
+
+            If ra < 1 Then
+                EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - add record failed" & Environment.NewLine)
+                bolAddOK = False
+            Else
+                intRecordID = cmd.Parameters("@ID").Value.ToString()
+            End If
+
+            If bolAddOK = False Then
+                cnn.Close()
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+            bolAddOK = False
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+            If bolAddOK = False Then
+                cnn.Dispose()
+                cnn = Nothing
+            End If
+        End Try
+
+        Return intRecordID
+    End Function
+
+    ''' <summary>
+    ''' Setup the command parameters for the given Louvre Price.
+    ''' </summary>
+    ''' <param name="aLouvrePrice">The <see cref="LouvrePrice"/> to use to configure the command parameters.</param>
+    ''' <param name="cmd">The <see cref="SqlCommand"/> object to configure.</param>
+    Protected Sub setupCommandParameters(aLouvrePrice As LouvrePrice, ByRef cmd As SqlCommand, bIsAdd As Boolean)
+
+        SqlCommandBuilder.DeriveParameters(cmd)
+
+        cmd.Parameters("@ID").Direction = ParameterDirection.InputOutput
+
+        With aLouvrePrice
+            If .ID > 0 Then
+                cmd.Parameters("@ID").Value = .ID
+            Else
+                cmd.Parameters("@ID").Value = DBNull.Value
+            End If
+
+            cmd.Parameters("@CategoryID").Value = .CategoryID
+            cmd.Parameters("@CoatingTypeID").Value = .CoatingTypeID
+            cmd.Parameters("@CostPrice").Value = .CostPrice
+            cmd.Parameters("@CreationDateTime").Value = .CreationDateTime
+            cmd.Parameters("@EffectiveDateTime").Value = .EffectiveDateTime
+            cmd.Parameters("@LouvreStyleID").Value = .LouvreStyleID
+            cmd.Parameters("@LouvreTypeID").Value = .LouvreTypeID
+            cmd.Parameters("@SalePrice").Value = .SalePrice
+            cmd.Parameters("@Height").Value = .Height
+            cmd.Parameters("@Width").Value = .Width
+        End With
+    End Sub
+End Class

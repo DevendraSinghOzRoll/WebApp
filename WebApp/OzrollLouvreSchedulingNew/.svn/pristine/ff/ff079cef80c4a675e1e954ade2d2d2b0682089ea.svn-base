@@ -1,0 +1,86 @@
+﻿Imports Microsoft.VisualBasic
+
+Public Class ExtraProduct
+    Implements ICloneable
+
+    Dim _ExtraProductID As Integer
+    Dim _Description As String
+    Dim _ProductCode As String
+    Dim _UnitOfMeasurement As Integer
+    Dim _SortOrder As Integer
+    Dim _Discontinued As Boolean
+    Dim _PageVisibility As SharedEnums.ExtraProductPageVisibility
+
+    Public Property ExtraProductID As Integer
+        Get
+            Return _ExtraProductID
+        End Get
+        Set(value As Integer)
+            _ExtraProductID = value
+        End Set
+    End Property
+
+    Public Property Description As String
+        Get
+            Return _Description
+        End Get
+        Set(value As String)
+            _Description = value
+        End Set
+    End Property
+
+    Public Property ProductCode As String
+        Get
+            Return _ProductCode
+        End Get
+        Set(value As String)
+            _ProductCode = value
+        End Set
+    End Property
+
+    Public Property UnitOfMeasurement As Integer
+        Get
+            Return _UnitOfMeasurement
+        End Get
+        Set(value As Integer)
+            _UnitOfMeasurement = value
+        End Set
+    End Property
+
+    Public Property SortOrder As Integer
+        Get
+            Return _SortOrder
+        End Get
+        Set(value As Integer)
+            _SortOrder = value
+        End Set
+    End Property
+
+    Public Property Discontinued As Boolean
+        Get
+            Return _Discontinued
+        End Get
+        Set(value As Boolean)
+            _Discontinued = value
+        End Set
+    End Property
+
+    Public Property PageVisibility As SharedEnums.ExtraProductPageVisibility
+        Get
+            Return _PageVisibility
+        End Get
+        Set(value As SharedEnums.ExtraProductPageVisibility)
+            _PageVisibility = value
+        End Set
+    End Property
+
+    Public ReadOnly Property IsVisibleToPage(enumFlag As SharedEnums.ExtraProductPageVisibility) As Boolean
+        Get
+            Return ((_PageVisibility = 0) OrElse ((_PageVisibility.HasFlag(enumFlag))))
+        End Get
+    End Property
+
+    Public Function Clone() As Object Implements ICloneable.Clone
+        Return MyBase.MemberwiseClone()
+    End Function
+End Class

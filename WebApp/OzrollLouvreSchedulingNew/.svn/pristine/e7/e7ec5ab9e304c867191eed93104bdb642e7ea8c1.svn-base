@@ -1,0 +1,215 @@
+﻿Imports Microsoft.VisualBasic
+Imports System.Data.SqlClient
+
+Public Class CustomerDAO
+
+    Function addCustomerRecord(cCustomer As Customer, Optional cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As Integer
+
+        Dim bolAddOK As Boolean = True
+        Dim SaveRecord As Boolean = False
+        If IsNothing(cnn) Then
+            bolAddOK = False
+            Dim dbConn As New DBConnection
+            cnn = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+            dbConn = Nothing
+        End If
+
+        Dim cmd As New SqlCommand
+        Try
+
+            If bolAddOK = False Then
+                cnn.Open()
+            End If
+
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_addCustomer"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            If bolAddOK = True Then
+                cmd.Transaction = trans
+            End If
+
+            setupCommandParameters(cCustomer, cmd)
+            Dim ra As Integer = cmd.ExecuteNonQuery
+            If ra < 1 Then
+                EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - add record failed" & Environment.NewLine)
+                bolAddOK = False
+            Else
+                SaveRecord = True
+            End If
+            If bolAddOK = False Then
+                cnn.Close()
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+            bolAddOK = False
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+            If bolAddOK = False Then
+                cnn.Dispose()
+                cnn = Nothing
+            End If
+        End Try
+        Return SaveRecord
+        ''
+
+    End Function
+
+    Function updateCustomerRecord(cCustomer As Customer, Optional cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As Integer
+
+        Dim bolAddOK As Boolean = True
+        Dim SaveRecord As Boolean = False
+        If IsNothing(cnn) Then
+            bolAddOK = False
+            Dim dbConn As New DBConnection
+            cnn = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+            dbConn = Nothing
+        End If
+
+        Dim cmd As New SqlCommand
+        Try
+
+            If bolAddOK = False Then
+                cnn.Open()
+            End If
+
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_updateCustomers"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            If bolAddOK = True Then
+                cmd.Transaction = trans
+            End If
+
+            setupCommandParameters(cCustomer, cmd)
+            Dim ra As Integer = cmd.ExecuteNonQuery
+            If ra < 1 Then
+                EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - add record failed" & Environment.NewLine)
+                bolAddOK = False
+            Else
+                SaveRecord = True
+            End If
+            If bolAddOK = False Then
+                cnn.Close()
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+            bolAddOK = False
+        Finally
+            cmd.Dispose()
+            cmd = Nothing
+            If bolAddOK = False Then
+                cnn.Dispose()
+                cnn = Nothing
+            End If
+        End Try
+        Return SaveRecord
+    End Function
+
+    Protected Sub setupCommandParameters(cCustomer As Customer, ByRef cmd As SqlCommand)
+
+        SqlCommandBuilder.DeriveParameters(cmd)
+
+        If cCustomer.CustomerID <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@CustomerID").Value = cCustomer.CustomerID
+        Else
+            cmd.Parameters("@CustomerID").Direction = ParameterDirection.Output
+            cmd.Parameters("@CustomerID").Value = DBNull.Value
+        End If
+
+        If cCustomer.CustomerName <> String.Empty Then
+            cmd.Parameters("@CustomerName").Value = cCustomer.CustomerName
+        Else
+            cmd.Parameters("@CustomerName").Value = DBNull.Value
+        End If
+
+        If cCustomer.Discontinued <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@Discontinued").Value = cCustomer.Discontinued
+        Else
+            cmd.Parameters("@Discontinued").Value = DBNull.Value
+        End If
+
+        If cCustomer.ExternalCustomer <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@ExternalCustomer").Value = cCustomer.ExternalCustomer
+        Else
+            cmd.Parameters("@ExternalCustomer").Value = DBNull.Value
+        End If
+
+        If cCustomer.CollectionFromFactory <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@CollectionFromFactory").Value = cCustomer.CollectionFromFactory
+        Else
+            cmd.Parameters("@CollectionFromFactory").Value = DBNull.Value
+        End If
+
+        If cCustomer.FreightPercentage <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@FreightPercentage").Value = cCustomer.FreightPercentage
+        Else
+            cmd.Parameters("@FreightPercentage").Value = DBNull.Value
+        End If
+
+        If cCustomer.CustomerAbbreviation <> String.Empty Then
+            cmd.Parameters("@CustomerAbbreviation").Value = cCustomer.CustomerAbbreviation
+        Else
+            cmd.Parameters("@CustomerAbbreviation").Value = DBNull.Value
+        End If
+
+        If cCustomer.FullCustomerName <> String.Empty Then
+            cmd.Parameters("@FullCustomerName").Value = cCustomer.FullCustomerName
+        Else
+            cmd.Parameters("@FullCustomerName").Value = DBNull.Value
+        End If
+
+        If cCustomer.Plantations <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@Plantations").Value = cCustomer.Plantations
+        Else
+            cmd.Parameters("@Plantations").Value = DBNull.Value
+        End If
+
+        If cCustomer.WholesaleLouvres <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@WholesaleLouvres").Value = cCustomer.WholesaleLouvres
+        Else
+            cmd.Parameters("@WholesaleLouvres").Value = DBNull.Value
+        End If
+
+        If cCustomer.RetailLouvres <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@RetailLouvres").Value = cCustomer.RetailLouvres
+        Else
+            cmd.Parameters("@RetailLouvres").Value = DBNull.Value
+        End If
+
+        If cCustomer.CustomerAddress <> String.Empty Then
+            cmd.Parameters("@CustomerAddress").Value = cCustomer.CustomerAddress
+        Else
+            cmd.Parameters("@CustomerAddress").Value = DBNull.Value
+        End If
+
+        If cCustomer.CustomerPhone1 <> String.Empty Then
+            cmd.Parameters("@CustomerPhone1").Value = cCustomer.CustomerPhone1
+        Else
+            cmd.Parameters("@CustomerPhone1").Value = DBNull.Value
+        End If
+
+        If cCustomer.CustomerPhone2 <> String.Empty Then
+            cmd.Parameters("@CustomerPhone2").Value = cCustomer.CustomerPhone2
+        Else
+            cmd.Parameters("@CustomerPhone2").Value = DBNull.Value
+        End If
+
+        If cCustomer.CustomerPhone3 <> String.Empty Then
+            cmd.Parameters("@CustomerPhone3").Value = cCustomer.CustomerPhone3
+        Else
+            cmd.Parameters("@CustomerPhone3").Value = DBNull.Value
+        End If
+
+        If cCustomer.Discount <> String.Empty Then
+            cmd.Parameters("@Discount").Value = cCustomer.Discount
+        Else
+            cmd.Parameters("@Discount").Value = DBNull.Value
+        End If
+
+    End Sub
+
+End Class

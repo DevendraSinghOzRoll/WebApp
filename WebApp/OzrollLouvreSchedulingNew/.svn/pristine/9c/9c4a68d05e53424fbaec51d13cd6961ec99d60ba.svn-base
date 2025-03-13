@@ -1,0 +1,740 @@
+﻿Imports Microsoft.VisualBasic
+Imports System.Data.SqlClient
+Imports System.Linq
+
+Public Class QuoteDAO
+
+    Public Function GetQuoteDataSetByParameters(Optional intCustomerID As Integer? = Nothing,
+                                                Optional strName As String = Nothing,
+                                                Optional strNumber As String = Nothing,
+                                                Optional enumQuoteType As SharedEnums.QuoteType? = Nothing,
+                                                Optional dteExpiryDateTimeStart As Date? = Nothing,
+                                                Optional dteExpiryDateTimeEnd As Date? = Nothing,
+                                                Optional dteCreationDateTimeStart As Date? = Nothing,
+                                                Optional dteCreationDateTimeEnd As Date? = Nothing) As DataSet
+
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim ds As New DataSet
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_GetQuotesByParameters"
+            cmd.CommandType = CommandType.StoredProcedure
+            SqlCommandBuilder.DeriveParameters(cmd)
+
+            If intCustomerID.HasValue Then
+                cmd.Parameters("@CustomerID").Value = intCustomerID.Value
+            End If
+
+            If strName IsNot Nothing Then
+                cmd.Parameters("@Name").Value = strName
+            End If
+
+            If strNumber IsNot Nothing Then
+                cmd.Parameters("@Number").Value = strNumber
+            End If
+
+            If enumQuoteType.HasValue Then
+                cmd.Parameters("@QuoteType").Value = enumQuoteType.Value
+            End If
+
+            If dteExpiryDateTimeStart.HasValue Then
+                cmd.Parameters("@ExpiryDateTimeStart").Value = dteExpiryDateTimeStart.Value
+            End If
+
+            If dteExpiryDateTimeEnd.HasValue Then
+                cmd.Parameters("@ExpiryDateTimeEnd").Value = dteExpiryDateTimeEnd.Value
+            End If
+
+            If dteCreationDateTimeStart.HasValue Then
+                cmd.Parameters("@CreationDateTimeStart").Value = dteCreationDateTimeStart.Value
+            End If
+
+            If dteCreationDateTimeEnd.HasValue Then
+                cmd.Parameters("@CreationDateTimeEnd").Value = dteCreationDateTimeEnd.Value
+            End If
+
+            adp.SelectCommand = cmd
+            adp.Fill(ds)
+
+            Dim dtQuotes As DataTable = ds.Tables(0)
+
+            dtQuotes.TableName = "tblQuotes"
+
+            If dtQuotes IsNot Nothing Then
+                Dim hsQuoteIDs As New HashSet(Of Integer)
+                Dim dtLouvreTable As DataTable = Nothing
+                Dim dtExtraTable As DataTable = Nothing
+
+                ' Get unique quote IDs
+                For Each quoteRow As DataRow In dtQuotes.Rows
+                    hsQuoteIDs.Add(CInt(quoteRow("ID")))
+                Next quoteRow
+
+                For Each id As Integer In hsQuoteIDs
+                    ' Get QuoteLouvres
+                    cmd.CommandText = "sp_GetQuoteLouvresByParameters"
+                    SqlCommandBuilder.DeriveParameters(cmd)
+                    cmd.Parameters("@QuoteID").Value = id
+                    adp.SelectCommand = cmd
+                    adp.Fill(ds)
+
+                    dtLouvreTable = ds.Tables(1)
+                Next id
+
+                If dtLouvreTable IsNot Nothing Then
+                    dtLouvreTable.TableName = "tblQuoteLouvres"
+
+                    Dim hsQuoteLouvreIDs As New HashSet(Of Integer)
+
+                    ' Get unique quote louvre IDs
+                    For Each quoteLouvreRow As DataRow In dtLouvreTable.Rows
+                        hsQuoteLouvreIDs.Add(CInt(quoteLouvreRow("ID")))
+                    Next quoteLouvreRow
+
+                    For Each id As Integer In hsQuoteLouvreIDs
+                        ' Get QuoteLouvres
+                        cmd.CommandText = "sp_getQuoteExtrasByParameters"
+                        SqlCommandBuilder.DeriveParameters(cmd)
+                        cmd.Parameters("@QuoteLouvreID").Value = id
+                        adp.SelectCommand = cmd
+                        adp.Fill(ds)
+
+                        dtExtraTable = ds.Tables(2)
+                    Next id
+
+                    If dtExtraTable IsNot Nothing Then
+                        ds.Tables(2).TableName = "tblQuoteExtras"
+                    End If
+                End If
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Close()
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+
+        Return ds
+
+    End Function
+
+    Public Function GetQuoteDataSetByID(intID As Integer) As DataSet
+
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim ds As New DataSet
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_getQuoteByID"
+            cmd.CommandType = CommandType.StoredProcedure
+            SqlCommandBuilder.DeriveParameters(cmd)
+
+            cmd.Parameters("@ID").Value = intID
+
+            adp.SelectCommand = cmd
+            adp.Fill(ds)
+
+            Dim dtQuotes As DataTable = ds.Tables(0)
+
+            dtQuotes.TableName = "tblQuotes"
+
+            If dtQuotes IsNot Nothing Then
+                Dim hsQuoteIDs As New HashSet(Of Integer)
+                Dim dtLouvreTable As DataTable = Nothing
+                Dim dtExtraTable As DataTable = Nothing
+
+                ' Get unique quote IDs
+                For Each quoteRow As DataRow In dtQuotes.Rows
+                    hsQuoteIDs.Add(CInt(quoteRow("ID")))
+                Next quoteRow
+
+                For Each id As Integer In hsQuoteIDs
+                    ' Get QuoteLouvres
+                    cmd.CommandText = "sp_GetQuoteLouvresByParameters"
+                    SqlCommandBuilder.DeriveParameters(cmd)
+                    cmd.Parameters("@QuoteID").Value = id
+                    adp.SelectCommand = cmd
+                    adp.Fill(ds)
+
+                    dtLouvreTable = ds.Tables(1)
+                Next id
+
+                If dtLouvreTable IsNot Nothing Then
+                    dtLouvreTable.TableName = "tblQuoteLouvres"
+
+                    Dim hsQuoteLouvreIDs As New HashSet(Of Integer)
+
+                    ' Get unique quote louvre IDs
+                    For Each quoteLouvreRow As DataRow In dtLouvreTable.Rows
+                        hsQuoteLouvreIDs.Add(CInt(quoteLouvreRow("ID")))
+                    Next quoteLouvreRow
+
+                    For Each id As Integer In hsQuoteLouvreIDs
+                        ' Get QuoteLouvres
+                        cmd.CommandText = "sp_getQuoteExtrasByParameters"
+                        SqlCommandBuilder.DeriveParameters(cmd)
+                        cmd.Parameters("@QuoteLouvreID").Value = id
+                        adp.SelectCommand = cmd
+                        adp.Fill(ds)
+
+                        dtExtraTable = ds.Tables(2)
+                    Next id
+
+                    If dtExtraTable IsNot Nothing Then
+                        ds.Tables(2).TableName = "tblQuoteExtras"
+                    End If
+                End If
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Close()
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+
+        Return ds
+
+    End Function
+
+    Public Function GetQuoteDataSetByProductionScheduleID(intProductionScheduleID As Integer) As DataSet
+
+        Dim dbConn As New DBConnection
+        Dim cnn As SqlConnection = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        Dim cmd As New SqlCommand
+        Dim adp As New SqlDataAdapter
+        Dim ds As New DataSet
+        Try
+            cnn.Open()
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_GetQuoteByProductionScheduleID"
+            cmd.CommandType = CommandType.StoredProcedure
+            SqlCommandBuilder.DeriveParameters(cmd)
+
+            cmd.Parameters("@ProductionScheduleID").Value = intProductionScheduleID
+
+            adp.SelectCommand = cmd
+            adp.Fill(ds)
+
+            Dim dtQuotes As DataTable = ds.Tables(0)
+
+            dtQuotes.TableName = "tblQuotes"
+
+            If dtQuotes IsNot Nothing Then
+                Dim hsQuoteIDs As New HashSet(Of Integer)
+                Dim dtLouvreTable As DataTable = Nothing
+                Dim dtExtraTable As DataTable = Nothing
+
+                ' Get unique quote IDs
+                For Each quoteRow As DataRow In dtQuotes.Rows
+                    hsQuoteIDs.Add(CInt(quoteRow("ID")))
+                Next quoteRow
+
+                For Each id As Integer In hsQuoteIDs
+                    ' Get QuoteLouvres
+                    cmd.CommandText = "sp_GetQuoteLouvresByParameters"
+                    SqlCommandBuilder.DeriveParameters(cmd)
+                    cmd.Parameters("@QuoteID").Value = id
+                    adp.SelectCommand = cmd
+                    adp.Fill(ds)
+
+                    dtLouvreTable = ds.Tables(1)
+                Next id
+
+                If dtLouvreTable IsNot Nothing Then
+                    dtLouvreTable.TableName = "tblQuoteLouvres"
+
+                    Dim hsQuoteLouvreIDs As New HashSet(Of Integer)
+
+                    ' Get unique quote louvre IDs
+                    For Each quoteLouvreRow As DataRow In dtLouvreTable.Rows
+                        hsQuoteLouvreIDs.Add(CInt(quoteLouvreRow("ID")))
+                    Next quoteLouvreRow
+
+                    For Each id As Integer In hsQuoteLouvreIDs
+                        ' Get QuoteLouvres
+                        cmd.CommandText = "sp_getQuoteExtrasByParameters"
+                        SqlCommandBuilder.DeriveParameters(cmd)
+                        cmd.Parameters("@QuoteLouvreID").Value = id
+                        adp.SelectCommand = cmd
+                        adp.Fill(ds)
+
+                        dtExtraTable = ds.Tables(2)
+                    Next id
+
+                    If dtExtraTable IsNot Nothing Then
+                        ds.Tables(2).TableName = "tblQuoteExtras"
+                    End If
+                End If
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+        Finally
+            adp.Dispose()
+            adp = Nothing
+            cmd.Dispose()
+            cmd = Nothing
+            cnn.Close()
+            cnn.Dispose()
+            cnn = Nothing
+        End Try
+
+        Return ds
+
+    End Function
+
+    Public Function GetQuoteByID(intID As Integer) As Quote
+        Dim dsQuotes As DataSet = GetQuoteDataSetByID(intID)
+        Dim cQuote As Quote = QuoteDataSetToQuoteObjects(dsQuotes).FirstOrDefault
+
+        Return cQuote
+    End Function
+
+    Public Function GetQuotesByParameters(Optional intCustomerID As Integer? = Nothing,
+                                          Optional strName As String = Nothing,
+                                          Optional strNumber As String = Nothing,
+                                          Optional enumQuoteType As SharedEnums.QuoteType? = Nothing,
+                                          Optional dteExpiryDateTimeStart As Date? = Nothing,
+                                          Optional dteExpiryDateTimeEnd As Date? = Nothing,
+                                          Optional dteCreationDateTimeStart As Date? = Nothing,
+                                          Optional dteCreationDateTimeEnd As Date? = Nothing) As List(Of Quote)
+
+        Dim dsQuotes As DataSet = GetQuoteDataSetByParameters(intCustomerID,
+                                                              strName,
+                                                              strNumber,
+                                                              enumQuoteType,
+                                                              dteExpiryDateTimeStart,
+                                                              dteExpiryDateTimeEnd,
+                                                              dteCreationDateTimeStart,
+                                                              dteCreationDateTimeEnd)
+
+        Dim lQuotes As List(Of Quote) = QuoteDataSetToQuoteObjects(dsQuotes)
+
+        Return lQuotes
+    End Function
+
+    Public Function GetQuoteByProductionScheduleID(intProductionScheduleID As Integer) As Quote
+        Dim dsQuotes As DataSet = GetQuoteDataSetByProductionScheduleID(intProductionScheduleID)
+        Dim cQuote As Quote = QuoteDataSetToQuoteObjects(dsQuotes).FirstOrDefault
+
+        If cQuote IsNot Nothing Then
+            Return cQuote
+        Else
+            Return New Quote
+        End If
+    End Function
+
+    ''' <summary>
+    ''' Converts the given <see cref="DataSet"/> into <see cref="Quote"/> objects.
+    ''' </summary>
+    ''' <param name="dsQuotes">The <see cref="Dataset"/> to convert.</param>
+    ''' <returns>A <see cref="List(Of Quote)"/> of all the quotes in the given dataset.</returns>
+    Private Function QuoteDataSetToQuoteObjects(dsQuotes As DataSet) As List(Of Quote)
+        Dim lQuotes As New List(Of Quote)
+        Dim quoteIDtoQuote As New Dictionary(Of Integer, Quote)
+        Dim quoteLouvreIDtoQuoteLouvre As New Dictionary(Of Integer, QuoteLouvre)
+        Dim dtQuotes As DataTable = dsQuotes.Tables.Item("tblQuotes")
+
+        For Each quoteRow As DataRow In dtQuotes.Rows
+            Dim cQuote As New Quote
+
+            With cQuote
+                .ID = CInt(quoteRow("ID"))
+                .AddressZoneID = CInt(quoteRow("AddressZoneID"))
+                .AddressZoneName = quoteRow("AddressZoneName").ToString()
+                .CreationDateTime(False) = CDate(quoteRow("CreationDateTime"))
+                .CustomerID = CInt(quoteRow("CustomerID"))
+                .ExpiryDateTime = CDate(quoteRow("ExpiryDateTime"))
+                .GSTPercent = CDec(quoteRow("GSTPercent"))
+                .ShippingPrice = CDec(quoteRow("ShippingPrice"))
+                .QuoteType = CInt(quoteRow("QuoteType"))
+                .ProductionScheduleID = CInt(quoteRow("ProductionScheduleID"))
+                .Name = quoteRow("Name")
+                .Number = quoteRow("Number")
+                .Notes = quoteRow("Notes")
+                .DeliveryAddressName = quoteRow("DeliveryAddressName")
+                .DeliveryAddressID = quoteRow("DeliveryAddressID")
+            End With
+
+            ' Map each quoteID to its object for fast lookup.
+            quoteIDtoQuote.Add(cQuote.ID, cQuote)
+
+            ' Add the quote to the list to be returned.
+            lQuotes.Add(cQuote)
+        Next quoteRow
+
+        ' Populate the QuoteLouvres for each quote.
+        Dim dtQuoteLouvres As DataTable = dsQuotes.Tables.Item("tblQuoteLouvres")
+
+        If dtQuoteLouvres IsNot Nothing Then
+            For Each louvreRow As DataRow In dtQuoteLouvres.Rows
+                Dim quoteID As Integer = CInt(louvreRow("QuoteID"))
+
+                ' Get the quote that this louvre goes with.
+                Dim cQuote As Quote = Nothing
+
+                If quoteIDtoQuote.TryGetValue(quoteID, cQuote) Then
+
+                    If cQuote IsNot Nothing Then
+                        Dim cQuoteLouvre As New QuoteLouvre
+
+                        With cQuoteLouvre
+                            .ID = CInt(louvreRow("ID"))
+                            .CategoryID = CInt(louvreRow("CategoryID"))
+                            .CoatingTypeID = CInt(louvreRow("CoatingTypeID"))
+                            .CoatingTypeName = louvreRow("CoatingTypeName").ToString()
+                            .CostPricePerUnit = CDec(louvreRow("CostPricePerUnit"))
+                            .CreationDateTime = CDate(louvreRow("CreationDateTime"))
+                            .LouvrePriceID = CInt(louvreRow("LouvrePriceID"))
+                            .LouvreStyleID = CInt(louvreRow("LouvreStyleID"))
+                            .LouvreStyleName = louvreRow("LouvreStyleName").ToString()
+                            .LouvreTypeID = CInt(louvreRow("LouvreTypeID"))
+                            .LouvreTypeName = louvreRow("LouvreTypeName").ToString()
+                            .QuoteID = quoteID
+                            .SalePricePerUnit = CDec(louvreRow("SalePricePerUnit"))
+                            .Width = CInt(louvreRow("Width"))
+                            .Height = CInt(louvreRow("Height"))
+                            .NumberOfPanels = CInt(louvreRow("NumberOfPanels"))
+                        End With
+
+                        ' Map each quoteLouvreID to its object for fast lookup.
+                        quoteLouvreIDtoQuoteLouvre.Add(cQuoteLouvre.ID, cQuoteLouvre)
+
+                        ' Add the louvre to the quote
+                        cQuote.QuoteLouvres.Add(cQuoteLouvre)
+                    End If
+                End If
+            Next louvreRow
+        End If
+
+        ' Populate the QuoteExtras for each QuoteLouvre.
+        Dim dtQuoteExtras As DataTable = dsQuotes.Tables.Item("tblQuoteExtras")
+
+        If dtQuoteExtras IsNot Nothing Then
+            For Each extraRow As DataRow In dtQuoteExtras.Rows
+                Dim intQuoteLouvreID As Integer = CInt(extraRow("QuoteLouvreID"))
+
+                ' Get the quote louvre that this extra goes with.
+                Dim cQuoteLouvre As QuoteLouvre = Nothing
+
+                If quoteLouvreIDtoQuoteLouvre.TryGetValue(intQuoteLouvreID, cQuoteLouvre) Then
+
+                    If cQuoteLouvre IsNot Nothing Then
+                        Dim cQuoteExtra As New QuoteExtra
+
+                        With cQuoteExtra
+                            .ID = CInt(extraRow("ID"))
+                            .CreationDateTime = CDate(extraRow("CreationDateTime"))
+                            .ExtraName = extraRow("ExtraName").ToString()
+                            .LouvreExtraPriceID = CInt(extraRow("LouvreExtraPriceID"))
+                            .PriceIsPercentage = CBool(extraRow("PriceIsPercentage"))
+                            .PricePerUnit = CDec(extraRow("PricePerUnit"))
+                            .QuoteLouvreID = intQuoteLouvreID
+                            .UnitDescriptionID = CInt(extraRow("UnitDescriptionID"))
+                            .UnitSize = CInt(extraRow("UnitSize"))
+                            .UnitsQuoted = CDec(extraRow("UnitsQuoted"))
+                            .CategoryID = CInt(extraRow("CategoryID"))
+                            .ExtraProductID = CInt(extraRow("ExtraProductID"))
+                        End With
+
+                        ' Add the extra to the quote louvre
+                        cQuoteLouvre.QuoteExtras.Add(cQuoteExtra)
+                    End If
+                End If
+            Next extraRow
+        End If
+
+        Return lQuotes
+    End Function
+
+    ''' <summary>
+    ''' Adds a new Quote to the database. Will write all child collections to the DB as well.
+    ''' </summary>
+    ''' <param name="cQuote">The <see cref="Quote"/> to add.</param>
+    ''' <param name="cnn">The <see cref="SqlConnection"/> to use.</param>
+    ''' <param name="trans">The <see cref="SqlTransaction"/> to use.</param>
+    ''' <returns>The ID of the new Quote record.</returns>
+    Public Function AddOrUpdateQuoteRecord(
+            cQuote As Quote,
+            Optional cnn As SqlConnection = Nothing,
+            Optional ByRef trans As SqlTransaction = Nothing
+        ) As Integer
+
+        Dim bolAddOK As Boolean = True
+        Dim cmd As New SqlCommand
+        Dim intRecordID As Integer = 0
+        Dim boolInternalTransaction As Boolean = False
+        Dim isNewConnection As Boolean = False
+
+        Try
+            If cnn Is Nothing Then
+                Dim dbConn As New DBConnection
+
+                cnn = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+                dbConn = Nothing
+            End If
+
+            If cnn.State = ConnectionState.Closed Then
+                cnn.Open()
+                isNewConnection = True
+            End If
+
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_addOrUpdateQuote"
+            cmd.CommandType = CommandType.StoredProcedure
+
+            ' As this function requires a transaction, if we are not given one we must create one as use it in this scope only.
+            If trans Is Nothing Then
+                boolInternalTransaction = True
+                trans = cnn.BeginTransaction
+            End If
+
+            cmd.Transaction = trans
+
+            ' Quote parent object
+            SetupQuoteCommandParameters(cQuote, cmd)
+            Dim ra As Integer = cmd.ExecuteNonQuery
+
+            If ra < 1 Then
+                bolAddOK = False
+            Else
+                ' Return the quote record ID
+                intRecordID = cmd.Parameters("@ID").Value.ToString()
+            End If
+
+            If ra < 1 Then
+                bolAddOK = False
+            End If
+
+            ' Quote Louvre objects
+            For Each l As QuoteLouvre In cQuote.QuoteLouvres
+                If bolAddOK Then
+
+                    ' Set ID of parent quote
+                    l.QuoteID = intRecordID
+
+                    cmd.CommandText = "sp_addOrUpdateQuoteLouvre"
+
+                    ' Quote parent object
+                    SetupQuoteLouvreCommandParameters(l, cmd)
+                    ra = cmd.ExecuteNonQuery
+
+                    Dim intLouvreID As Integer = 0
+
+                    If ra < 1 Then
+                        bolAddOK = False
+                        Exit For
+                    Else
+                        ' Return the quote record ID
+                        intLouvreID = cmd.Parameters("@ID").Value.ToString()
+                    End If
+
+                    ' Quote Extra objects
+                    For Each e As QuoteExtra In l.QuoteExtras
+                        If bolAddOK Then
+
+                            ' Set ID of parent louvre
+                            e.QuoteLouvreID = intLouvreID
+
+                            cmd.CommandText = "sp_addOrUpdateQuoteExtra"
+
+                            ' Quote parent object
+                            SetupQuoteExtraCommandParameters(e, cmd)
+                            ra = cmd.ExecuteNonQuery
+                        End If
+
+                        If ra < 1 Then
+                            bolAddOK = False
+                            Exit For
+                        End If
+                    Next e
+                End If
+            Next l
+
+            If bolAddOK Then
+                If boolInternalTransaction Then
+                    trans.Commit()
+                End If
+
+                If isNewConnection Then
+                    cnn.Close()
+                End If
+            Else
+                EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - add record failed" & Environment.NewLine)
+                bolAddOK = False
+                intRecordID = 0
+
+                If boolInternalTransaction Then
+                    trans.Rollback()
+                End If
+
+                cnn.Close()
+            End If
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+            bolAddOK = False
+            intRecordID = 0
+
+            If boolInternalTransaction Then
+                trans.Rollback()
+            End If
+
+        Finally
+            If boolInternalTransaction Then
+                trans.Dispose()
+            End If
+
+            cmd.Dispose()
+            cmd = Nothing
+
+            If Not bolAddOK Then
+                cnn.Dispose()
+                cnn = Nothing
+            End If
+        End Try
+
+        Return intRecordID
+    End Function
+
+    ''' <summary>
+    ''' Deletes all Quote records from the tblQuote database table for the given LouvreDetailsID. Also removes all child records from
+    ''' tblQuoteLouvre and tblQuoteExtras.
+    ''' </summary>
+    ''' <param name="cQuote">The LouvreDetailsID to remove all LouvreExtraProduct records from the database.</param>
+    ''' <param name="cnn">The <see cref="SqlConnection"/> object.</param>
+    ''' <param name="trans">The <see cref="SqlTransaction"/> object.</param>
+    ''' <returns>The number of removed records.</returns>
+    Public Function DeleteQuoteRecord(cQuote As Quote, Optional cnn As SqlConnection = Nothing, Optional ByRef trans As SqlTransaction = Nothing) As Integer
+        Dim boolNewCnn As Boolean = False
+        Dim intNumRowsDeleted As Integer = 0
+        Dim cmd As New SqlCommand
+
+        If IsNothing(cnn) Then
+            Dim dbConn As New DBConnection
+
+            boolNewCnn = True
+            cnn = dbConn.getSQLConnection_To_OzRollPlantationScheduling
+        End If
+
+        Try
+            If cnn.State = ConnectionState.Closed Then
+                cnn.Open()
+            End If
+
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_deleteQuoteByID"
+            cmd.CommandType = CommandType.StoredProcedure
+            cmd.Transaction = trans
+
+            cmd.Parameters.Add("@ID", SqlDbType.Int)
+            cmd.Parameters("@ID").Value = cQuote.ID
+
+            intNumRowsDeleted = cmd.ExecuteNonQuery
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+        Finally
+            cmd.Dispose()
+
+            If boolNewCnn Then
+                cnn.Dispose()
+            End If
+        End Try
+
+        Return intNumRowsDeleted
+    End Function
+
+    Private Sub SetupQuoteCommandParameters(cQuote As Quote, ByRef cmd As SqlCommand)
+
+        SqlCommandBuilder.DeriveParameters(cmd)
+
+        ' Quote
+        cmd.Parameters("@ID").Direction = ParameterDirection.InputOutput
+        cmd.Parameters("@ID").Value = cQuote.ID
+
+        cmd.Parameters("@CustomerID").Value = cQuote.CustomerID
+        cmd.Parameters("@AddressZoneID").Value = cQuote.AddressZoneID
+        cmd.Parameters("@AddressZoneName").Value = cQuote.AddressZoneName
+        cmd.Parameters("@CreationDateTime").Value = cQuote.CreationDateTime
+        cmd.Parameters("@ExpiryDateTime").Value = cQuote.ExpiryDateTime
+        cmd.Parameters("@GSTPercent").Value = cQuote.GSTPercent
+        cmd.Parameters("@ShippingPrice").Value = cQuote.ShippingPrice
+        cmd.Parameters("@QuoteType").Value = cQuote.QuoteType
+        cmd.Parameters("@ProductionScheduleID").Value = cQuote.ProductionScheduleID
+        cmd.Parameters("@AddressZoneName").Value = cQuote.AddressZoneName
+        cmd.Parameters("@Name").Value = cQuote.Name
+        cmd.Parameters("@Number").Value = cQuote.Number
+        cmd.Parameters("@Notes").Value = cQuote.Notes
+        cmd.Parameters("@DeliveryAddressID").Value = cQuote.DeliveryAddressID
+        cmd.Parameters("@DeliveryAddressName").Value = cQuote.DeliveryAddressName
+    End Sub
+
+    Private Sub SetupQuoteLouvreCommandParameters(cQuoteLouvre As QuoteLouvre, ByRef cmd As SqlCommand)
+
+        SqlCommandBuilder.DeriveParameters(cmd)
+
+        With cQuoteLouvre
+            cmd.Parameters("@ID").Direction = ParameterDirection.InputOutput
+            cmd.Parameters("@ID").Value = .ID
+
+            cmd.Parameters("@CategoryID").Value = .CategoryID
+            cmd.Parameters("@CoatingTypeID").Value = .CoatingTypeID
+            cmd.Parameters("@CoatingTypeName").Value = .CoatingTypeName
+            cmd.Parameters("@CostPricePerUnit").Value = .CostPricePerUnit
+            cmd.Parameters("@CreationDateTime").Value = .CreationDateTime
+            cmd.Parameters("@LouvrePriceID").Value = .LouvrePriceID
+            cmd.Parameters("@LouvreStyleID").Value = .LouvreStyleID
+            cmd.Parameters("@LouvreStyleName").Value = .LouvreStyleName
+            cmd.Parameters("@LouvreTypeID").Value = .LouvreTypeID
+            cmd.Parameters("@LouvreTypeName").Value = .LouvreTypeName
+            cmd.Parameters("@QuoteID").Value = .QuoteID
+            cmd.Parameters("@SalePricePerUnit").Value = .SalePricePerUnit
+            cmd.Parameters("@NumberOfPanels").Value = .NumberOfPanels
+            cmd.Parameters("@Width").Value = .Width
+            cmd.Parameters("@Height").Value = .Height
+        End With
+    End Sub
+
+    Private Sub SetupQuoteExtraCommandParameters(cQuoteExtra As QuoteExtra, ByRef cmd As SqlCommand)
+
+        SqlCommandBuilder.DeriveParameters(cmd)
+
+        With cQuoteExtra
+            cmd.Parameters("@ID").Direction = ParameterDirection.InputOutput
+            cmd.Parameters("@ID").Value = .ID
+
+            cmd.Parameters("@CreationDateTime").Value = .CreationDateTime
+            cmd.Parameters("@ExtraName").Value = .ExtraName
+            cmd.Parameters("@LouvreExtraPriceID").Value = .LouvreExtraPriceID
+            cmd.Parameters("@PriceIsPercentage").Value = .PriceIsPercentage
+            cmd.Parameters("@PricePerUnit").Value = .PricePerUnit
+            cmd.Parameters("@QuoteLouvreID").Value = .QuoteLouvreID
+            cmd.Parameters("@UnitDescriptionID").Value = .UnitDescriptionID
+            cmd.Parameters("@UnitSize").Value = .UnitSize
+            cmd.Parameters("@UnitsQuoted").Value = .UnitsQuoted
+            cmd.Parameters("@CategoryID").Value = .CategoryID
+            cmd.Parameters("@ExtraProductID").Value = .ExtraProductID
+        End With
+    End Sub
+
+End Class

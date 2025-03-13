@@ -1,0 +1,96 @@
+﻿Imports Microsoft.VisualBasic
+
+Public Class PlantationGRAPhotos
+
+    Implements ICloneable
+
+    Private _ID As Integer
+    Private _PlantationGRAID As Integer
+    Private _PhotoFileName As String
+    Private _Description As String
+    Private _UploadedDateTime As Date
+    Private _Deleted As Integer
+    Private _DeletedDateTime As Date
+
+    Property ID() As Integer
+        Get
+            Return _ID
+        End Get
+        Set(ByVal value As Integer)
+            _ID = value
+        End Set
+    End Property
+
+    Property PlantationGRAID() As Integer
+        Get
+            Return _PlantationGRAID        
+        End Get
+        Set(ByVal value As Integer)
+            _PlantationGRAID = value
+        End Set
+    End Property
+
+    Property PhotoFileName() As String
+        Get
+            Return _PhotoFileName
+        End Get
+        Set(ByVal value As String)
+            _PhotoFileName = value
+        End Set
+    End Property
+
+    Property Description() As String
+        Get
+            Return _Description
+        End Get
+        Set(ByVal value As String)
+            _Description = value
+        End Set
+    End Property
+
+    Property UploadedDateTime() As Date
+        Get
+            Return _UploadedDateTime
+        End Get
+        Set(ByVal value As Date)
+            _UploadedDateTime = value
+        End Set
+    End Property
+
+    Property Deleted() As Integer
+        Get
+            Return _Deleted
+        End Get
+        Set(ByVal value As Integer)
+            _Deleted = value
+        End Set
+    End Property
+
+    Property DeletedDateTime() As Date
+        Get
+            Return _DeletedDateTime
+        End Get
+        Set(ByVal value As Date)
+            _DeletedDateTime = value
+        End Set
+    End Property
+
+    Public Sub New()
+
+        _ID = Constants.DEFAULT_INTEGER_VALUE
+        _PlantationGRAID = Constants.DEFAULT_INTEGER_VALUE
+        _PhotoFileName = String.Empty
+        _Description = String.Empty
+        _UploadedDateTime = Constants.DEFAULT_DATE_VALUE
+        _Deleted = Constants.DEFAULT_INTEGER_VALUE
+        _DeletedDateTime = Constants.DEFAULT_DATE_VALUE
+
+    End Sub
+
+    Public Function Clone() As Object Implements System.ICloneable.Clone
+
+        Return MyBase.MemberwiseClone
+
+    End Function
+
+End Class

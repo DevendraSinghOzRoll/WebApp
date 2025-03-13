@@ -1,0 +1,91 @@
+﻿Imports System.Data.SqlClient
+
+Public Class LouvreExtraProductDAO
+
+    Function addLouvreExtraProductRecord(cLouvreExtra As LouvreExtraProduct, cnn As SqlConnection, ByRef trans As SqlTransaction) As Boolean
+
+        Dim cmd As New SqlCommand
+
+        Try
+            cmd.Connection = cnn
+            cmd.CommandText = "sp_addLouvreExtraProduct"
+            cmd.CommandType = CommandType.StoredProcedure
+            cmd.Transaction = trans
+
+            setupCommandParameters(cLouvreExtra, cmd)
+
+            cmd.ExecuteNonQuery()
+
+            Return True
+
+        Catch ex As Exception
+            EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message & Environment.NewLine)
+            Return False
+        Finally
+
+        End Try
+
+
+    End Function
+
+    Private Sub setupCommandParameters(cLouvreExtra As LouvreExtraProduct, ByRef cmd As SqlCommand)
+
+        SqlCommandBuilder.DeriveParameters(cmd)
+
+        'cmd.Parameters("@ID").Value = 1
+        cmd.Parameters("@ID").Direction = ParameterDirection.Output
+
+        If cLouvreExtra.LouvreDetailsID <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@LouvreDetailsID").Value = cLouvreExtra.LouvreDetailsID
+        Else
+            cmd.Parameters("@LouvreDetailsID").Value = DBNull.Value
+        End If
+
+        If cLouvreExtra.ExtraProductID <> Constants.DEFAULT_INTEGER_VALUE Then
+            cmd.Parameters("@ExtraProductID").Value = cLouvreExtra.ExtraProductID
+        Else
+            cmd.Parameters("@ExtraProductID").Value = DBNull.Value
+        End If
+
+        If cLouvreExtra.Quantity <> Constants.DEFAULT_DECIMAL_VALUE Then
+            cmd.Parameters("@Quantity").Value = cLouvreExtra.Quantity
+        Else
+            cmd.Parameters("@Quantity").Value = DBNull.Value
+        End If
+
+        If cLouvreExtra.CutLength <> Constants.DEFAULT_DECIMAL_VALUE Then
+            cmd.Parameters("@CutLength").Value = cLouvreExtra.CutLength
+        Else
+            cmd.Parameters("@CutLength").Value = DBNull.Value
+        End If
+
+        If cLouvreExtra.CostPrice <> Constants.DEFAULT_DECIMAL_VALUE Then
+            cmd.Parameters("@CostPrice").Value = cLouvreExtra.CostPrice
+        Else
+            cmd.Parameters("@CostPrice").Value = DBNull.Value
+        End If
+
+        If cLouvreExtra.CostPriceGST <> Constants.DEFAULT_DECIMAL_VALUE Then
+            cmd.Parameters("@CostPriceGST").Value = cLouvreExtra.CostPriceGST
+        Else
+            cmd.Parameters("@CostPriceGST").Value = DBNull.Value
+        End If
+
+        If cLouvreExtra.SalePrice <> Constants.DEFAULT_DECIMAL_VALUE Then
+            cmd.Parameters("@SalePrice").Value = cLouvreExtra.SalePrice
+        Else
+            cmd.Parameters("@SalePrice").Value = DBNull.Value
+        End If
+
+        If cLouvreExtra.SalePriceGST <> Constants.DEFAULT_DECIMAL_VALUE Then
+            cmd.Parameters("@SalePriceGST").Value = cLouvreExtra.SalePriceGST
+        Else
+            cmd.Parameters("@SalePriceGST").Value = DBNull.Value
+        End If
+
+
+    End Sub
+
+
+
+End Class

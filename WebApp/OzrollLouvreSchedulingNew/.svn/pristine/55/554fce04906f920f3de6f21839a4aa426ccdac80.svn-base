@@ -1,0 +1,120 @@
+﻿Imports Microsoft.VisualBasic
+
+Public Class LouvreExtraPrice
+    Implements ICloneable
+
+    Private _ID As Integer
+    Private _ExtraProductID As Integer
+    Private _UnitPrice As Decimal
+    Private _PriceIsPercentage As Boolean
+    Private _UnitSize As Integer
+    Private _MinimumCharge As Decimal
+    Private _UnitDescriptionID As String
+    Private _Discontinued As Boolean
+    Private _CreationDateTime As Date
+    Private _CategoryID As Integer
+    Private _EffectiveDateTime As Date
+
+    Public Property ID As Integer
+        Get
+            Return _ID
+        End Get
+        Set(value As Integer)
+            _ID = value
+        End Set
+    End Property
+
+    Public Property UnitPrice As Decimal
+        Get
+            Return _UnitPrice
+        End Get
+        Set(value As Decimal)
+            _UnitPrice = value
+        End Set
+    End Property
+
+    Public Property PriceIsPercentage As Boolean
+        Get
+            Return _PriceIsPercentage
+        End Get
+        Set(value As Boolean)
+            _PriceIsPercentage = value
+        End Set
+    End Property
+
+    Public Property UnitSize As Integer
+        Get
+            Return _UnitSize
+        End Get
+        Set(value As Integer)
+            _UnitSize = value
+        End Set
+    End Property
+
+    Public Property MinimumCharge As Decimal
+        Get
+            Return _MinimumCharge
+        End Get
+        Set(value As Decimal)
+            _MinimumCharge = value
+        End Set
+    End Property
+
+    Public Property UnitDescriptionID As String
+        Get
+            Return _UnitDescriptionID
+        End Get
+        Set(value As String)
+            _UnitDescriptionID = value
+        End Set
+    End Property
+
+    Public Property Discontinued As Boolean
+        Get
+            Return _Discontinued
+        End Get
+        Set(value As Boolean)
+            _Discontinued = value
+        End Set
+    End Property
+
+    Public Property CreationDateTime As Date
+        Get
+            Return _CreationDateTime
+        End Get
+        Set(value As Date)
+            _CreationDateTime = value
+        End Set
+    End Property
+
+    Public Property CategoryID As Integer
+        Get
+            Return _CategoryID
+        End Get
+        Set(value As Integer)
+            _CategoryID = value
+        End Set
+    End Property
+
+    Public Property EffectiveDateTime As Date
+        Get
+            Return _EffectiveDateTime
+        End Get
+        Set(value As Date)
+            _EffectiveDateTime = value
+        End Set
+    End Property
+
+    Public Property ExtraProductID As Integer
+        Get
+            Return _ExtraProductID
+        End Get
+        Set(value As Integer)
+            _ExtraProductID = value
+        End Set
+    End Property
+
+    Public Function Clone() As Object Implements ICloneable.Clone
+        Return MyBase.MemberwiseClone
+    End Function
+End Class

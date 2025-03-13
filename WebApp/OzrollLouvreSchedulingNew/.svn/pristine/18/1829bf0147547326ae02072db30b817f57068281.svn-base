@@ -1,0 +1,543 @@
+﻿
+Partial Class Home
+    Inherits System.Web.UI.Page
+
+    Protected Sub Page_Load(sender As Object, e As System.EventArgs) Handles Me.Load
+
+        If Not IsPostBack Then
+
+            If Session("sessUserID") = String.Empty Then
+                Response.Redirect("Logout.aspx", False)
+                Exit Sub
+            Else
+                If Not IsNumeric(Session("sessUserID")) Then
+                    Response.Redirect("Logout.aspx", False)
+                    Exit Sub
+                End If
+            End If
+
+            Me.txtProductTypeID.Text = Session("sessProductTypeID").ToString
+
+            Dim service As New AppService
+
+            service.addWebsitePageAccess("Ozroll Plantation Scheduling", CInt(Session("sessUserID")), Session("sessUserName").ToString, System.IO.Path.GetFileName(Request.PhysicalPath), Request.QueryString.ToString(), Now)
+
+            If Session("sessUserName").ToString = "tbayley" Then
+                '    Me.btnDeliveryDocket.Visible = True
+                '    Me.btnRunningSheet.Visible = True
+                '    Me.btnTimeSheet.Visible = True
+                '    Me.btnCoverSheet.Visible = True
+                'Me.btnCustomers.Visible = True
+            End If
+
+            'data to show in each section
+            '-# jobs
+            '-# of panels
+            '-total sqm
+            '-$value (cost price sum)??
+
+            'section 1
+            '-------
+            'scheduled for today
+            'scheduled for tomorrow
+            '   if today is friday, show tomorrow as saturday and then add monday after that
+            '   if today is saturday, show today as saturday and then tomorrow as monday
+            Dim intWeekDay As Integer = Weekday(DateTime.Today.Date)
+
+                Dim dteToday As Date = DateTime.Today.Date
+                Dim dteTomorrow As Date = DateAdd(DateInterval.Day, 1, dteToday)
+                Dim dteNextDay As Date = Constants.DEFAULT_DATE_VALUE
+
+                Select Case intWeekDay
+                    Case 6
+                        'on friday, set next day to monday
+                        dteNextDay = DateAdd(DateInterval.Day, 3, dteToday)
+                    Case 7
+                        'on saturday, set tomorrow to monday
+                        dteTomorrow = DateAdd(DateInterval.Day, 2, dteToday)
+                    Case Else
+
+                End Select
+
+                Dim dtScheduleToday As DataTable = service.getDailyProductionSchedule(dteToday, CInt(Me.txtProductTypeID.Text))
+                Dim dtScheduleTomorrow As DataTable = service.getDailyProductionSchedule(dteTomorrow, CInt(Me.txtProductTypeID.Text))
+                Dim dtScheduleNextDay As DataTable = New DataTable
+
+                If dteNextDay <> Constants.DEFAULT_DATE_VALUE Then
+                    dtScheduleNextDay = service.getDailyProductionSchedule(dteNextDay, CInt(Me.txtProductTypeID.Text))
+                End If
+
+                Dim decNoPanels As Decimal = SharedFunctions.performDatatableSelectSum(dtScheduleToday, "TotalPanels", "")
+                Dim decTotalSQM As Decimal = SharedFunctions.performDatatableSelectSum(dtScheduleToday, "TotalSQM", "")
+
+                Me.lblScheduleTodayHeading.Text = "Scheduled for " & Format(dteToday, "ddd, d MMM yyyy")
+                Me.lblScheduleToday.Text = "<b>No of Jobs: </b>" & dtScheduleToday.Rows.Count.ToString & "<br />"
+                Me.lblScheduleToday.Text &= "<b>No of Panels: </b>" & decNoPanels.ToString & "<br />"
+                Me.lblScheduleToday.Text &= "<b>Total SQM: </b>" & decTotalSQM.ToString("#.0")
+
+
+                decNoPanels = SharedFunctions.performDatatableSelectSum(dtScheduleTomorrow, "TotalPanels", "")
+                decTotalSQM = SharedFunctions.performDatatableSelectSum(dtScheduleTomorrow, "TotalSQM", "")
+
+                Me.lblScheduleTomorrowHeading.Text = "Scheduled for " & Format(dteTomorrow, "ddd, d MMM yyyy")
+                Me.lblScheduleTomorrow.Text = "<b>No of Jobs: </b>" & dtScheduleTomorrow.Rows.Count.ToString & "<br />"
+                Me.lblScheduleTomorrow.Text &= "<b>No of Panels: </b>" & decNoPanels.ToString & "<br />"
+                Me.lblScheduleTomorrow.Text &= "<b>Total SQM: </b>" & decTotalSQM.ToString("#.0")
+
+                If dtScheduleNextDay.Columns.Count > 0 Then
+                    Me.pnlNextDay.Visible = True
+
+                    decNoPanels = SharedFunctions.performDatatableSelectSum(dtScheduleNextDay, "TotalPanels", "")
+                    decTotalSQM = SharedFunctions.performDatatableSelectSum(dtScheduleNextDay, "TotalSQM", "")
+
+                    Me.lblScheduleNextDayHeading.Text = "Scheduled for " & Format(dteNextDay, "ddd, d MMM yyyy")
+                    Me.lblScheduleNextDay.Text = "<b>No of Jobs: </b>" & dtScheduleNextDay.Rows.Count.ToString & "<br />"
+                    Me.lblScheduleNextDay.Text &= "<b>No of Panels: </b>" & decNoPanels.ToString & "<br />"
+                    Me.lblScheduleNextDay.Text &= "<b>Total SQM: </b>" & decTotalSQM.ToString("#.0")
+                Else
+                    Me.pnlNextDay.Visible = False
+                    Me.lblScheduleNextDayHeading.Text = String.Empty
+                    Me.lblScheduleNextDay.Text = String.Empty
+                End If
+
+                dtScheduleToday.Dispose()
+                dtScheduleToday = Nothing
+                dtScheduleTomorrow.Dispose()
+                dtScheduleTomorrow = Nothing
+                dtScheduleNextDay.Dispose()
+                dtScheduleNextDay = Nothing
+
+
+                'section 1.1
+                '-------
+                'current high priority jobs
+                Dim dtHighPriority As DataTable = service.runSQLScheduling("select * from dbo.tblProductionScheduleList where OrderStatus in(2,3,6) and PriorityLevel=1 and ProductTypeID=" & Me.txtProductTypeID.Text)
+                decNoPanels = SharedFunctions.performDatatableSelectSum(dtHighPriority, "TotalPanels", "")
+                decTotalSQM = SharedFunctions.performDatatableSelectSum(dtHighPriority, "TotalSQM", "")
+
+                Me.lblHighPriorityJobsHeading.Text = "Current High Priority Jobs"
+                Me.lblHighPriorityJobs.Text = "<b>No of Jobs: </b>" & dtHighPriority.Rows.Count.ToString & "<br />"
+                Me.lblHighPriorityJobs.Text &= "<b>No of Panels: </b>" & decNoPanels.ToString & "<br />"
+                Me.lblHighPriorityJobs.Text &= "<b>Total SQM: </b>" & decTotalSQM.ToString("#.0")
+
+                dtHighPriority.Dispose()
+                dtHighPriority = Nothing
+
+                'section 2
+                '-------
+                'jobs awaiting acceptance
+                Dim dtAwaitingAcceptance As DataTable = service.runSQLScheduling("select * from dbo.tblProductionScheduleList where (OrderStatus=1 or OrderStatus=2) and ProductTypeID=" & Me.txtProductTypeID.Text)
+                decNoPanels = SharedFunctions.performDatatableSelectSum(dtAwaitingAcceptance, "TotalPanels", "")
+                decTotalSQM = SharedFunctions.performDatatableSelectSum(dtAwaitingAcceptance, "TotalSQM", "")
+
+                Me.lblAwaitAcceptanceHeading.Text = "Jobs Awaiting Acceptance"
+                Me.lblAwaitAcceptance.Text = "<b>No of Jobs: </b>" & dtAwaitingAcceptance.Rows.Count.ToString & "<br />"
+                Me.lblAwaitAcceptance.Text &= "<b>No of Panels: </b>" & decNoPanels.ToString & "<br />"
+                Me.lblAwaitAcceptance.Text &= "<b>Total SQM: </b>" & decTotalSQM.ToString("#.0")
+
+                dtAwaitingAcceptance.Dispose()
+                dtAwaitingAcceptance = Nothing
+
+                'section 2.1
+                '-------
+                If Me.txtProductTypeID.Text = "1" Then
+                    'jobs awaiting entry to shutter pro
+                    'Dim dtEnterShutterPro As DataTable = New DataTable
+                    Dim dtEnterShutterPro As DataTable = service.runSQLScheduling("select * from dbo.tblProductionScheduleList where OrderStatus=2 and ProductTypeID=" & Me.txtProductTypeID.Text)
+                    decNoPanels = SharedFunctions.performDatatableSelectSum(dtEnterShutterPro, "TotalPanels", "")
+                    decTotalSQM = SharedFunctions.performDatatableSelectSum(dtEnterShutterPro, "TotalSQM", "")
+
+                    Me.lblEnterShutterProHeading.Text = "Jobs To Be Entered into Shutter Pro"
+                    Me.lblEnterShutterPro.Text = "<b>No of Jobs: </b>" & dtEnterShutterPro.Rows.Count.ToString & "<br />"
+                    Me.lblEnterShutterPro.Text &= "<b>No of Panels: </b>" & decNoPanels.ToString & "<br />"
+                    Me.lblEnterShutterPro.Text &= "<b>Total SQM: </b>" & decTotalSQM.ToString("#.0")
+
+                    dtEnterShutterPro.Dispose()
+                    dtEnterShutterPro = Nothing
+                Else
+                    Me.pnlShowShutterPro.Visible = False
+                End If
+
+                'section 3
+                '-------
+                'jobs to be despatched - link to page
+                Dim dtToDespatch As DataTable = service.getToBeDespatchedList(CInt(Me.txtProductTypeID.Text))
+                decNoPanels = SharedFunctions.performDatatableSelectSum(dtToDespatch, "TotalPanels", "")
+                decTotalSQM = SharedFunctions.performDatatableSelectSum(dtToDespatch, "TotalSQM", "")
+
+                Me.lblToDespatchHeading.Text = "To Be Despatched"
+                Me.lblToDespatch.Text = "<b>No of Jobs: </b>" & dtToDespatch.Rows.Count.ToString & "<br />"
+                Me.lblToDespatch.Text &= "<b>No of Panels: </b>" & decNoPanels.ToString & "<br />"
+                Me.lblToDespatch.Text &= "<b>Total SQM: </b>" & decTotalSQM.ToString("#.0")
+
+                dtToDespatch.Dispose()
+                dtToDespatch = Nothing
+
+                'section 3.1
+                '-------
+                'rady for collection - link to page
+                Dim dtToCollect As DataTable = service.getToBeCollectedFromFactory(CInt(Me.txtProductTypeID.Text))
+                decNoPanels = SharedFunctions.performDatatableSelectSum(dtToCollect, "TotalPanels", "")
+                decTotalSQM = SharedFunctions.performDatatableSelectSum(dtToCollect, "TotalSQM", "")
+
+                Me.lblToCollectHeading.Text = "Ready For Collection"
+                Me.lblToCollect.Text = "<b>No of Jobs: </b>" & dtToCollect.Rows.Count.ToString & "<br />"
+                Me.lblToCollect.Text &= "<b>No of Panels: </b>" & decNoPanels.ToString & "<br />"
+                Me.lblToCollect.Text &= "<b>Total SQM: </b>" & decTotalSQM.ToString("#.0")
+
+                dtToCollect.Dispose()
+                dtToCollect = Nothing
+
+                'section 3.2
+                '-------
+                'rady for invoice - link to page
+                Dim dtToInvoice As DataTable = service.getToBeInvoiced(CInt(Me.txtProductTypeID.Text))
+                decNoPanels = SharedFunctions.performDatatableSelectSum(dtToInvoice, "TotalPanels", "")
+                decTotalSQM = SharedFunctions.performDatatableSelectSum(dtToInvoice, "TotalSQM", "")
+
+                Me.lblToInvoicedHeading.Text = "Ready For Invoice"
+                Me.lblToInvoice.Text = "<b>No of Jobs: </b>" & dtToInvoice.Rows.Count.ToString & "<br />"
+                Me.lblToInvoice.Text &= "<b>No of Panels: </b>" & decNoPanels.ToString & "<br />"
+                Me.lblToInvoice.Text &= "<b>Total SQM: </b>" & decTotalSQM.ToString("#.0")
+
+                dtToInvoice.Dispose()
+                dtToInvoice = Nothing
+
+                'section 4
+                '-------
+                'jobs in progress (jobs on the schedule) - link to daily schedule page
+                Dim dtInProgress As DataTable = service.runSQLScheduling("select * from dbo.tblProductionScheduleList where OrderStatus=3 and ProductTypeID=" & Me.txtProductTypeID.Text)
+                decNoPanels = SharedFunctions.performDatatableSelectSum(dtInProgress, "TotalPanels", "")
+                decTotalSQM = SharedFunctions.performDatatableSelectSum(dtInProgress, "TotalSQM", "")
+
+                Me.lblInProgressHeading.Text = "Work In Progress"
+                Me.lblInProgress.Text = "<b>No of Jobs: </b>" & dtInProgress.Rows.Count.ToString & "<br />"
+                Me.lblInProgress.Text &= "<b>No of Panels: </b>" & decNoPanels.ToString & "<br />"
+                Me.lblInProgress.Text &= "<b>Total SQM: </b>" & decTotalSQM.ToString("#.0")
+
+                dtInProgress.Dispose()
+                dtInProgress = Nothing
+
+                'section 5
+                '-------
+                'total jobs in system (WIP)
+                'show remakes/reorders
+                Dim dtWIP As DataTable = service.runSQLScheduling("select * from dbo.tblProductionScheduleList where OrderStatus in(2,3,6) and ProductTypeID=" & Me.txtProductTypeID.Text)
+                decNoPanels = SharedFunctions.performDatatableSelectSum(dtWIP, "TotalPanels", "")
+                decTotalSQM = SharedFunctions.performDatatableSelectSum(dtWIP, "TotalSQM", "")
+
+                Me.lblWIPHeading.Text = "Work In System"
+                Me.lblWIP.Text = "<b>No of Jobs: </b>" & dtWIP.Rows.Count.ToString & "<br />"
+                Me.lblWIP.Text &= "<b>No of Panels: </b>" & decNoPanels.ToString & "<br />"
+                Me.lblWIP.Text &= "<b>Total SQM: </b>" & decTotalSQM.ToString("#.0")
+
+                dtWIP.Dispose()
+                dtWIP = Nothing
+
+                'section 5.1
+                '-------
+                'total remakes in system (WIP)
+                Dim dtWIPRemakes As DataTable = service.runSQLScheduling("select * from dbo.tblProductionScheduleList where OrderStatus in(2,3,6) and OrderTypeID=2 and ProductTypeID=" & Me.txtProductTypeID.Text)
+                decNoPanels = SharedFunctions.performDatatableSelectSum(dtWIPRemakes, "TotalPanels", "")
+                decTotalSQM = SharedFunctions.performDatatableSelectSum(dtWIPRemakes, "TotalSQM", "")
+
+                Me.lblWIPRemakesHeading.Text = "Remakes In System"
+                Me.lblWIPRemakes.Text = "<b>No of Jobs: </b>" & dtWIPRemakes.Rows.Count.ToString & "<br />"
+                Me.lblWIPRemakes.Text &= "<b>No of Panels: </b>" & decNoPanels.ToString & "<br />"
+                Me.lblWIPRemakes.Text &= "<b>Total SQM: </b>" & decTotalSQM.ToString("#.0")
+
+                dtWIPRemakes.Dispose()
+                dtWIPRemakes = Nothing
+
+                'section 5.2
+                '-------
+                'total reorders in system (WIP)
+                Dim dtWIPReorders As DataTable = service.runSQLScheduling("select * from dbo.tblProductionScheduleList where OrderStatus in(2,3,6) and OrderTypeID=3 and ProductTypeID=" & Me.txtProductTypeID.Text)
+                decNoPanels = SharedFunctions.performDatatableSelectSum(dtWIPReorders, "TotalPanels", "")
+                decTotalSQM = SharedFunctions.performDatatableSelectSum(dtWIPReorders, "TotalSQM", "")
+
+                Me.lblWIPReordersHeading.Text = "Reorders In System"
+                Me.lblWIPReorders.Text = "<b>No of Jobs: </b>" & dtWIPReorders.Rows.Count.ToString & "<br />"
+                Me.lblWIPReorders.Text &= "<b>No of Panels: </b>" & decNoPanels.ToString & "<br />"
+                Me.lblWIPReorders.Text &= "<b>Total SQM: </b>" & decTotalSQM.ToString("#.0")
+
+                dtWIPReorders.Dispose()
+                dtWIPReorders = Nothing
+
+                service = Nothing
+
+                checkPermissions()
+
+            End If
+
+    End Sub
+
+    Private Sub Page_Error(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.Error
+        Dim objErr1 As Exception = Server.GetLastError().GetBaseException()
+
+        Dim strErrorMessage As String = String.Empty
+
+        strErrorMessage &= "Error In: " & Request.Url.ToString() & Environment.NewLine & Environment.NewLine
+
+        strErrorMessage &= "Server.GetLastError().GetBaseException()" & Environment.NewLine & Environment.NewLine
+
+        strErrorMessage &= "Error Message: " & objErr1.Message & Environment.NewLine
+        strErrorMessage &= "Stack Trace:" & Environment.NewLine
+        strErrorMessage &= objErr1.StackTrace & Environment.NewLine & Environment.NewLine
+
+        Dim objErr2 As Exception = Server.GetLastError()
+
+        strErrorMessage &= "Server.GetLastError()" & Environment.NewLine & Environment.NewLine
+
+        strErrorMessage &= "Error Message: " & objErr2.Message & Environment.NewLine
+        strErrorMessage &= "Stack Trace:" & Environment.NewLine
+        strErrorMessage &= objErr2.StackTrace & Environment.NewLine
+
+        EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & strErrorMessage)
+
+        Server.ClearError()
+
+        Response.Redirect("GenericErrorPage.aspx", False)
+    End Sub
+
+    Private Function getPageInfo() As String
+
+        Dim strPageInfo As String = String.Empty
+
+        Dim strName As String = String.Empty
+        If Session.Contents.Count > 0 Then
+            strPageInfo &= "Session Variables" & Environment.NewLine
+            For Each strName In Session.Contents
+                strPageInfo &= strName & ": " & CStr(Session.Contents(strName)) & Environment.NewLine
+            Next
+        Else
+            strPageInfo &= "No Session Variables" & Environment.NewLine
+        End If
+
+        strPageInfo &= Environment.NewLine
+
+        If Me.HasControls Then
+            strPageInfo &= "Form Controls" & Environment.NewLine
+            getPageControls(Me, strPageInfo)
+        Else
+            strPageInfo &= "No Form Controls" & Environment.NewLine
+        End If
+        Return strPageInfo
+
+    End Function
+
+    Private Sub getPageControls(ByVal ctrl As Control, ByRef strPageControls As String)
+
+        If ctrl.HasControls Then
+            For Each childCtrl As Control In ctrl.Controls
+                getPageControls(childCtrl, strPageControls)
+            Next
+        Else
+            Select Case ctrl.GetType.Name
+                Case "TextBox"
+                    Dim frmTxt As TextBox
+                    frmTxt = DirectCast(ctrl, TextBox)
+                    strPageControls &= frmTxt.ID & ": " & Left(frmTxt.Text, 100) & Environment.NewLine
+                Case "DropDownList"
+                    Dim frmCbo As DropDownList
+                    frmCbo = DirectCast(ctrl, DropDownList)
+                    If frmCbo.Items.Count > 0 Then
+                        strPageControls &= frmCbo.ID & ": " & frmCbo.SelectedItem.Text & " (" & frmCbo.SelectedValue & ")" & Environment.NewLine
+                    Else
+                        strPageControls &= frmCbo.ID & ": Not Populated" & Environment.NewLine
+                    End If
+                Case "CheckBox"
+                    Dim frmChk As CheckBox
+                    frmChk = DirectCast(ctrl, CheckBox)
+                    strPageControls &= frmChk.ID & ": " & frmChk.Checked & Environment.NewLine
+                Case "RadioButton"
+                    Dim frmRdo As RadioButton
+                    frmRdo = DirectCast(ctrl, RadioButton)
+                    strPageControls &= frmRdo.ID & ": " & frmRdo.Checked & Environment.NewLine
+                Case "RadioButtonList"
+                    Dim frmRdoLst As RadioButtonList
+                    frmRdoLst = DirectCast(ctrl, RadioButtonList)
+                    If frmRdoLst.SelectedIndex >= 0 Then
+                        strPageControls &= frmRdoLst.ID & ": " & frmRdoLst.SelectedItem.Text & " (" & frmRdoLst.SelectedValue & ")" & Environment.NewLine
+                    Else
+                        strPageControls &= frmRdoLst.ID & ": Not Selected" & Environment.NewLine
+                    End If
+            End Select
+        End If
+
+    End Sub
+
+    Protected Sub btnLogout_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles btnLogout.Click
+
+        Response.Redirect("Logout.aspx", False)
+
+    End Sub
+
+    Protected Sub btnProductionList_Click(sender As Object, e As System.EventArgs) Handles btnProductionList.Click
+
+        Response.Redirect("ProductionScheduleList.aspx", False)
+
+    End Sub
+
+    Protected Sub btnScheduleDateUpdate_Click(sender As Object, e As System.EventArgs) Handles btnScheduleDateUpdate.Click
+
+        Response.Redirect("ScheduleDateUpdate.aspx", False)
+
+    End Sub
+
+    Protected Sub btnPlannedShippingDate_Click(sender As Object, e As System.EventArgs) Handles btnPlannedShippingDate.Click
+
+        Response.Redirect("PlannedShippingDateUpdate.aspx", False)
+
+    End Sub
+
+    Protected Sub checkPermissions()
+
+        Me.btnProductionList.Visible = False
+        Me.pnlDailySchedule.Visible = False
+        Me.btnScheduleDateUpdate.Visible = False
+        Me.btnPlannedShippingDate.Visible = False
+        Me.pnlAwaitAcceptance.Visible = False
+        Me.pnlShutterPro.Visible = False
+        Me.pnlToDespatch.Visible = False
+        Me.pnlCollectFactory.Visible = False
+        Me.pnlAwaitingInvoice.Visible = False
+
+        Dim service As New AppService
+        Dim dtPerm As DataTable = service.getUserPermsisionsByUserID(CInt(Session("sessUserID")))
+        If dtPerm.Rows.Count > 0 Then
+
+            'production schedule search button
+            Dim drows() As DataRow = dtPerm.Select("PermissionID=1")
+            If drows.Length > 0 Then
+                Me.btnProductionList.Visible = True
+            End If
+            drows = Nothing
+
+            'daily schhedule update
+            drows = dtPerm.Select("PermissionID=2")
+            If drows.Length > 0 Then
+                Me.pnlDailySchedule.Visible = True
+            End If
+            drows = Nothing
+
+            'schedule date update
+            drows = dtPerm.Select("PermissionID=3")
+            If drows.Length > 0 Then
+                Me.btnScheduleDateUpdate.Visible = True
+            End If
+            drows = Nothing
+
+            'est shipping date update
+            drows = dtPerm.Select("PermissionID=4")
+            If drows.Length > 0 Then
+                Me.btnPlannedShippingDate.Visible = True
+            End If
+            drows = Nothing
+
+            'awaiting acceptance
+            drows = dtPerm.Select("PermissionID=5")
+            If drows.Length > 0 Then
+                Me.pnlAwaitAcceptance.Visible = True
+            End If
+            drows = Nothing
+
+            'to be entered shutter pro
+            drows = dtPerm.Select("PermissionID=6")
+            If drows.Length > 0 Then
+                Me.pnlShutterPro.Visible = True
+            End If
+            drows = Nothing
+
+            'to be despatched
+            drows = dtPerm.Select("PermissionID=7")
+            If drows.Length > 0 Then
+                Me.pnlToDespatch.Visible = True
+            End If
+            drows = Nothing
+
+            'to be collected
+            drows = dtPerm.Select("PermissionID=8")
+            If drows.Length > 0 Then
+                Me.pnlCollectFactory.Visible = True
+            End If
+            drows = Nothing
+
+            'to be invoiced
+            drows = dtPerm.Select("PermissionID=9")
+            If drows.Length > 0 Then
+                Me.pnlAwaitingInvoice.Visible = True
+            End If
+            drows = Nothing
+
+            'high priority jobs
+            drows = dtPerm.Select("PermissionID=11")
+            If drows.Length > 0 Then
+                Me.pnlHighPriority.Visible = True
+            End If
+            drows = Nothing
+
+
+        End If
+        dtPerm.Dispose()
+        dtPerm = Nothing
+
+        service = Nothing
+
+    End Sub
+
+
+    Private Sub btnLouvreReport_Click(sender As Object, e As EventArgs) Handles btnLouvreReport.Click
+
+        Response.Redirect("LouvreProductionReport.aspx", False)
+
+        'Response.Redirect("testpage.aspx", False)
+
+    End Sub
+
+    Private Sub btnCustomers_Click(sender As Object, e As EventArgs) Handles btnCustomers.Click
+
+        Response.Redirect("CustomerDetails.aspx", False)
+
+    End Sub
+
+    Private Sub btnReportPage_Click(sender As Object, e As EventArgs) Handles btnReportPage.Click
+
+        Response.Redirect("ReportPage.aspx", False)
+
+        'Response.Redirect("testpage.aspx", False)
+
+    End Sub
+
+    Private Sub btnStockPicking_Click(sender As Object, e As EventArgs) Handles btnStockPicking.Click
+
+        Response.Redirect("UpdateStockPicking.aspx", False)
+
+
+    End Sub
+
+    Private Sub btnDeliveryDocket_Click(sender As Object, e As EventArgs) Handles btnDeliveryDocket.Click
+
+        LouvreJobDeliveryDocket.GetLouvreJobDeliveryDocket(10079)
+
+    End Sub
+
+    Private Sub btnRunningSheet_Click(sender As Object, e As EventArgs) Handles btnRunningSheet.Click
+
+        LouvreJobRunningSheet.GetJobRunningSheetPDF(10079)
+
+
+    End Sub
+
+    Private Sub btnTimeSheet_Click(sender As Object, e As EventArgs) Handles btnTimeSheet.Click
+
+        LouvreJobTimeSheet.JobTimeSheet(10079)
+
+    End Sub
+
+    Private Sub btnCoverSheet_Click(sender As Object, e As EventArgs) Handles btnCoverSheet.Click
+
+        LouvreJobCoverSheet.GetProjectCoverSheetPDF(10079)
+
+    End Sub
+End Class

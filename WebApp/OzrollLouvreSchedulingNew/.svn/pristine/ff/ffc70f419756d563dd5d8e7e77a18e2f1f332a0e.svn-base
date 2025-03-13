@@ -1,0 +1,171 @@
+﻿Imports System.Data.SqlClient
+
+Public Class WebEmailDAO
+
+    Private dbcon As New DBConnection
+
+    Public Function addAutoEmailWebRecord(ByVal email As WebEmail) As Boolean
+        Dim con As SqlConnection
+        Dim com As New SqlCommand
+
+        con = dbcon.getSQLConnection_To_WebAutoEmail()
+        Try
+            con.Open()
+            com.Connection = con
+            com.CommandText = "sp_addAutoEmailWebRecordFrom"
+            com.CommandType = CommandType.StoredProcedure
+
+            com.Parameters.Add("@DateOfEntry", SqlDbType.DateTime)
+            If email.DateOfEntry.Equals(Constants.DEFAULT_DATE_VALUE) Then
+                com.Parameters("@DateOfEntry").Value = System.DBNull.Value
+            Else : com.Parameters("@DateOfEntry").Value = email.DateOfEntry.ToShortDateString
+            End If
+
+            com.Parameters.Add("@TimeOfEntry", SqlDbType.DateTime)
+            If email.TimeOfEntry.Equals(Constants.DEFAULT_DATE_VALUE) Then
+                com.Parameters("@TimeOfEntry").Value = System.DBNull.Value
+            Else : com.Parameters("@TimeOfEntry").Value = email.TimeOfEntry.ToString
+            End If
+
+            com.Parameters.Add("@FromUserID", SqlDbType.Int)
+            If email.FromUserID = Constants.DEFAULT_INTEGER_VALUE Then
+                com.Parameters("@FromUserID").Value = System.DBNull.Value
+            Else : com.Parameters("@FromUserID").Value = email.FromUserID
+            End If
+
+            com.Parameters.Add("@FromUser", SqlDbType.VarChar)
+            If email.FromUser.Equals(String.Empty) Then
+                com.Parameters("@FromUser").Value = System.DBNull.Value
+            Else : com.Parameters("@FromUser").Value = email.FromUser
+            End If
+
+            ''''''''''''''''''''''''''''''''''''''''''''''''
+
+            com.Parameters.Add("@FromMachineID", SqlDbType.VarChar)
+            If email.FromMachineID.Equals(String.Empty) Then
+                com.Parameters("@FromMachineID").Value = System.DBNull.Value
+            Else : com.Parameters("@FromMachineID").Value = email.FromMachineID
+            End If
+
+            com.Parameters.Add("@Source", SqlDbType.Int)
+            If email.Source = Constants.DEFAULT_INTEGER_VALUE Then
+                com.Parameters("@Source").Value = System.DBNull.Value
+            Else : com.Parameters("@Source").Value = email.Source
+            End If
+
+            com.Parameters.Add("@FromField", SqlDbType.VarChar)
+            If email.FromField.Equals(String.Empty) Then
+                com.Parameters("@FromField").Value = System.DBNull.Value
+            Else : com.Parameters("@FromField").Value = email.FromField
+            End If
+
+            com.Parameters.Add("@ToField", SqlDbType.VarChar)
+            If email.ToField.Equals(String.Empty) Then
+                com.Parameters("@ToField").Value = System.DBNull.Value
+            Else : com.Parameters("@ToField").Value = email.ToField
+            End If
+
+            com.Parameters.Add("@CC", SqlDbType.VarChar)
+            If email.CC.Equals(String.Empty) Then
+                com.Parameters("@CC").Value = System.DBNull.Value
+            Else : com.Parameters("@CC").Value = email.CC
+            End If
+
+            com.Parameters.Add("@BCC", SqlDbType.VarChar)
+            If email.BCC.Equals(String.Empty) Then
+                com.Parameters("@BCC").Value = System.DBNull.Value
+            Else : com.Parameters("@BCC").Value = email.BCC
+            End If
+
+            com.Parameters.Add("@DoNotEmailTo", SqlDbType.VarChar)
+            If email.DoNotEmailTo.Equals(String.Empty) Then
+                com.Parameters("@DoNotEmailTo").Value = System.DBNull.Value
+            Else : com.Parameters("@DoNotEmailTo").Value = email.DoNotEmailTo
+            End If
+
+            com.Parameters.Add("@DoNotEmailCC", SqlDbType.VarChar)
+            If email.DoNotEmailCC.Equals(String.Empty) Then
+                com.Parameters("@DoNotEmailCC").Value = System.DBNull.Value
+            Else : com.Parameters("@DoNotEmailCC").Value = email.DoNotEmailCC
+            End If
+
+            com.Parameters.Add("@DoNotEmailBCC", SqlDbType.VarChar)
+            If email.DoNotEmailBCC.Equals(String.Empty) Then
+                com.Parameters("@DoNotEmailBCC").Value = System.DBNull.Value
+            Else : com.Parameters("@DoNotEmailBCC").Value = email.DoNotEmailBCC
+            End If
+
+            ''''''''''''''''''''''''''''''''''''''''''''''''
+
+            com.Parameters.Add("@NoOfRecipients", SqlDbType.Int)
+            If email.NoOfRecipients = Constants.DEFAULT_INTEGER_VALUE Then
+                com.Parameters("@NoOfRecipients").Value = System.DBNull.Value
+            Else : com.Parameters("@NoOfRecipients").Value = email.NoOfRecipients
+            End If
+
+            com.Parameters.Add("@Subject", SqlDbType.VarChar)
+            If email.Subject.Equals(String.Empty) Then
+                com.Parameters("@Subject").Value = System.DBNull.Value
+            Else : com.Parameters("@Subject").Value = email.Subject
+            End If
+
+            com.Parameters.Add("@AttachmentPath", SqlDbType.VarChar)
+            If email.AttachmentPath.Equals(String.Empty) Then
+                com.Parameters("@AttachmentPath").Value = System.DBNull.Value
+            Else : com.Parameters("@AttachmentPath").Value = email.AttachmentPath
+            End If
+
+            com.Parameters.Add("@MessageBody", SqlDbType.VarChar)
+            If email.MessageBody.Equals(String.Empty) Then
+                com.Parameters("@MessageBody").Value = System.DBNull.Value
+            Else : com.Parameters("@MessageBody").Value = email.MessageBody
+            End If
+
+            com.Parameters.Add("@EmailSent", SqlDbType.Bit)
+            com.Parameters("@EmailSent").Value = email.EmailSent
+
+            com.Parameters.Add("@EmailNotSent", SqlDbType.Bit)
+            com.Parameters("@EmailNotSent").Value = email.EmailNotSent
+
+            ''''''''''''''''''''''''''''''''''''''''''''''''
+
+            com.Parameters.Add("@DateEmailSent", SqlDbType.DateTime)
+            If email.DateEmailSent.Equals(Constants.DEFAULT_DATE_VALUE) Then
+                com.Parameters("@DateEmailSent").Value = System.DBNull.Value
+            Else : com.Parameters("@DateEmailSent").Value = email.DateEmailSent.ToShortDateString
+            End If
+
+
+            com.Parameters.Add("@TimeEmailSent", SqlDbType.DateTime)
+            If email.TimeEmailSent.Equals(Constants.DEFAULT_DATE_VALUE) Then
+                com.Parameters("@TimeEmailSent").Value = System.DBNull.Value
+            Else : com.Parameters("@TimeEmailSent").Value = email.TimeEmailSent.ToString
+            End If
+
+            Dim ra As Integer = com.ExecuteNonQuery()
+            con.Close()
+
+            If ra = 0 Then
+                'EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - insert record failed", String.Empty)
+                Return False
+            Else
+                Return True
+            End If
+
+        Catch ex As Exception
+            con.Close()
+            'EventLog.addEventLogEmail(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name & ": " & System.Reflection.MethodBase.GetCurrentMethod().Name & " - " & ex.Message, String.Empty)
+            Return False
+
+        Finally
+            com.Dispose()
+            com = Nothing
+            con.Dispose()
+            con = Nothing
+
+        End Try
+    End Function
+
+
+
+End Class
