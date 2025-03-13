@@ -1,0 +1,13 @@
+.vs/
+.vs
+*.suo
+*.user
+*.cache
+*.log
+bin/
+.bin
+obj/
+packages/
+node_modules/
+*.csproj.user
+*dbmdl
